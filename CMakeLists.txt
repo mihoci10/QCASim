@@ -11,13 +11,13 @@ set (CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
-set(QCASIM_OUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/out CACHE STRING "Set the output base directory")
-set(QCASIM_BUILD_SHARED False CACHE BOOL "Build QCASim as a dynamic library")
+set(QCAS_OUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/out CACHE STRING "Set the output base directory")
+set(QCAS_BUILD_SHARED False CACHE BOOL "Build QCASim as a dynamic library")
 
 # set output directories
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${QCASIM_OUT_DIR}/archive)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${QCASIM_OUT_DIR}/lib)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QCASIM_OUT_DIR}/bin)
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${QCAS_OUT_DIR}/archive)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${QCAS_OUT_DIR}/lib)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QCAS_OUT_DIR}/bin)
 
 # auto-ignore build directory
 if(NOT EXISTS ${PROJECT_BINARY_DIR}/.gitignore)
@@ -26,10 +26,10 @@ endif()
 
 # detect platform
 if(WIN32)
-  set(QCASIM_PLATFORM_WIN True BOOL)
+  set(QCAS_PLATFORM_WIN True BOOL)
 endif()
 if(UNIX)
-  set(QCASIM_PLATFORM_UNIX True BOOL)
+  set(QCAS_PLATFORM_UNIX True BOOL)
 endif()
 
 function(defineBoolVariable varName)
@@ -44,5 +44,10 @@ function(collectSources varName dir)
   set("${varName}" "${SOURCES}" PARENT_SCOPE)
 endfunction()
 
-defineBoolVariable(QCASIM_PLATFORM_WIN)
-defineBoolVariable(QCASIM_BUILD_SHARED)
+defineBoolVariable(QCAS_PLATFORM_WIN)
+defineBoolVariable(QCAS_BUILD_SHARED)
+
+add_subdirectory(QCACore)
+#add_subdirectory(QCASim)
+#add_subdirectory(QCAExample)
+add_subdirectory(QCATest)
