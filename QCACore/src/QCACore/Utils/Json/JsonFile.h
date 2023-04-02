@@ -10,14 +10,18 @@ namespace QCAC::Util{
 
     class JsonFile {
     public:
-        JsonFile() = delete;
+        JsonFile();
         JsonFile(std::ifstream stream);
         JsonFile(const std::string& string);
 
+        void inline SetMode(JsonFileMode mode) { m_Mode = mode; };
+
         JsonNode GetRootNode() { return m_Root; };
+        JsonNode GetChildNode(JsonNode node, const std::string& name);
+        JsonNode GetChildNode(JsonNode node, size_t index);
 
         template <typename T>
-        void UpdateValue(JsonNode node, const std::string&, T& value, T defaultValue);
+        void UpdateValue(JsonNode node, const std::string& name, T& value, T defaultValue);
         template <typename T>
         void WriteValue(JsonNode node, const std::string&, T value);
         template <typename T>
@@ -29,7 +33,7 @@ namespace QCAC::Util{
     };
 
     template<typename T>
-    inline void JsonFile::UpdateValue(JsonNode node, const std::string&, T& value, T defaultValue) {
+    inline void JsonFile::UpdateValue(JsonNode node, const std::string& name, T& value, T defaultValue) {
         switch (m_Mode)
         {
         case JsonFileMode::Read:
