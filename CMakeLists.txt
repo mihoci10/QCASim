@@ -48,6 +48,8 @@ defineBoolVariable(QCAS_PLATFORM_WIN)
 defineBoolVariable(QCAS_BUILD_SHARED)
 
 add_subdirectory(QCACore)
-#add_subdirectory(QCASim)
+add_subdirectory(QCASim)
 #add_subdirectory(QCAExample)
+
+enable_testing()
 add_subdirectory(QCATest)

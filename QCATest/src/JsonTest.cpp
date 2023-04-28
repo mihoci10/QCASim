@@ -72,3 +72,26 @@ TEST(BasicTests, ReadBasic) {
 	f.ReadValue(root, "text", s, std::string("asdf"));
 	ASSERT_STREQ("asdashdjikhoihahjkasjdaij", s.c_str());
 }
+
+TEST(BasicTests, ReadComplex) {
+	QCAC::Util::JsonFile f(complexJson);
+
+	auto root = f.GetRootNode();
+	int i;
+	double d;
+	bool b;
+	std::string s;
+
+	auto arrayNode = f.GetChildNode(root, "arrayNum");
+	ASSERT_EQ(f.GetChildCount(arrayNode), 3);
+	f.ReadValue(arrayNode, 0, i, 0);
+	ASSERT_EQ(i, 1);
+	f.ReadValue(arrayNode, 1, i, 0);
+	ASSERT_EQ(i, 2);
+	f.ReadValue(arrayNode, 2, i, 0);
+	ASSERT_EQ(i, 3);
+	
+	auto objectNode = f.GetChildNode(root, "object");
+	f.ReadValue(objectNode, "num", i, 0);
+	ASSERT_EQ(i, 123);
+}

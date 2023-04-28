@@ -16,4 +16,19 @@ namespace QCAC::Util{
     {
     }
 
+    JsonNode JsonFile::GetChildNode(JsonNode node, const std::string& name)
+    {
+        return node.Get().at(name);
+    }
+
+    JsonNode JsonFile::GetChildNode(JsonNode node, size_t index)
+    {
+        return node.Get().at(index);
+    }
+
+    size_t JsonFile::GetChildCount(JsonNode node)
+    {
+        return node.Get().size();
+    }
+
 }
