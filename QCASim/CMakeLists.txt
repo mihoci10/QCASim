@@ -1,16 +1,20 @@
-collectSources(PROJECT_SRC src/QCAS)
+collectSources(PROJECT_SRC src/QCASim)
 
-if(${QCAS_BUILD_SHARED})
-    set(LIB_TYPE "SHARED")
-else()
-    set(LIB_TYPE "STATIC")
-endif()
+FetchContent_Declare(
+    Cherry
+    GIT_REPOSITORY https://github.com/mihoci10/Cherry.git
+    GIT_TAG        origin/master
+)
 
-add_library(QCASim ${LIB_TYPE} 
+FetchContent_MakeAvailable(Cherry)
+
+add_executable(QCASim 
 ${PROJECT_SRC})
 
 target_include_directories(QCASim PUBLIC src)
 
+target_link_libraries(QCASim PUBLIC QCACore CherryAPI)
+
 target_precompile_headers(QCASim PUBLIC src/qcaspch.h)
 
-source_group("QCAS" FILES ${PROJECT_SRC})
+source_group("QCASim" FILES ${PROJECT_SRC})
