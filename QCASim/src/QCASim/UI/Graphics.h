@@ -17,6 +17,6 @@ namespace QCAS::UI{
         std::shared_ptr<SDL_Window> m_windowHnd;
         std::shared_ptr<Cherry::RendererSettings> m_RendererSettings;
 
-    }
+    };
 
 }
