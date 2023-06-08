@@ -1,5 +1,8 @@
 #pragma once
 
+#include <QCASim/UI/Graphics.h>
+#include <QCASim/Input/Input.h>
+
 namespace QCAS {
 
 	class QCASim {

@@ -1,22 +1,32 @@
 #pragma once 
 
 #include <SDL.h>
-#include <Cherry/Renderer.h>
+#include <Cherry/RendererApi.h>
+#include <Cherry/GUI/ImGuiAPI.h>
 
 namespace QCAS::UI{
 
-    class Graphics{
+    class Graphics {
     public:
+        static void Initialize(const std::shared_ptr<Cherry::RendererSettings>& rendererSettings);
+        static void Deinitialize();
+        static Graphics& GetInstance();
 
-        void Init();
-        void Deinit();
+        void BeginFrame();
+        void EndFrame();
 
-        void SetRendererSettings(const std::shared_ptr<Cherry::RendererSettings>& rendererSettings) { m_RendererSettings = rendererSettings; }
+        Cherry::GUI::ImGuiAPI& GetImGuiApi() const { return *m_ImGuiApi.get(); };
 
     private:
-        std::shared_ptr<SDL_Window> m_windowHnd;
-        std::shared_ptr<Cherry::RendererSettings> m_RendererSettings;
+        Graphics(const std::shared_ptr<Cherry::RendererSettings>& rendererSettings);
+        ~Graphics();
 
-    }
+        static Graphics* s_Graphics;
+
+        std::shared_ptr<SDL_Window> m_windowHnd;
+        std::unique_ptr<Cherry::RendererAPI> m_RenderApi;
+        std::shared_ptr<Cherry::RendererSettings> m_RendererSettings;
+        std::unique_ptr<Cherry::GUI::ImGuiAPI> m_ImGuiApi;
+    };
 
 }
