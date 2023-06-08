@@ -66,8 +66,8 @@ namespace QCAS::UI{
 		if (SDL_InitSubSystem(SDL_INIT_VIDEO))
 			throw std::exception("SDL initialization error!");
 
-		m_windowHnd = std::shared_ptr<SDL_Window>(SDL_CreateWindow("CherryExample", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-			800, 600, ctxFlag), Cherry::SDL_Deleter());
+		m_windowHnd = std::shared_ptr<SDL_Window>(SDL_CreateWindow("QCASim", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+			512, 512, ctxFlag), Cherry::SDL_Deleter());
 
 		if(!m_windowHnd)
 			throw std::exception("SDL window initialization error!");
