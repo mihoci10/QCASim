@@ -1,8 +1,9 @@
 #include "Graphics.h"
 
 #include <Cherry/Utils/SDLUtils.hpp>
+#include <QCASim/UI/Frames/MainFrame.h>
 
-namespace QCAS::UI{
+namespace QCAS{
 
 	Graphics* Graphics::s_Graphics = nullptr;
 
@@ -35,6 +36,11 @@ namespace QCAS::UI{
 	{
 		m_ImGuiApi->NewFrame();
 		m_RenderApi->Clear();
+	}
+
+	void Graphics::RenderFrame()
+	{
+		m_Frame->Render();
 	}
 
 	void Graphics::EndFrame()
@@ -73,6 +79,7 @@ namespace QCAS::UI{
 			throw std::exception("SDL window initialization error!");
 
 		SDL_SetWindowResizable(m_windowHnd.get(), SDL_TRUE);
+		SDL_MaximizeWindow(m_windowHnd.get());
 
 		m_RenderApi = Cherry::RendererAPI::Create(m_windowHnd, rendererSettings);
 		m_RenderApi->Init();
@@ -83,6 +90,8 @@ namespace QCAS::UI{
 
 		//Prevent saving of window state
 		ImGui::GetIO().IniFilename = NULL;
+
+		m_Frame = std::make_unique<MainFrame>();
 	}
 
 	Graphics::~Graphics()

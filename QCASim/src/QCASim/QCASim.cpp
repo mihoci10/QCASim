@@ -9,7 +9,7 @@ namespace QCAS
     {
         m_ShouldRestart = false;
 
-        UI::Graphics::Initialize(std::make_shared<Cherry::RendererSettings>(Cherry::RendererPlatform::OpenGL, true));
+        Graphics::Initialize(std::make_shared<Cherry::RendererSettings>(Cherry::RendererPlatform::OpenGL, true));
         
         Input::Initialize();
         Input::GetInstance().m_OnQuit = [&]() { m_Running = false; };
@@ -24,22 +24,20 @@ namespace QCAS
         while (m_Running) {
 
             while (SDL_PollEvent(&ev) != 0) { 
-                UI::Graphics::GetInstance().GetImGuiApi().OnEvent(&ev);
+                Graphics::GetInstance().GetImGuiApi().OnEvent(&ev);
                 Input::GetInstance().OnEvent(&ev); 
             };
 
-            UI::Graphics::GetInstance().BeginFrame();
-            ImGui::Begin("Demo window");
-            ImGui::Text("asdf");
-            ImGui::End();
-            UI::Graphics::GetInstance().EndFrame();
+            Graphics::GetInstance().BeginFrame();
+            Graphics::GetInstance().RenderFrame();
+            Graphics::GetInstance().EndFrame();
         }
     }
 
     void QCASim::Shutdown()
     {
         Input::Deinitialize();
-        UI::Graphics::Deinitialize();
+        Graphics::Deinitialize();
     }
 
 }
