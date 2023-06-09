@@ -10,6 +10,7 @@ namespace QCAS {
 	}
 	void MainFrame::Render()
 	{
+		ImGui::DockSpaceOverViewport(ImGui::GetMainViewport(), ImGuiDockNodeFlags_PassthruCentralNode);
 		m_MenuBarFrame->Render();
 
         ImGui::Begin("asd");

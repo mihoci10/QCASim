@@ -90,6 +90,7 @@ namespace QCAS{
 
 		//Prevent saving of window state
 		ImGui::GetIO().IniFilename = NULL;
+		ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
 		m_Frame = std::make_unique<MainFrame>();
 	}
