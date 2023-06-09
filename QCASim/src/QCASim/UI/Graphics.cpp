@@ -76,9 +76,13 @@ namespace QCAS::UI{
 
 		m_RenderApi = Cherry::RendererAPI::Create(m_windowHnd, rendererSettings);
 		m_RenderApi->Init();
+		m_RenderApi->SetClearColor({ 0.5, 0.5, 0.5, 1 });
 
 		m_ImGuiApi = Cherry::GUI::ImGuiAPI::Create();
 		m_ImGuiApi->Init();
+
+		//Prevent saving of window state
+		ImGui::GetIO().IniFilename = NULL;
 	}
 
 	Graphics::~Graphics()
