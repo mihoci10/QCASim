@@ -3,6 +3,7 @@
 #include <SDL.h>
 #include <Cherry/RendererApi.h>
 #include <Cherry/GUI/ImGuiAPI.h>
+#include <QCASim/UI/FontManager.h>
 #include <QCASim/UI/Frames/IFrame.hpp>
 
 namespace QCAS{
@@ -18,6 +19,7 @@ namespace QCAS{
         void EndFrame();
 
         Cherry::GUI::ImGuiAPI& GetImGuiApi() const { return *m_ImGuiApi.get(); };
+        FontManager& GetFontManager() const { return *m_FontManager.get(); };
 
     private:
         Graphics(const std::shared_ptr<Cherry::RendererSettings>& rendererSettings);
@@ -31,9 +33,8 @@ namespace QCAS{
         std::unique_ptr<Cherry::RendererAPI> m_RenderApi;
         std::shared_ptr<Cherry::RendererSettings> m_RendererSettings;
         std::unique_ptr<Cherry::GUI::ImGuiAPI> m_ImGuiApi;
+        std::unique_ptr<FontManager> m_FontManager;
         std::unique_ptr<IFrame> m_Frame;
-
-        ImFont* m_DefaultFont, m_ItalicFont, m_BoldFont;
     };
 
 }

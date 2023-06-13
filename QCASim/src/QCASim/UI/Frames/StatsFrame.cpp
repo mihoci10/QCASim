@@ -1,7 +1,7 @@
 #include "StatsFrame.h"
 
 #include <Cherry/GUI/ImGuiAPI.h>
-#include <QCASim/UI/FontManager.h>
+#include <QCASim/UI/Graphics.h>
 
 namespace QCAS {
 
@@ -11,7 +11,7 @@ namespace QCAS {
 
 		ImGui::Text("Frame rate:");
 		ImGui::SameLine();
-		ImGui::PushFont(FontManager::GetInstance().GetBoldFont());
+		ImGui::PushFont(Graphics::GetInstance().GetFontManager().GetBoldFont());
 		ImGui::Text("%f fps", 123.0f);
 		ImGui::PopFont();
 

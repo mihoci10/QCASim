@@ -2,33 +2,6 @@
 
 namespace QCAS{
 
-	FontManager* FontManager::s_FontManager = nullptr;
-
-	void FontManager::Initialize()
-	{
-		if (s_FontManager)
-			throw std::exception("Font manager has already been initialized!");
-
-		s_FontManager = new FontManager();
-	}
-
-	void FontManager::Deinitialize()
-	{
-		if (!s_FontManager)
-			throw std::exception("Font manager was not initialized!");
-
-		delete s_FontManager;
-		s_FontManager = nullptr;
-	}
-
-	FontManager& FontManager::GetInstance()
-	{
-		if (!s_FontManager)
-			throw std::exception("Font manager was not initialized!");
-
-		return *s_FontManager;
-	}
-
 	FontManager::FontManager() 
 	{
 		ImGuiIO& io = ImGui::GetIO();

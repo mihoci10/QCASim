@@ -1,7 +1,6 @@
 #include "Graphics.h"
 
 #include <Cherry/Utils/SDLUtils.hpp>
-#include <QCASim/UI/FontManager.h>
 #include <QCASim/UI/Frames/MainFrame.h>
 
 namespace QCAS{
@@ -41,7 +40,7 @@ namespace QCAS{
 
 	void Graphics::RenderFrame()
 	{
-		ImGui::PushFont(FontManager::GetInstance().GetRegularFont());
+		ImGui::PushFont(m_FontManager->GetRegularFont());
 		m_Frame->Render();
 		ImGui::PopFont();
 	}
@@ -93,7 +92,7 @@ namespace QCAS{
 
 		SetupImGui();
 
-		QCAS::FontManager::Initialize();
+		m_FontManager = std::make_unique<FontManager>();
 
 		m_Frame = std::make_unique<MainFrame>();
 	}
