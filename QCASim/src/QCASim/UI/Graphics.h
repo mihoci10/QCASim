@@ -25,11 +25,15 @@ namespace QCAS{
 
         static Graphics* s_Graphics;
 
+        void SetupImGui();
+
         std::shared_ptr<SDL_Window> m_windowHnd;
         std::unique_ptr<Cherry::RendererAPI> m_RenderApi;
         std::shared_ptr<Cherry::RendererSettings> m_RendererSettings;
         std::unique_ptr<Cherry::GUI::ImGuiAPI> m_ImGuiApi;
         std::unique_ptr<IFrame> m_Frame;
+
+        ImFont* m_DefaultFont, m_ItalicFont, m_BoldFont;
     };
 
 }

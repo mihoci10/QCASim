@@ -1,6 +1,7 @@
 #include "Graphics.h"
 
 #include <Cherry/Utils/SDLUtils.hpp>
+#include <QCASim/UI/FontManager.h>
 #include <QCASim/UI/Frames/MainFrame.h>
 
 namespace QCAS{
@@ -40,7 +41,9 @@ namespace QCAS{
 
 	void Graphics::RenderFrame()
 	{
+		ImGui::PushFont(FontManager::GetInstance().GetRegularFont());
 		m_Frame->Render();
+		ImGui::PopFont();
 	}
 
 	void Graphics::EndFrame()
@@ -88,9 +91,9 @@ namespace QCAS{
 		m_ImGuiApi = Cherry::GUI::ImGuiAPI::Create();
 		m_ImGuiApi->Init();
 
-		//Prevent saving of window state
-		ImGui::GetIO().IniFilename = NULL;
-		ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+		SetupImGui();
+
+		QCAS::FontManager::Initialize();
 
 		m_Frame = std::make_unique<MainFrame>();
 	}
@@ -102,5 +105,14 @@ namespace QCAS{
 		m_windowHnd.reset();
 
 		SDL_QuitSubSystem(SDL_INIT_VIDEO);
+	}
+
+	void Graphics::SetupImGui()
+	{
+		ImGuiIO& io = ImGui::GetIO();
+		//Prevent saving of window state
+		io.IniFilename = NULL;
+		
+		io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 	}
 }

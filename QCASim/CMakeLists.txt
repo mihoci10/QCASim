@@ -11,7 +11,14 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(Cherry)
 
-add_executable(QCASim 
+set(PROJECT_RESOURCES
+resources/Roboto-Bold.ttf
+resources/Roboto-Italic.ttf
+resources/Roboto-Regular.ttf
+)
+
+
+add_executable(QCASim
 ${PROJECT_SRC}
 ${PROJECT_SRC_UI}
 ${PROJECT_SRC_UI_FRAMES}
@@ -22,6 +29,13 @@ target_include_directories(QCASim PUBLIC src)
 target_link_libraries(QCASim PUBLIC QCACore CherryAPI)
 
 target_precompile_headers(QCASim PUBLIC src/qcaspch.h)
+
+add_custom_command(TARGET QCASim POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+    ${CMAKE_CURRENT_SOURCE_DIR}/resources
+    ${PROJECT_BINARY_DIR}/resources
+    COMMENT "Copying resources into binary dir"
+)
 
 source_group("QCASim" FILES ${PROJECT_SRC})
 source_group("QCASim/UI" FILES ${PROJECT_SRC_UI})

@@ -27,8 +27,9 @@ namespace QCAS {
 			ImGui::DockBuilderAddNode(dockspace_id);
 			ImGui::DockBuilderSetNodeSize(dockspace_id, ImGui::GetMainViewport()->Size);
 
-			ImGui::DockBuilderSplitNode(dockspace_id, ImGuiDir_Left, 0.2f, &dock_id_left, &dock_id_right);
-			ImGui::DockBuilderDockWindow("Window 1", dock_id_left);
+			ImGui::DockBuilderSplitNode(dockspace_id, ImGuiDir_Left, 0.8f, &dock_id_left, &dock_id_right);
+			ImGui::DockBuilderDockWindow("Scene", dock_id_left);
+			ImGui::DockBuilderDockWindow("Stats", dock_id_right);
 
 			ImGui::DockBuilderFinish(dockspace_id);
 		}
