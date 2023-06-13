@@ -26,9 +26,6 @@ namespace QCAS {
             ImGui::EndMainMenuBar();
         }
 
-        ImGui::Begin("asd");
-        ImGui::End();
-
 	}
 
 }

@@ -4,17 +4,37 @@
 
 namespace QCAS {
 	MainFrame::MainFrame() 
-		: m_MenuBarFrame(std::make_unique<MenuBarFrame>())
+		: 
+		m_MenuBarFrame(std::make_unique<MenuBarFrame>()),
+		m_SceneFrame(std::make_unique<SceneFrame>()), 
+		m_StatsFrame(std::make_unique<StatsFrame>())
 	{
 
 	}
 	void MainFrame::Render()
 	{
-		ImGui::DockSpaceOverViewport(ImGui::GetMainViewport(), ImGuiDockNodeFlags_PassthruCentralNode);
+		ImGuiViewport* viewport = ImGui::GetMainViewport();
+		ImGuiIO& io = ImGui::GetIO();
+
 		m_MenuBarFrame->Render();
 
-        ImGui::Begin("asd");
-        ImGui::End();
+		ImGuiID dockspace_id = ImGui::DockSpaceOverViewport(viewport, ImGuiDockNodeFlags_PassthruCentralNode);
+		static bool init = true;
+		ImGuiID dock_id_left, dock_id_right;
+		if (init) {
+			init = false;
+			ImGui::DockBuilderRemoveNode(dockspace_id);
+			ImGui::DockBuilderAddNode(dockspace_id);
+			ImGui::DockBuilderSetNodeSize(dockspace_id, ImGui::GetMainViewport()->Size);
+
+			ImGui::DockBuilderSplitNode(dockspace_id, ImGuiDir_Left, 0.2f, &dock_id_left, &dock_id_right);
+			ImGui::DockBuilderDockWindow("Window 1", dock_id_left);
+
+			ImGui::DockBuilderFinish(dockspace_id);
+		}
+
+		m_SceneFrame->Render();
+		m_StatsFrame->Render();
 
 	}
 
