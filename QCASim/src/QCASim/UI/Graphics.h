@@ -4,15 +4,14 @@
 #include <Cherry/RendererApi.h>
 #include <Cherry/GUI/ImGuiAPI.h>
 #include <QCASim/UI/FontManager.h>
-#include <QCASim/UI/Frames/IFrame.hpp>
+#include <QCASim/UI/Frames/BaseFrame.hpp>
 
 namespace QCAS{
 
     class Graphics {
     public:
-        static void Initialize(const std::shared_ptr<Cherry::RendererSettings>& rendererSettings);
-        static void Deinitialize();
-        static Graphics& GetInstance();
+        Graphics(const AppContext& appContext, const std::shared_ptr<Cherry::RendererSettings>& rendererSettings);
+        ~Graphics();
 
         void BeginFrame();
         void RenderFrame();
@@ -22,11 +21,6 @@ namespace QCAS{
         FontManager& GetFontManager() const { return *m_FontManager.get(); };
 
     private:
-        Graphics(const std::shared_ptr<Cherry::RendererSettings>& rendererSettings);
-        ~Graphics();
-
-        static Graphics* s_Graphics;
-
         void SetupImGui();
 
         std::shared_ptr<SDL_Window> m_windowHnd;
@@ -34,7 +28,7 @@ namespace QCAS{
         std::shared_ptr<Cherry::RendererSettings> m_RendererSettings;
         std::unique_ptr<Cherry::GUI::ImGuiAPI> m_ImGuiApi;
         std::unique_ptr<FontManager> m_FontManager;
-        std::unique_ptr<IFrame> m_Frame;
+        std::unique_ptr<BaseFrame> m_Frame;
     };
 
 }

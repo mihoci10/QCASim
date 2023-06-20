@@ -1,15 +1,15 @@
 #pragma once
 
-#include <QCASim/UI/Frames/IFrame.hpp>
+#include <QCASim/UI/Frames/BaseFrame.hpp>
 #include <QCASim/UI/Frames/MenuBarFrame.h>
 #include <QCASim/UI/Frames/SceneFrame.h>
 #include <QCASim/UI/Frames/StatsFrame.h>
 
 namespace QCAS{
 
-    class MainFrame : public IFrame {
+    class MainFrame : public BaseFrame {
     public:
-        MainFrame();
+        MainFrame(const AppContext& appContext);
         virtual void Render() override;
 
     private:

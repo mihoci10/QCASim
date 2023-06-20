@@ -4,31 +4,12 @@
 
 namespace QCAS{
 
-    Input* Input::s_Input = nullptr;
-
-    void Input::Initialize()
+    Input::Input(const AppContext& appContext)
     {
-        if (s_Input)
-            throw std::exception("Input module has already been initialized!");
-
-        s_Input = new Input();
     }
 
-    void Input::Deinitialize()
+    Input::~Input()
     {
-        if (!s_Input)
-            throw std::exception("Input module was not initialized!");
-
-        delete s_Input;
-        s_Input = nullptr;
-    }
-
-    Input& Input::GetInstance()
-    {
-        if (!s_Input)
-            throw std::exception("Input module was not initialized!");
-
-        return *s_Input;
     }
 
     bool Input::GetKeyDown(SDL_KeyCode keyCode)
@@ -45,14 +26,6 @@ namespace QCAS{
         if (k == m_MouseStatus.end())
             return false;
         return k->second;
-    }
-
-    Input::Input()
-    {
-    }
-
-    Input::~Input()
-    {
     }
 
     void Input::OnEvent(SDL_Event* ev)
@@ -73,7 +46,7 @@ namespace QCAS{
                 break;
 
             case SDL_EVENT_QUIT:
-                s_Input->m_OnQuit();
+                m_OnQuit();
                 break;
         }
     }

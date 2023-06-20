@@ -1,7 +1,7 @@
 #include "QCASim.h"
 
-#include <Cherry/RendererSettings.hpp>
-#include <Cherry/GUI/ImGuiAPI.h>
+#include <QCASim/UI/Graphics.h>
+#include <QCASim/Input/Input.h>
 
 namespace QCAS
 {
@@ -9,10 +9,14 @@ namespace QCAS
     {
         m_ShouldRestart = false;
 
-        Graphics::Initialize(std::make_shared<Cherry::RendererSettings>(Cherry::RendererPlatform::OpenGL, true));
+        m_AppContext = std::make_unique<AppContext>();
+
+        m_AppContext->m_Graphics = std::make_unique<Graphics>(*m_AppContext.get(), std::make_shared<Cherry::RendererSettings>(Cherry::RendererPlatform::OpenGL, true));
         
-        Input::Initialize();
-        Input::GetInstance().m_OnQuit = [&]() { m_Running = false; };
+        m_AppContext->m_Input = std::make_unique<Input>(*m_AppContext.get());
+        m_AppContext->GetInput().m_OnQuit = [&]() { m_Running = false; };
+
+        m_AppContext->m_Initialized = true;
     }
 
     void QCASim::Run()
@@ -24,20 +28,19 @@ namespace QCAS
         while (m_Running) {
 
             while (SDL_PollEvent(&ev) != 0) { 
-                Graphics::GetInstance().GetImGuiApi().OnEvent(&ev);
-                Input::GetInstance().OnEvent(&ev); 
+                m_AppContext->GetGraphics().GetImGuiApi().OnEvent(&ev);
+                m_AppContext->GetInput().OnEvent(&ev);
             };
 
-            Graphics::GetInstance().BeginFrame();
-            Graphics::GetInstance().RenderFrame();
-            Graphics::GetInstance().EndFrame();
+            m_AppContext->GetGraphics().BeginFrame();
+            m_AppContext->GetGraphics().RenderFrame();
+            m_AppContext->GetGraphics().EndFrame();
         }
     }
 
     void QCASim::Shutdown()
     {
-        Input::Deinitialize();
-        Graphics::Deinitialize();
+        m_AppContext.reset();
     }
 
 }

@@ -11,7 +11,8 @@ namespace QCAS{
         virtual void Render() = 0;
 
     protected:
-        AppContext& m_AppContext;
+        BaseFrame(const AppContext& appContext) : m_AppContext(appContext) {};
+        const AppContext& m_AppContext;
     };
 
 }

@@ -1,7 +1,6 @@
 #pragma once
 
-#include <QCASim/UI/Graphics.h>
-#include <QCASim/Input/Input.h>
+#include <QCASim/AppContext.hpp>
 
 namespace QCAS {
 
@@ -16,6 +15,8 @@ namespace QCAS {
 	private:
 		bool m_Running = false;
 		bool m_ShouldRestart = false;
+
+		std::unique_ptr<AppContext> m_AppContext;
 	};
 
 }

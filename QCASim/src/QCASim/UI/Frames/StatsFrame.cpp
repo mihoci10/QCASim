@@ -11,7 +11,7 @@ namespace QCAS {
 
 		ImGui::Text("Frame rate:");
 		ImGui::SameLine();
-		ImGui::PushFont(Graphics::GetInstance().GetFontManager().GetBoldFont());
+		ImGui::PushFont(m_AppContext.GetGraphics().GetFontManager().GetBoldFont());
 		ImGui::Text("%f fps", 123.0f);
 		ImGui::PopFont();
 
