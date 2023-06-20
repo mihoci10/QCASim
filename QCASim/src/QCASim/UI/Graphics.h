@@ -21,6 +21,7 @@ namespace QCAS{
         FontManager& GetFontManager() const { return *m_FontManager.get(); };
 
     private:
+        void SetupSDL();
         void SetupImGui();
 
         std::shared_ptr<SDL_Window> m_windowHnd;

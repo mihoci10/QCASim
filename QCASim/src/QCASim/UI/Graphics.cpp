@@ -34,9 +34,6 @@ namespace QCAS{
 		if (!m_windowHnd)
 			throw std::exception("SDL window initialization error!");
 
-		SDL_SetWindowResizable(m_windowHnd.get(), SDL_TRUE);
-		SDL_MaximizeWindow(m_windowHnd.get());
-
 		m_RenderApi = Cherry::RendererAPI::Create(m_windowHnd, rendererSettings);
 		m_RenderApi->Init();
 		m_RenderApi->SetClearColor({ 0.5, 0.5, 0.5, 1 });
@@ -44,6 +41,7 @@ namespace QCAS{
 		m_ImGuiApi = Cherry::GUI::ImGuiAPI::Create();
 		m_ImGuiApi->Init();
 
+		SetupSDL();
 		SetupImGui();
 
 		m_FontManager = std::make_unique<FontManager>();
@@ -77,6 +75,13 @@ namespace QCAS{
 	{
 		m_ImGuiApi->DrawFrame();
 		SDL_GL_SwapWindow(m_windowHnd.get());
+	}
+
+	void Graphics::SetupSDL()
+	{
+		SDL_SetWindowResizable(m_windowHnd.get(), SDL_TRUE);
+		SDL_MaximizeWindow(m_windowHnd.get());
+		SDL_GL_SetSwapInterval(0);
 	}
 
 	void Graphics::SetupImGui()
