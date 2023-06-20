@@ -2,6 +2,7 @@
 
 #include <QCASim/UI/Graphics.h>
 #include <QCASim/Input/Input.h>
+#include <QCASim/Data/MachineStats.h>
 
 namespace QCAS
 {
@@ -16,6 +17,8 @@ namespace QCAS
         m_AppContext->m_Input = std::make_unique<Input>(*m_AppContext.get());
         m_AppContext->GetInput().m_OnQuit = [&]() { m_Running = false; };
 
+        m_AppContext->m_MachineStats = std::make_unique<MachineStats>(*m_AppContext.get());
+
         m_AppContext->m_Initialized = true;
     }
 
@@ -26,6 +29,7 @@ namespace QCAS
         SDL_Event ev;
 
         while (m_Running) {
+            m_AppContext->GetMachineStats().StartFrame();
 
             while (SDL_PollEvent(&ev) != 0) { 
                 m_AppContext->GetGraphics().GetImGuiApi().OnEvent(&ev);
@@ -35,6 +39,8 @@ namespace QCAS
             m_AppContext->GetGraphics().BeginFrame();
             m_AppContext->GetGraphics().RenderFrame();
             m_AppContext->GetGraphics().EndFrame();
+
+            m_AppContext->GetMachineStats().EndFrame();
         }
     }
 
