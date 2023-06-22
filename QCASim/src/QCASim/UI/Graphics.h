@@ -17,6 +17,7 @@ namespace QCAS{
         void RenderFrame();
         void EndFrame();
 
+        Cherry::RendererAPI& GetRendererApi() const { return *m_RenderApi.get(); };
         Cherry::GUI::ImGuiAPI& GetImGuiApi() const { return *m_ImGuiApi.get(); };
         FontManager& GetFontManager() const { return *m_FontManager.get(); };
 
