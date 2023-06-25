@@ -25,4 +25,8 @@ jobs:
         -Bbuild   
 
     - name: Build
-      run: cmake --build build --parallel 
+      run: >- 
+        cmake 
+        --build build 
+        --parallel 
+        -DCHERRY_ENABLE_IMGUI=TRUE
