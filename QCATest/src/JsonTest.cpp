@@ -25,15 +25,15 @@ std::string complexJson = R"(
 	  }
 	)";
 
-TEST(BasicTests, ParseBasic) {
+TEST(JSON, ParseBasic) {
 	QCAC::Util::JsonFile f(simpleJson);
 }
 
-TEST(BasicTests, ParseComplex) {
+TEST(JSON, ParseComplex) {
 	QCAC::Util::JsonFile f(complexJson);
 }
 
-TEST(BasicTests, ReadBasic) {
+TEST(JSON, ReadBasic) {
 	QCAC::Util::JsonFile f(simpleJson);
 
 	auto root = f.GetRootNode();
@@ -73,7 +73,7 @@ TEST(BasicTests, ReadBasic) {
 	ASSERT_STREQ("asdashdjikhoihahjkasjdaij", s.c_str());
 }
 
-TEST(BasicTests, ReadComplex) {
+TEST(JSON, ReadComplex) {
 	QCAC::Util::JsonFile f(complexJson);
 
 	auto root = f.GetRootNode();
