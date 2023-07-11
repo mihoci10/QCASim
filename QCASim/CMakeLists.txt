@@ -1,6 +1,7 @@
 collectSources(PROJECT_SRC src/QCASim)
 collectSources(PROJECT_SRC_UI src/QCASim/UI)
 collectSources(PROJECT_SRC_UI_FRAMES src/QCASim/UI/Frames)
+collectSources(PROJECT_SRC_UI_VISUALS src/QCASim/UI/Visuals)
 collectSources(PROJECT_SRC_INPUT src/QCASim/Input)
 collectSources(PROJECT_SRC_DATA src/QCASim/Data)
 
@@ -23,6 +24,7 @@ add_executable(QCASim
 ${PROJECT_SRC}
 ${PROJECT_SRC_UI}
 ${PROJECT_SRC_UI_FRAMES}
+${PROJECT_SRC_UI_VISUALS}
 ${PROJECT_SRC_INPUT}
 ${PROJECT_SRC_DATA})
 
@@ -42,5 +44,6 @@ add_custom_command(TARGET QCASim POST_BUILD
 source_group("QCASim" FILES ${PROJECT_SRC})
 source_group("QCASim/UI" FILES ${PROJECT_SRC_UI})
 source_group("QCASim/UI/Frames" FILES ${PROJECT_SRC_UI_FRAMES})
+source_group("QCASim/UI/Visuals" FILES ${PROJECT_SRC_UI_VISUALS})
 source_group("QCASim/Input" FILES ${PROJECT_SRC_INPUT})
 source_group("QCASim/Data" FILES ${PROJECT_SRC_DATA})

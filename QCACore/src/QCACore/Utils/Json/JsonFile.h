@@ -29,8 +29,8 @@ namespace QCAC::Util{
         void ReadValue(JsonNode node, const K&, T& key, T defaultValue);
 
     private:
-        JsonFileMode m_Mode = JsonFileMode::Write;
         JsonNode m_Root;
+        JsonFileMode m_Mode = JsonFileMode::Write;
     };
 
     template <typename K, typename T>
