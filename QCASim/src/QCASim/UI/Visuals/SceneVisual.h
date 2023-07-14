@@ -1,8 +1,8 @@
 #pragma once
 
 #include <QCASim/UI/Visuals/BaseVisual.hpp>
+#include <QCASim/UI/Visuals/OrtographicCamera.h>
 
-#include <Cherry/Camera.hpp>
 #include <Cherry/Buffer.h>
 #include <Cherry/Framebuffer.h>
 #include <Cherry/Shader.h>
@@ -24,6 +24,7 @@ namespace QCAS {
         std::shared_ptr<Cherry::VertexBuffer> m_Buffer;
         std::shared_ptr<Cherry::Shader> m_Shader;
         std::shared_ptr<Cherry::Framebuffer> m_Framebuffer;
+        std::shared_ptr<OrtographicCamera> m_Camera;
     };
 
 }
