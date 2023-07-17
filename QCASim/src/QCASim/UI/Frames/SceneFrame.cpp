@@ -4,8 +4,9 @@
 
 namespace QCAS {
 
-	SceneFrame::SceneFrame(const AppContext& appContext) 
-		: BaseFrame(appContext), m_Visual(std::make_unique<SceneVisual>(appContext)) {}
+	SceneFrame::SceneFrame(const QCASim& app) : 
+		BaseFrame(app) ,
+		m_Visual(std::make_unique<SceneVisual>(app)) {}
 
 	void SceneFrame::Render()
 	{

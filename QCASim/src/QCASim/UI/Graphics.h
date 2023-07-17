@@ -1,16 +1,17 @@
 #pragma once 
 
+#include <QCASim/QCASimComponent.hpp>
 #include <SDL.h>
-#include <Cherry/RendererApi.h>
+#include <Cherry/RendererAPI.h>
 #include <Cherry/GUI/ImGuiAPI.h>
 #include <QCASim/UI/FontManager.h>
 #include <QCASim/UI/Frames/BaseFrame.hpp>
 
 namespace QCAS{
 
-    class Graphics {
+    class Graphics : public QCASimComponent {
     public:
-        Graphics(const AppContext& appContext, const std::shared_ptr<Cherry::RendererSettings>& rendererSettings);
+        Graphics(const QCASim& app, const Cherry::RendererSettings& rendererSettings);
         ~Graphics();
 
         void BeginFrame();
@@ -26,8 +27,8 @@ namespace QCAS{
         void SetupImGui();
 
         std::shared_ptr<SDL_Window> m_windowHnd;
-        std::unique_ptr<Cherry::RendererAPI> m_RenderApi;
-        std::shared_ptr<Cherry::RendererSettings> m_RendererSettings;
+        std::shared_ptr<Cherry::RendererAPI> m_RenderApi;
+        Cherry::RendererSettings m_RendererSettings;
         std::unique_ptr<Cherry::GUI::ImGuiAPI> m_ImGuiApi;
         std::unique_ptr<FontManager> m_FontManager;
         std::unique_ptr<BaseFrame> m_Frame;

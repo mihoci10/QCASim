@@ -4,7 +4,7 @@
 
 namespace QCAS{
 
-    Input::Input(const AppContext& appContext)
+    Input::Input(const QCASim& app) : QCASimComponent(app)
     {
     }
 

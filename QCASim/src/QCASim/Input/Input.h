@@ -1,13 +1,13 @@
 #pragma once
 
-#include <QCASim/AppContext.hpp>
+#include <QCASim/QCASimComponent.hpp>
 #include <SDL.h>
 
 namespace QCAS{
 
-    class Input {
+    class Input : public QCASimComponent {
     public:
-        Input(const AppContext& appContext);
+        Input(const QCASim& app);
         ~Input();
 
         bool GetKeyDown(SDL_KeyCode keyCode);

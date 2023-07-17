@@ -6,7 +6,7 @@ namespace QCAS{
 
     class StatsFrame : public BaseFrame {
     public:
-        StatsFrame(const AppContext& appContext) : BaseFrame(appContext) {};
+        StatsFrame(const QCASim& app) : BaseFrame(app) {};
         virtual void Render() override;
 
     };

@@ -2,7 +2,7 @@
 
 namespace QCAS{
 
-    MachineStats::MachineStats(const AppContext& appContext)
+    MachineStats::MachineStats(const QCASim& app) : QCASimComponent(app)
     {
     }
 
@@ -23,6 +23,8 @@ namespace QCAS{
 
         m_FrameTime = duration.count();
         m_FrameRate = 1000 / m_FrameTime;
+
+        m_ElapsedTime += m_FrameTime;
     }
 
 }

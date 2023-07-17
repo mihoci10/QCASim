@@ -5,15 +5,12 @@
 
 namespace QCAS{
 
-	Graphics::Graphics(const AppContext& appContext, const std::shared_ptr<Cherry::RendererSettings>& rendererSettings)
-		: m_RendererSettings(rendererSettings)
+	Graphics::Graphics(const QCASim& app, const Cherry::RendererSettings& rendererSettings)
+		: QCASimComponent(app),  m_RendererSettings(rendererSettings)
 	{
-		if (!m_RendererSettings)
-			throw std::exception("Renderer settings need to be set before initialization!");
-
 		Uint32 ctxFlag = 0;
 
-		switch (m_RendererSettings->platform)
+		switch (m_RendererSettings.platform)
 		{
 		case Cherry::RendererPlatform::None:
 			break;
@@ -35,26 +32,20 @@ namespace QCAS{
 			throw std::exception("SDL window initialization error!");
 
 		m_RenderApi = Cherry::RendererAPI::Create(m_windowHnd, rendererSettings);
-		m_RenderApi->Init();
 		m_RenderApi->SetClearColor({ 0.5, 0.5, 0.5, 1 });
 
-		m_ImGuiApi = Cherry::GUI::ImGuiAPI::Create();
-		m_ImGuiApi->Init();
+		m_ImGuiApi = Cherry::GUI::ImGuiAPI::Create(m_RenderApi);
 
 		SetupSDL();
 		SetupImGui();
 
 		m_FontManager = std::make_unique<FontManager>();
 
-		m_Frame = std::make_unique<MainFrame>(appContext);
+		m_Frame = std::make_unique<MainFrame>(m_App);
 	}
 
 	Graphics::~Graphics()
 	{
-		m_ImGuiApi->Deinit();
-		m_RenderApi->Deinit();
-		m_windowHnd.reset();
-
 		SDL_QuitSubSystem(SDL_INIT_VIDEO);
 	}
 

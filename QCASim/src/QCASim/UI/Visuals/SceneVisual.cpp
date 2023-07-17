@@ -1,24 +1,26 @@
 #include "SceneVisual.h"
 
-#include <QCASim/UI/Graphics.h>
+#include <QCASim/QCASim.h>
 
 namespace QCAS{
-	SceneVisual::SceneVisual(const QCAS::AppContext& appContext) : BaseVisual(appContext)
+	SceneVisual::SceneVisual(const QCASim& app) : BaseVisual(app)
 	{
 		Cherry::BufferDescriptor bufferDescriptor;
 		bufferDescriptor.AddSegment(Cherry::BufferDataType::FLOAT, 3, false);
 		std::array<float, 18> vertices {};
-		m_Buffer = Cherry::VertexBuffer::Create(vertices.data(), bufferDescriptor, 6);
+		m_Buffer = Cherry::VertexBuffer::Create(m_App.GetGraphics().GetRendererApi().GetRendererSettings(), 
+			vertices.data(), bufferDescriptor, 6);
 
 		Cherry::FramebufferSpecification framebufferSpec = { 1, 1, 1, {Cherry::FramebufferTextureFormat::Color} };
-		m_Framebuffer = Cherry::Framebuffer::Create(framebufferSpec);
+		m_Framebuffer = Cherry::Framebuffer::Create(m_App.GetGraphics().GetRendererApi().GetRendererSettings(),
+			framebufferSpec);
 
 		const std::string vertexShader = R"(
 			#version 330 core
 			uniform mat4 u_ViewProjection;
 			vec3 gridPlane[6] = vec3[](
-				vec3(1, 1, 0), vec3(-1, -1, 0), vec3(-1, 1, 0),
-				vec3(-1, -1, 0), vec3(1, 1, 0), vec3(1, -1, 0)
+				vec3(100, 100, 0), vec3(-100, -100, 0), vec3(-100, 100, 0),
+				vec3(-100, -100, 0), vec3(100, 100, 0), vec3(100, -100, 0)
 				);
 			
 			void main()
@@ -36,22 +38,23 @@ namespace QCAS{
 			})";
 
 		m_Shader = Cherry::Shader::Create(
+			m_App.GetGraphics().GetRendererApi().GetRendererSettings(),
 			"Shader", 
 			vertexShader,
 			fragmentShader);
 
-		m_Camera = std::make_shared<OrtographicCamera>(-1, 1, -1, 1);
+		m_Camera = std::make_unique<OrtographicCamera>(-1, 1, -1, 1);
 	}
 
 	void SceneVisual::Render()
 	{
 		m_Framebuffer->Bind();
-		m_AppContext.GetGraphics().GetRendererApi().SetViewport( 0,0,m_Width,m_Height );
-		m_AppContext.GetGraphics().GetRendererApi().SetClearColor({0.3, 0.1, 0.1, 1});
-		m_AppContext.GetGraphics().GetRendererApi().Clear();
+		m_App.GetGraphics().GetRendererApi().SetViewport( 0,0,m_Width,m_Height );
+		m_App.GetGraphics().GetRendererApi().SetClearColor({0.3, 0.1, 0.1, 1});
+		m_App.GetGraphics().GetRendererApi().Clear();
 		m_Shader->Bind();
 		m_Shader->SetUniform("u_ViewProjection", m_Camera->GetViewProjection());
-		m_AppContext.GetGraphics().GetRendererApi().DrawTriangles(m_Buffer);
+		m_App.GetGraphics().GetRendererApi().DrawTriangles(*m_Buffer.get());
 		m_Shader->Unbind();
 		m_Framebuffer->Unbind();
 	}
@@ -60,9 +63,10 @@ namespace QCAS{
 	{
 		BaseVisual::SetSize(width, height);
 		m_Framebuffer->Resize(width, height);
+		m_Camera->SetView(width / -2.0f, width / 2.0f, height / -2.0f, height / 2.0f);
 	}
 
-	uint32_t SceneVisual::GetTextureID()
+	uint32_t SceneVisual::GetTextureID() const
 	{
 		return m_Framebuffer->GetColorAttachmentID();
 	}

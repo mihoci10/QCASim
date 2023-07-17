@@ -12,19 +12,19 @@ namespace QCAS {
     class SceneVisual : public BaseVisual
     {
     public:
-        SceneVisual(const QCAS::AppContext& appContext);
+        SceneVisual(const QCASim& app);
 
         virtual void Render() override;
-        virtual uint32_t GetTextureID() override;
+
+        virtual uint32_t GetTextureID() const override;
 
         virtual void SetSize(uint32_t width, uint32_t height) override;
 
     private:
-
-        std::shared_ptr<Cherry::VertexBuffer> m_Buffer;
-        std::shared_ptr<Cherry::Shader> m_Shader;
-        std::shared_ptr<Cherry::Framebuffer> m_Framebuffer;
-        std::shared_ptr<OrtographicCamera> m_Camera;
+        std::unique_ptr<Cherry::VertexBuffer> m_Buffer;
+        std::unique_ptr<Cherry::Shader> m_Shader;
+        std::unique_ptr<Cherry::Framebuffer> m_Framebuffer;
+        std::unique_ptr<OrtographicCamera> m_Camera;
     };
 
 }

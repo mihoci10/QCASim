@@ -1,16 +1,17 @@
 #pragma once
 
-#include <QCASim/AppContext.hpp>
+#include <QCASim/QCASimComponent.hpp>
 
 namespace QCAS{
 
-    class MachineStats {
+    class MachineStats : public QCASimComponent {
     public:
-        MachineStats(const AppContext& appContext);
+        MachineStats(const QCASim& app);
         ~MachineStats();
 
         double GetFrameRate() const { return m_FrameRate; };
         double GetFrameTime() const { return m_FrameTime; };
+        double GetElapsedTime() const { return m_ElapsedTime; };
 
     private:
         void StartFrame();
@@ -20,6 +21,7 @@ namespace QCAS{
 
         double m_FrameRate = 0;
         double m_FrameTime = 0;
+        double m_ElapsedTime = 0;
 
         friend class QCASim;
     };
