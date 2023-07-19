@@ -14,7 +14,7 @@ namespace QCAS{
         double GetElapsedTime() const { return m_ElapsedTime; };
 
     private:
-        void StartFrame();
+        void BeginFrame();
         void EndFrame();
 
         std::chrono::time_point<std::chrono::system_clock> m_StartFrameTime, m_StopFrameTime;

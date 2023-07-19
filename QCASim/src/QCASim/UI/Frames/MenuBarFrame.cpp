@@ -4,7 +4,7 @@
 
 namespace QCAS {
 
-	void MenuBarFrame::Render()
+    void MenuBarFrame::Render()
 	{
         if (ImGui::BeginMainMenuBar())
         {

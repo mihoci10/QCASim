@@ -7,6 +7,8 @@ namespace QCAS
         m_ShouldRestart = false;
 
         m_Graphics = std::make_unique<Graphics>(*this, Cherry::RendererSettings(Cherry::RendererPlatform::OpenGL, true));
+
+        m_MainFrame = std::make_unique<MainFrame>(*this);
         
         m_Input = std::make_unique<Input>(*this);
         m_Input->m_OnQuit = [&]() { m_Running = false; };
@@ -21,7 +23,7 @@ namespace QCAS
         SDL_Event ev;
 
         while (m_Running) {
-            m_MachineStats->StartFrame();
+            m_MachineStats->BeginFrame();
 
             while (SDL_PollEvent(&ev) != 0) { 
                 m_Graphics->GetImGuiApi().OnEvent(&ev);
@@ -29,7 +31,7 @@ namespace QCAS
             };
 
             m_Graphics->BeginFrame();
-            m_Graphics->RenderFrame();
+            m_MainFrame->Render();
             m_Graphics->EndFrame();
 
             m_MachineStats->EndFrame();
@@ -40,6 +42,7 @@ namespace QCAS
     {
         m_MachineStats.reset();
         m_Input.reset();
+        m_MainFrame.reset();
         m_Graphics.reset();
     }
 

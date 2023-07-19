@@ -40,9 +40,6 @@ namespace QCAS{
 		SetupImGui();
 
 		m_FontManager = std::make_unique<FontManager>();
-
-		const FrameInitContext frameContext = { m_App, m_RenderApi->GetRendererSettings() };
-		m_Frame = std::make_unique<MainFrame>(frameContext);
 	}
 
 	Graphics::~Graphics()
@@ -54,13 +51,6 @@ namespace QCAS{
 	{
 		m_ImGuiApi->NewFrame();
 		m_RenderApi->Clear();
-	}
-
-	void Graphics::RenderFrame()
-	{
-		ImGui::PushFont(m_FontManager->GetRegularFont());
-		m_Frame->Render();
-		ImGui::PopFont();
 	}
 
 	void Graphics::EndFrame()

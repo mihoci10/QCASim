@@ -5,7 +5,6 @@
 #include <Cherry/RendererAPI.h>
 #include <Cherry/GUI/ImGuiAPI.h>
 #include <QCASim/UI/FontManager.h>
-#include <QCASim/UI/Frames/BaseFrame.hpp>
 
 namespace QCAS{
 
@@ -15,7 +14,6 @@ namespace QCAS{
         ~Graphics();
 
         void BeginFrame();
-        void RenderFrame();
         void EndFrame();
 
         Cherry::RendererAPI& GetRendererApi() const { return *m_RenderApi.get(); };
@@ -31,7 +29,6 @@ namespace QCAS{
         Cherry::RendererSettings m_RendererSettings;
         std::unique_ptr<Cherry::GUI::ImGuiAPI> m_ImGuiApi;
         std::unique_ptr<FontManager> m_FontManager;
-        std::unique_ptr<BaseFrame> m_Frame;
     };
 
 }

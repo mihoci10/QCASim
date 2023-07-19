@@ -3,6 +3,7 @@
 #include <QCASim/UI/Graphics.h>
 #include <QCASim/Input/Input.h>
 #include <QCASim/Data/MachineStats.h>
+#include <QCASim/UI/Frames/MainFrame.h>
 
 namespace QCAS {
 
@@ -24,6 +25,7 @@ namespace QCAS {
 
 		std::unique_ptr<Input> m_Input;
 		std::unique_ptr<Graphics> m_Graphics;
+		std::unique_ptr<MainFrame> m_MainFrame;
 		std::unique_ptr<MachineStats> m_MachineStats;
 	};
 

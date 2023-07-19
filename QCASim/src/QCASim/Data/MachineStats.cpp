@@ -10,7 +10,7 @@ namespace QCAS{
     {
     }
 
-    void MachineStats::StartFrame()
+    void MachineStats::BeginFrame()
     {
         m_StartFrameTime = std::chrono::system_clock::now();
     }

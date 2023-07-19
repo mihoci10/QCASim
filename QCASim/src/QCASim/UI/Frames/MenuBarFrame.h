@@ -6,7 +6,8 @@ namespace QCAS{
 
     class MenuBarFrame : public BaseFrame {
     public:
-        MenuBarFrame(const FrameInitContext& context) : BaseFrame(context) {};
+        MenuBarFrame(const QCASim& app) : BaseFrame(app) {};
+
         virtual void Render() override;
     };
 

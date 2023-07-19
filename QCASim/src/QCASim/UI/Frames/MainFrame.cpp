@@ -1,21 +1,25 @@
 #include "MainFrame.h"
 
 #include <Cherry/GUI/ImGuiAPI.h>
+#include <QCASim/QCASim.h>
 
 namespace QCAS {
-	MainFrame::MainFrame(const FrameInitContext& context)
+	MainFrame::MainFrame(const QCASim& app)
 		: 
-		BaseFrame(context),
-		m_MenuBarFrame(std::make_unique<MenuBarFrame>(context)),
-		m_SceneFrame(std::make_unique<SceneFrame>(context)),
-		m_StatsFrame(std::make_unique<StatsFrame>(context))
+		BaseFrame(app),
+		m_MenuBarFrame(std::make_unique<MenuBarFrame>(app)),
+		m_SceneFrame(std::make_unique<SceneFrame>(app)),
+		m_StatsFrame(std::make_unique<StatsFrame>(app))
 	{
 
 	}
+
 	void MainFrame::Render()
 	{
 		ImGuiViewport* viewport = ImGui::GetMainViewport();
 		ImGuiIO& io = ImGui::GetIO();
+
+		ImGui::PushFont(m_App.GetGraphics().GetFontManager().GetRegularFont());
 
 		m_MenuBarFrame->Render();
 
@@ -38,6 +42,7 @@ namespace QCAS {
 		m_SceneFrame->Render();
 		m_StatsFrame->Render();
 
+		ImGui::PopFont();
 	}
 
 }

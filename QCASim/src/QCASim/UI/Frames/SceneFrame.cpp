@@ -4,21 +4,21 @@
 
 namespace QCAS {
 
-	SceneFrame::SceneFrame(const FrameInitContext& context) :
-		BaseFrame(context) 
+	SceneFrame::SceneFrame(const QCASim& app) :
+		BaseFrame(app) 
 	{
-		const VisualInitContext visualContext = { context.app, context.rendererSettings };
-		m_Visual = std::make_unique<SceneVisual>(visualContext);
+		m_Visual = std::make_unique<SceneVisual>(app);
 	}
 
 	void SceneFrame::Render()
 	{
 		ImGui::Begin("Scene");
 
-		auto frameSize = ImGui::GetWindowSize();
+		auto frameSize = ImGui::GetContentRegionAvail();
+
 		auto visualSize = m_Visual->GetSize();
 		if (frameSize.x != visualSize.x || frameSize.y != visualSize.y)
-			m_Visual->SetSize(frameSize.x, frameSize.y);
+			m_Visual->SetSize(std::max(frameSize.x, 1.0f), std::max(frameSize.y, 1.0f));
 
 		m_Visual->Render();
 

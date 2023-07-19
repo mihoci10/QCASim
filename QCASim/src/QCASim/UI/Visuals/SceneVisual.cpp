@@ -3,16 +3,16 @@
 #include <QCASim/QCASim.h>
 
 namespace QCAS{
-	SceneVisual::SceneVisual(const VisualInitContext& context) : BaseVisual(context)
+	SceneVisual::SceneVisual(const QCASim& app) : BaseVisual(app)
 	{
 		Cherry::BufferDescriptor bufferDescriptor;
 		bufferDescriptor.AddSegment(Cherry::BufferDataType::FLOAT, 3, false);
 		std::array<float, 18> vertices {};
-		m_Buffer = Cherry::VertexBuffer::Create(context.rendererSettings,
+		m_Buffer = Cherry::VertexBuffer::Create(app.GetGraphics().GetRendererApi().GetRendererSettings(),
 			vertices.data(), bufferDescriptor, 6);
 
 		Cherry::FramebufferSpecification framebufferSpec = { 1, 1, 1, {Cherry::FramebufferTextureFormat::Color} };
-		m_Framebuffer = Cherry::Framebuffer::Create(context.rendererSettings,
+		m_Framebuffer = Cherry::Framebuffer::Create(app.GetGraphics().GetRendererApi().GetRendererSettings(),
 			framebufferSpec);
 
 		const std::string vertexShader = R"(
@@ -38,7 +38,7 @@ namespace QCAS{
 			})";
 
 		m_Shader = Cherry::Shader::Create(
-			context.rendererSettings,
+			app.GetGraphics().GetRendererApi().GetRendererSettings(),
 			"Shader", 
 			vertexShader,
 			fragmentShader);
@@ -48,13 +48,15 @@ namespace QCAS{
 
 	void SceneVisual::Render()
 	{
+		const Cherry::RendererAPI& renderer = m_App.GetGraphics().GetRendererApi();
+
 		m_Framebuffer->Bind();
-		m_App.GetGraphics().GetRendererApi().SetViewport( 0,0,m_Width,m_Height );
-		m_App.GetGraphics().GetRendererApi().SetClearColor({0.3, 0.1, 0.1, 1});
-		m_App.GetGraphics().GetRendererApi().Clear();
+		renderer.SetViewport( 0,0,m_Width,m_Height );
+		renderer.SetClearColor({0.3, 0.1, 0.1, 1});
+		renderer.Clear();
 		m_Shader->Bind();
 		m_Shader->SetUniform("u_ViewProjection", m_Camera->GetViewProjection());
-		m_App.GetGraphics().GetRendererApi().DrawTriangles(*m_Buffer.get());
+		renderer.DrawTriangles(*m_Buffer.get());
 		m_Shader->Unbind();
 		m_Framebuffer->Unbind();
 	}
