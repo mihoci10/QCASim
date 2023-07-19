@@ -12,7 +12,7 @@ namespace QCAS {
     class SceneVisual : public BaseVisual
     {
     public:
-        SceneVisual(const QCASim& app);
+        SceneVisual(const VisualInitContext& context);
 
         virtual void Render() override;
 

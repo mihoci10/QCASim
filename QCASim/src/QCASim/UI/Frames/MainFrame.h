@@ -9,7 +9,7 @@ namespace QCAS{
 
     class MainFrame : public BaseFrame {
     public:
-        MainFrame(const QCASim& app);
+        MainFrame(const FrameInitContext& context);
         virtual void Render() override;
 
     private:

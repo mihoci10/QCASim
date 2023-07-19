@@ -8,7 +8,7 @@ namespace QCAS{
 
     class SceneFrame : public BaseFrame {
     public:
-        SceneFrame(const QCASim& app);
+        SceneFrame(const FrameInitContext& context);
         virtual void Render() override;
 
     private:

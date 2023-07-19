@@ -3,12 +3,12 @@
 #include <Cherry/GUI/ImGuiAPI.h>
 
 namespace QCAS {
-	MainFrame::MainFrame(const QCASim& app)
+	MainFrame::MainFrame(const FrameInitContext& context)
 		: 
-		BaseFrame(app),
-		m_MenuBarFrame(std::make_unique<MenuBarFrame>(app)),
-		m_SceneFrame(std::make_unique<SceneFrame>(app)),
-		m_StatsFrame(std::make_unique<StatsFrame>(app))
+		BaseFrame(context),
+		m_MenuBarFrame(std::make_unique<MenuBarFrame>(context)),
+		m_SceneFrame(std::make_unique<SceneFrame>(context)),
+		m_StatsFrame(std::make_unique<StatsFrame>(context))
 	{
 
 	}

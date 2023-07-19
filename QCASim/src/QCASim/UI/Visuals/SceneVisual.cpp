@@ -3,16 +3,16 @@
 #include <QCASim/QCASim.h>
 
 namespace QCAS{
-	SceneVisual::SceneVisual(const QCASim& app) : BaseVisual(app)
+	SceneVisual::SceneVisual(const VisualInitContext& context) : BaseVisual(context)
 	{
 		Cherry::BufferDescriptor bufferDescriptor;
 		bufferDescriptor.AddSegment(Cherry::BufferDataType::FLOAT, 3, false);
 		std::array<float, 18> vertices {};
-		m_Buffer = Cherry::VertexBuffer::Create(m_App.GetGraphics().GetRendererApi().GetRendererSettings(), 
+		m_Buffer = Cherry::VertexBuffer::Create(context.rendererSettings,
 			vertices.data(), bufferDescriptor, 6);
 
 		Cherry::FramebufferSpecification framebufferSpec = { 1, 1, 1, {Cherry::FramebufferTextureFormat::Color} };
-		m_Framebuffer = Cherry::Framebuffer::Create(m_App.GetGraphics().GetRendererApi().GetRendererSettings(),
+		m_Framebuffer = Cherry::Framebuffer::Create(context.rendererSettings,
 			framebufferSpec);
 
 		const std::string vertexShader = R"(
@@ -38,7 +38,7 @@ namespace QCAS{
 			})";
 
 		m_Shader = Cherry::Shader::Create(
-			m_App.GetGraphics().GetRendererApi().GetRendererSettings(),
+			context.rendererSettings,
 			"Shader", 
 			vertexShader,
 			fragmentShader);

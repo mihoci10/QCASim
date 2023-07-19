@@ -41,7 +41,8 @@ namespace QCAS{
 
 		m_FontManager = std::make_unique<FontManager>();
 
-		m_Frame = std::make_unique<MainFrame>(m_App);
+		const FrameInitContext frameContext = { m_App, m_RenderApi->GetRendererSettings() };
+		m_Frame = std::make_unique<MainFrame>(frameContext);
 	}
 
 	Graphics::~Graphics()
