@@ -9,6 +9,9 @@ namespace QCAS {
     public:
         OrtographicCamera(float left, float right, float bottom, float top);
 
+        glm::vec3 GetPosition() const { return m_Position; };
+        glm::vec3 GetRotation() const { return m_Rotation; };
+        float GetZoom() const { return m_Zoom;  };
         const glm::mat4& GetView() const { return m_View; }
         const glm::mat4& GetViewProjection() const { return m_CachedViewProject; }
 

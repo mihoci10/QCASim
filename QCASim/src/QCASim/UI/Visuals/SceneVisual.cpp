@@ -50,6 +50,15 @@ namespace QCAS{
 	{
 		const Cherry::RendererAPI& renderer = m_App.GetGraphics().GetRendererApi();
 
+		if (m_App.GetInput().GetMouseKeyDown(ImGuiMouseButton_Right)) {
+			ImVec2 mousePosDelta = m_App.GetInput().GetMousePositionDelta();
+			auto camPos = m_Camera->GetPosition();
+			camPos.x -= mousePosDelta.x / m_Camera->GetZoom();
+			camPos.y += mousePosDelta.y / m_Camera->GetZoom();
+			m_Camera->SetPosition(camPos);
+		}
+		m_Camera->SetZoom(m_Camera->GetZoom() + m_App.GetInput().GetMouseWheelDelta() * 0.1);
+
 		m_Framebuffer->Bind();
 		renderer.SetViewport( 0,0,m_Width,m_Height );
 		renderer.SetClearColor({0.3, 0.1, 0.1, 1});

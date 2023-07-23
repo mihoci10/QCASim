@@ -1,6 +1,6 @@
 #include "Input.h"
 
-#include <Cherry/GUI/ImGuiAPI.h>
+#include <QCASim/QCASim.h>
 
 namespace QCAS{
 
@@ -12,39 +12,32 @@ namespace QCAS{
     {
     }
 
-    bool Input::GetKeyDown(SDL_KeyCode keyCode)
+    bool Input::GetKeyDown(ImGuiKey key) const
     {
-        auto k = m_KeyStatus.find(keyCode);
-        if (k == m_KeyStatus.end())
-            return false;
-        return k->second;
+        return ImGui::IsMouseClicked(key);
     }
 
-    bool Input::GetMouseKeyDown(Uint8 keyCode)
+    bool Input::GetMouseKeyDown(ImGuiMouseButton mouse) const
     {
-        auto k = m_MouseStatus.find(keyCode);
-        if (k == m_MouseStatus.end())
-            return false;
-        return k->second;
+        return ImGui::IsMouseDown(mouse);
+    }
+
+    ImVec2 Input::GetMousePositionDelta() const
+    {
+        return ImGui::GetIO().MouseDelta;
+    }
+
+    float Input::GetMouseWheelDelta() const
+    {
+        return ImGui::GetIO().MouseWheel;
     }
 
     void Input::OnEvent(SDL_Event* ev)
     {
         auto io = ImGui::GetIO();
+        m_App.GetGraphics().GetImGuiApi().OnEvent(ev);
         
         switch (ev->type) {
-            case SDL_EVENT_MOUSE_BUTTON_DOWN:
-            case SDL_EVENT_MOUSE_BUTTON_UP:
-                if (!io.WantCaptureMouse)
-                    m_MouseStatus[ev->button.button] = ev->button.state == SDL_PRESSED;
-                break;
-
-            case SDL_EVENT_KEY_DOWN:
-            case SDL_EVENT_KEY_UP:
-                if(!io.WantCaptureKeyboard)
-                    m_KeyStatus[ev->key.keysym.sym] = ev->key.state == SDL_PRESSED;
-                break;
-
             case SDL_EVENT_QUIT:
                 m_OnQuit();
                 break;

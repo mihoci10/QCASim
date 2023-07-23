@@ -25,10 +25,8 @@ namespace QCAS
         while (m_Running) {
             m_MachineStats->BeginFrame();
 
-            while (SDL_PollEvent(&ev) != 0) { 
-                m_Graphics->GetImGuiApi().OnEvent(&ev);
+            while (SDL_PollEvent(&ev) != 0)
                 m_Input->OnEvent(&ev);
-            };
 
             m_Graphics->BeginFrame();
             m_MainFrame->Render();

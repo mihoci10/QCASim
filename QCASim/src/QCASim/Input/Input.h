@@ -2,6 +2,7 @@
 
 #include <QCASim/QCASimComponent.hpp>
 #include <SDL.h>
+#include <Cherry/GUI/ImGuiAPI.h>
 
 namespace QCAS{
 
@@ -10,16 +11,16 @@ namespace QCAS{
         Input(const QCASim& app);
         ~Input();
 
-        bool GetKeyDown(SDL_KeyCode keyCode);
-        bool GetMouseKeyDown(Uint8 keyCode);
+        bool GetKeyDown(ImGuiKey key) const;
+        bool GetMouseKeyDown(ImGuiMouseButton mouse) const;
+        ImVec2 GetMousePositionDelta() const;
+        float GetMouseWheelDelta() const;
 
     private:
         void OnEvent(SDL_Event* ev);
 
         std::function<void()> m_OnQuit;
 
-        std::unordered_map<SDL_Keycode, bool> m_KeyStatus;
-        std::unordered_map<Uint8, bool> m_MouseStatus;
 
         friend class QCASim;
     };

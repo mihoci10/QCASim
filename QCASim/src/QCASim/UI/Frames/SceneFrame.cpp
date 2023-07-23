@@ -12,6 +12,8 @@ namespace QCAS {
 
 	void SceneFrame::Render()
 	{
+		auto io = ImGui::GetIO();
+
 		ImGui::Begin("Scene");
 
 		auto frameSize = ImGui::GetContentRegionAvail();
@@ -22,7 +24,14 @@ namespace QCAS {
 
 		m_Visual->Render();
 
-		ImGui::Image(reinterpret_cast<void*>(m_Visual->GetTextureID()), frameSize);
+		ImVec2 pos = ImGui::GetCursorScreenPos();
+		ImGui::GetWindowDrawList()->AddImage(
+			reinterpret_cast<void*>(m_Visual->GetTextureID()),
+			ImVec2(pos.x, pos.y),
+			ImVec2(pos.x + frameSize.x, pos.y + frameSize.y),
+			ImVec2(0, 1),
+			ImVec2(1, 0)
+		);
 
 		ImGui::End();
 	}
