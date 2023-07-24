@@ -16,25 +16,51 @@ namespace QCAS{
 			framebufferSpec);
 
 		const std::string vertexShader = R"(
-			#version 330 core
+			#version 410
+
 			uniform mat4 u_ViewProjection;
+
+			layout(location = 1) out vec3 nearPoint;
+			layout(location = 2) out vec3 farPoint;
+
 			vec3 gridPlane[6] = vec3[](
-				vec3(100, 100, 0), vec3(-100, -100, 0), vec3(-100, 100, 0),
-				vec3(-100, -100, 0), vec3(100, 100, 0), vec3(100, -100, 0)
+				vec3(1, 1, 0), vec3(-1, -1, 0), vec3(-1, 1, 0),
+				vec3(-1, -1, 0), vec3(1, 1, 0), vec3(1, -1, 0)
 				);
+			
+			vec3 UnprojectPoint(float x, float y, float z, mat4 viewProjection) {
+				vec4 unprojectedPoint =  inverse(viewProjection) * vec4(x, y, z, 1.0);
+				return unprojectedPoint.xyz / unprojectedPoint.w;
+			}
 			
 			void main()
 			{
-				gl_Position = u_ViewProjection * vec4(gridPlane[gl_VertexID], 1.0);
+				vec3 p = gridPlane[gl_VertexID];
+				nearPoint = UnprojectPoint(p.x, p.y, 0.0, u_ViewProjection).xyz; 
+				farPoint = UnprojectPoint(p.x, p.y, 1.0, u_ViewProjection).xyz; 
+				gl_Position = vec4(p, 1.0);
 			})"; 
 
 		const std::string fragmentShader = R"(
-			#version 330 core
-			out vec4 FragColor;
-			
-			void main()
-			{
-				FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);
+			#version 410
+			layout(location = 1) in vec3 nearPoint;
+			layout(location = 2) in vec3 farPoint;
+			layout(location = 0) out vec4 outColor;
+
+			vec4 grid(vec3 fragPos3D, float scale) {
+				vec2 coord = fragPos3D.xy / scale;
+				vec2 derivative = fwidth(coord);
+				vec2 grid = abs(fract(coord - 0.5) - 0.5) / derivative;
+				float line = min(grid.x, grid.y);
+				float minimumy = min(derivative.y, 1);
+				float minimumx = min(derivative.x, 1);
+				vec4 color = vec4(0.4, 0.4, 0.4, 1.0 - min(line, 1.0));
+				return color;
+			}
+			void main() {
+				float t = -nearPoint.z / (farPoint.z - nearPoint.z);
+				vec3 fragPos3D = nearPoint + t * (farPoint - nearPoint);
+				outColor = grid(fragPos3D, 100) * float(t > 0);
 			})";
 
 		m_Shader = Cherry::Shader::Create(
@@ -44,6 +70,8 @@ namespace QCAS{
 			fragmentShader);
 
 		m_Camera = std::make_unique<OrtographicCamera>(-1, 1, -1, 1);
+		m_Camera->SetPosition({ 0, 0, 10 });
+		m_Camera->SetRotation({ 0, 0, 0 });
 	}
 
 	void SceneVisual::Render()
@@ -57,11 +85,11 @@ namespace QCAS{
 			camPos.y += mousePosDelta.y / m_Camera->GetZoom();
 			m_Camera->SetPosition(camPos);
 		}
-		m_Camera->SetZoom(m_Camera->GetZoom() + m_App.GetInput().GetMouseWheelDelta() * 0.1);
+		m_Camera->SetZoom(std::max(m_Camera->GetZoom() + m_App.GetInput().GetMouseWheelDelta() * 0.1, 0.1));
 
 		m_Framebuffer->Bind();
 		renderer.SetViewport( 0,0,m_Width,m_Height );
-		renderer.SetClearColor({0.3, 0.1, 0.1, 1});
+		renderer.SetClearColor({0,0,0,0});
 		renderer.Clear();
 		m_Shader->Bind();
 		m_Shader->SetUniform("u_ViewProjection", m_Camera->GetViewProjection());
