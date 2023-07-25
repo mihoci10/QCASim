@@ -16,7 +16,7 @@ namespace QCAS{
 			framebufferSpec);
 
 		const std::string vertexShader = R"(
-			#version 410
+			#version 450
 
 			uniform mat4 u_ViewProjection;
 
@@ -42,20 +42,15 @@ namespace QCAS{
 			})"; 
 
 		const std::string fragmentShader = R"(
-			#version 410
+			#version 450
 			layout(location = 1) in vec3 nearPoint;
 			layout(location = 2) in vec3 farPoint;
 			layout(location = 0) out vec4 outColor;
 
 			vec4 grid(vec3 fragPos3D, float scale) {
-				vec2 coord = fragPos3D.xy / scale;
-				vec2 derivative = fwidth(coord);
-				vec2 grid = abs(fract(coord - 0.5) - 0.5) / derivative;
-				float line = min(grid.x, grid.y);
-				float minimumy = min(derivative.y, 1);
-				float minimumx = min(derivative.x, 1);
-				vec4 color = vec4(0.4, 0.4, 0.4, 1.0 - min(line, 1.0));
-				return color;
+				vec2 grid = abs(fract(fragPos3D.xy / scale - 0.5) - 0.5);
+				vec2 line = vec2(1.0) - smoothstep(vec2(0.0), vec2(0.01), grid);
+				return vec4(0.3, 0.3, 0.3, min(max(line.x, line.y), 1.0));
 			}
 			void main() {
 				float t = -nearPoint.z / (farPoint.z - nearPoint.z);

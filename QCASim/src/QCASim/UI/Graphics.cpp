@@ -63,7 +63,7 @@ namespace QCAS{
 	{
 		SDL_SetWindowResizable(m_windowHnd.get(), SDL_TRUE);
 		SDL_MaximizeWindow(m_windowHnd.get());
-		SDL_GL_SetSwapInterval(0);
+		//SDL_GL_SetSwapInterval(0);
 	}
 
 	void Graphics::SetupImGui()

@@ -6,7 +6,10 @@ namespace QCAS
     {
         m_ShouldRestart = false;
 
-        m_Graphics = std::make_unique<Graphics>(*this, Cherry::RendererSettings(Cherry::RendererPlatform::OpenGL, true));
+        auto renderSettings = Cherry::RendererSettings(Cherry::RendererPlatform::OpenGL, true);
+        renderSettings.logCallback = [](uint8_t severity, std::string_view description, std::string_view source) 
+        {printf("***\n  SEVERITY: %d\n  %s\n  SOURCE: %s\n", severity, description.data(), source.data()); };
+        m_Graphics = std::make_unique<Graphics>(*this, renderSettings);
 
         m_MainFrame = std::make_unique<MainFrame>(*this);
         
