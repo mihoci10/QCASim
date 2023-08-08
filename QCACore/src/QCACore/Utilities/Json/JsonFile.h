@@ -1,6 +1,6 @@
 #pragma once
 
-#include <QCACore/Utils/Json/JsonNode.hpp>
+#include <QCACore/Utilities/Json/JsonNode.hpp>
 
 enum class JsonFileMode {
     Read, Write

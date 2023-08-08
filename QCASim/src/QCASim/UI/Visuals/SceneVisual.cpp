@@ -40,6 +40,8 @@ namespace QCAS{
 		m_GridShader->Unbind();
 		m_CellShader->Bind();
 		m_CellShader->SetUniform("u_ViewProjection", m_Camera->GetViewProjection());
+		m_CellShader->SetUniform("u_Resolution", GetSize());
+		m_CellShader->SetUniform("u_Zoom", m_Camera->GetZoom());
 		renderer.Draw(*m_CellsBufferBatch.get());
 		m_CellShader->Unbind();
 		m_Framebuffer->Unbind();
@@ -91,6 +93,8 @@ namespace QCAS{
 			layout(location = 1) in vec3 nearPoint;
 			layout(location = 2) in vec3 farPoint;
 			layout(location = 0) out vec4 outColor;
+
+			uniform highp vec2 u_Resolution;
 
 			vec4 grid(vec3 fragPos3D, float scale) {
 				vec2 grid = abs(fract(fragPos3D.xy / scale - 0.5) - 0.5);
@@ -176,15 +180,24 @@ namespace QCAS{
 			};
 
 			layout(location = 0) in CellData cache;
+
 			layout(location = 0) out vec4 outColor;
 
-			float RectMask(vec2 pos)
+			uniform highp vec2 u_Resolution;
+			uniform highp float u_Zoom;
+
+			float RectMask(vec2 pos, vec2 size)
 			{
-				return smoothstep(0.9, 0.95, abs(pos.x)) + smoothstep(0.9, 0.95, abs(pos.y));
+				vec2 startLimit = 1 - size;
+				vec2 stopLimit = 1 - size + 0.01;
+				vec2 mask = smoothstep(startLimit, stopLimit, abs(pos));
+				return max(max(mask.x, mask.y), 0.0);
 			}
 
 			void main() {
-				float mask = RectMask(cache.LocalPos.xy);
+				vec2 fragSize = fwidth(cache.LocalPos.xy) * 10;
+
+				float mask = RectMask(cache.LocalPos.xy, fragSize);
 				outColor = vec4(cache.Color.rgb, mask);
 			})";
 

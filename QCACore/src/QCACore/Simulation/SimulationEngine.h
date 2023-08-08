@@ -1,9 +1,9 @@
 #pragma once
 
-#include <QCACore/Sim/Cell.hpp>
-#include <QCACore/Sim/SimulationModel.hpp>
-#include <QCACore/Sim/SimulationSettings.hpp>
-#include <QCACore/Sim/SimulationModelConfig.hpp>
+#include <QCACore/Simulation/Cell.hpp>
+#include <QCACore/Simulation/SimulationModel.hpp>
+#include <QCACore/Simulation/SimulationSettings.hpp>
+#include <QCACore/Simulation/SimulationModelConfig.hpp>
 
 namespace QCAC::Sim {
 

@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include <QCACore/Utils/Json/JsonFile.h>
+#include <QCACore/Utilities/Json/JsonFile.h>
 
 std::string simpleJson = R"(
 	  {
