@@ -188,14 +188,14 @@ namespace QCAS{
 
 			float RectMask(vec2 pos, vec2 size)
 			{
-				vec2 startLimit = 1 - size;
-				vec2 stopLimit = 1 - size + 0.01;
+				vec2 startLimit = 1 - 2 * size;
+				vec2 stopLimit = 1 - size;
 				vec2 mask = smoothstep(startLimit, stopLimit, abs(pos));
 				return max(max(mask.x, mask.y), 0.0);
 			}
 
 			void main() {
-				vec2 fragSize = fwidth(cache.LocalPos.xy) * 10;
+				vec2 fragSize = fwidth(cache.LocalPos.xy);
 
 				float mask = RectMask(cache.LocalPos.xy, fragSize);
 				outColor = vec4(cache.Color.rgb, mask);
