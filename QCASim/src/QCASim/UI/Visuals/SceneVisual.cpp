@@ -40,8 +40,6 @@ namespace QCAS{
 		m_GridShader->Unbind();
 		m_CellShader->Bind();
 		m_CellShader->SetUniform("u_ViewProjection", m_Camera->GetViewProjection());
-		m_CellShader->SetUniform("u_Resolution", GetSize());
-		m_CellShader->SetUniform("u_Zoom", m_Camera->GetZoom());
 		renderer.Draw(*m_CellsBufferBatch.get());
 		m_CellShader->Unbind();
 		m_Framebuffer->Unbind();
@@ -94,11 +92,13 @@ namespace QCAS{
 			layout(location = 2) in vec3 farPoint;
 			layout(location = 0) out vec4 outColor;
 
-			uniform highp vec2 u_Resolution;
-
 			vec4 grid(vec3 fragPos3D, float scale) {
 				vec2 grid = abs(fract(fragPos3D.xy / scale - 0.5) - 0.5);
-				vec2 line = vec2(1.0) - smoothstep(vec2(0.0), vec2(0.01), grid);
+
+				vec2 lineWidth = fwidth(fragPos3D.xy) / 20;
+
+				vec2 line = vec2(1) - smoothstep(vec2(0), lineWidth, grid);
+
 				return vec4(0.3, 0.3, 0.3, min(max(line.x, line.y), 1.0));
 			}
 			void main() {
@@ -183,21 +183,36 @@ namespace QCAS{
 
 			layout(location = 0) out vec4 outColor;
 
-			uniform highp vec2 u_Resolution;
-			uniform highp float u_Zoom;
-
-			float RectMask(vec2 pos, vec2 size)
+			float HollowRectMask(vec2 pos, vec2 bandStart, vec2 bandStop, float fade = 0.01)
 			{
-				vec2 startLimit = 1 - 2 * size;
-				vec2 stopLimit = 1 - size;
-				vec2 mask = smoothstep(startLimit, stopLimit, abs(pos));
+				vec2 value = abs(cache.LocalPos.xy - pos);
+
+				vec2 mask = smoothstep(bandStart - fade, bandStart, value);
+				mask -= smoothstep(bandStop, bandStop + fade, value);
+
 				return max(max(mask.x, mask.y), 0.0);
+			}
+
+			float HollowCircleMask(vec2 pos, float radiusStart, float radiusStop, float fade = 0.01)
+			{
+				float value = length(cache.LocalPos.xy - pos);
+
+				float mask = smoothstep(radiusStart - fade, radiusStart, value);
+				mask -= smoothstep(radiusStop, radiusStop + fade, value);
+
+				return max(mask, 0.0);
 			}
 
 			void main() {
 				vec2 fragSize = fwidth(cache.LocalPos.xy);
 
-				float mask = RectMask(cache.LocalPos.xy, fragSize);
+				float mask = HollowRectMask(vec2(0), vec2(1) - (4 * fragSize), vec2(1));
+
+				mask += HollowCircleMask(vec2(0.5, 0.5), 0.2, 0.2 + (2*length(fragSize)));
+				mask += HollowCircleMask(vec2(0.5, -0.5), 0.2, 0.2 + (2*length(fragSize)));
+				mask += HollowCircleMask(vec2(-0.5, 0.5), 0.2, 0.2 + (2*length(fragSize)));
+				mask += HollowCircleMask(vec2(-0.5, -0.5), 0.2, 0.2 + (2*length(fragSize)));
+
 				outColor = vec4(cache.Color.rgb, mask);
 			})";
 
