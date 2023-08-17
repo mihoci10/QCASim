@@ -34,6 +34,7 @@ namespace QCAS {
             float GlobalPos[3];
             float VertexPos[3];
             float Color[4];
+            float Polarization;
         };
     };
 

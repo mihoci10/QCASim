@@ -120,11 +120,12 @@ namespace QCAS{
 		bufferDescriptor.AddSegment(Cherry::BufferDataType::FLOAT, 3, false);
 		bufferDescriptor.AddSegment(Cherry::BufferDataType::FLOAT, 3, false);
 		bufferDescriptor.AddSegment(Cherry::BufferDataType::FLOAT, 4, true);
+		bufferDescriptor.AddSegment(Cherry::BufferDataType::FLOAT, 1, false);
 		std::array<CellData, 4> vertices {
-			CellData{ {0, 0, 0}, { -1, -1, 0 }, { 1, 0.5, 0, 1 } },
-			CellData{ {100, 0, 0}, { 1, -1, 0 }, { 1, 0.5, 0, 1 } },
-			CellData{ {100, 100, 0}, { 1, 1, 0 }, { 1, 0.5, 0, 1 } },
-			CellData{ {0, 100, 0}, { -1, 1, 0 }, { 1, 0.5, 0, 1 } }
+			CellData{ {0, 0, 0}, { -1, -1, 0 }, { 1, 0.5, 0, 1 }, 1 },
+			CellData{ {100, 0, 0}, { 1, -1, 0 }, { 1, 0.5, 0, 1 }, 1 },
+			CellData{ {100, 100, 0}, { 1, 1, 0 }, { 1, 0.5, 0, 1 }, 1 },
+			CellData{ {0, 100, 0}, { -1, 1, 0 }, { 1, 0.5, 0, 1 }, 1 }
 		};
 		std::shared_ptr<Cherry::VertexBuffer> cellBuffer = Cherry::VertexBuffer::Create(m_App.GetGraphics().GetRendererApi().GetRendererSettings(),
 			vertices.data(), bufferDescriptor, 6);
@@ -150,11 +151,13 @@ namespace QCAS{
 				vec3 GlobalPos;
 				vec3 LocalPos;
 				vec4 Color;
+				float Polarization;
 			};
 
 			layout(location = 0) in vec3 aPos;
 			layout(location = 1) in vec3 lPos;
 			layout(location = 2) in vec4 color;
+			layout(location = 3) in float polarization;
 
 			uniform mat4 u_ViewProjection;
 
@@ -165,6 +168,7 @@ namespace QCAS{
 				cache.GlobalPos = aPos;
 				cache.LocalPos = lPos;
 				cache.Color = color;
+				cache.Polarization = polarization;
 
 				gl_Position = u_ViewProjection * vec4(aPos, 1.0);
 			})";
@@ -177,6 +181,7 @@ namespace QCAS{
 				vec3 GlobalPos;
 				vec3 LocalPos;
 				vec4 Color;
+				float Polarization;
 			};
 
 			layout(location = 0) in CellData cache;
@@ -195,6 +200,7 @@ namespace QCAS{
 
 			float HollowCircleMask(vec2 pos, float radiusStart, float radiusStop, float fade = 0.01)
 			{
+				radiusStop = max(radiusStart, radiusStop);
 				float value = length(cache.LocalPos.xy - pos);
 
 				float mask = smoothstep(radiusStart - fade, radiusStart, value);
@@ -208,10 +214,15 @@ namespace QCAS{
 
 				float mask = HollowRectMask(vec2(0), vec2(1) - (4 * fragSize), vec2(1));
 
-				mask += HollowCircleMask(vec2(0.5, 0.5), 0.2, 0.2 + (2*length(fragSize)));
-				mask += HollowCircleMask(vec2(0.5, -0.5), 0.2, 0.2 + (2*length(fragSize)));
-				mask += HollowCircleMask(vec2(-0.5, 0.5), 0.2, 0.2 + (2*length(fragSize)));
-				mask += HollowCircleMask(vec2(-0.5, -0.5), 0.2, 0.2 + (2*length(fragSize)));
+				mask += HollowCircleMask(vec2(0.5, 0.5), 0.2, 0.2 + (length(2*fragSize)));
+				mask += HollowCircleMask(vec2(0.5, -0.5), 0.2, 0.2 + (length(2*fragSize)));
+				mask += HollowCircleMask(vec2(-0.5, 0.5), 0.2, 0.2 + (length(2*fragSize)));
+				mask += HollowCircleMask(vec2(-0.5, -0.5), 0.2, 0.2 + (length(2*fragSize)));
+
+				mask += HollowCircleMask(vec2(0.5, 0.5), 0, cache.Polarization * (0.2 + (length(2*fragSize))), 0);
+				mask += HollowCircleMask(vec2(0.5, -0.5), 0, -cache.Polarization * (0.2 + (length(2*fragSize))), 0);
+				mask += HollowCircleMask(vec2(-0.5, 0.5), 0, -cache.Polarization * (0.2 + (length(2*fragSize))), 0);
+				mask += HollowCircleMask(vec2(-0.5, -0.5), 0, cache.Polarization * (0.2 + (length(2*fragSize))), 0);
 
 				outColor = vec4(cache.Color.rgb, mask);
 			})";
