@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include <QCACore/Utilities/Container/RingBuffer.h>
+#include <QCACore/Utilities/Container/RingBuffer.hpp>
 
 TEST(RingBuffer, Create) {
 	QCAC::RingBuffer<int> buf;
