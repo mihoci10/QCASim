@@ -6,6 +6,11 @@ namespace QCAC{
 		Begining, Current, End
 	};
 
+	class StreamBOFException : public std::exception {
+	};
+	class StreamEOFException : public std::exception {
+	};
+
 	template <class T>
 	class IStream {
 		virtual ~IStream() {};
