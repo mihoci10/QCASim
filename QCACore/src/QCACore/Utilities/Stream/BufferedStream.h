@@ -106,13 +106,13 @@ namespace QCAC {
 	template<class T>
 	void BufferedStream<T>::FlushBuffer()
 	{
-		m_Stream->Seek(m_BufferPos, SeekOrigin::Begining);
+		size_t N = m_Buffer.Capacity();
 
-		for (int i = 0; i < m_Buffer.Capacity(); i++)
-		{
-			T element = m_Buffer.PopFront();
-			m_Stream->Write(&element, 1);
-		}
+		std::unique_ptr<T[]> elements = std::make_unique<T[]>(N);
+		m_Buffer.GetRange(elements.get(), 0, N);
+
+		m_Stream->Seek(m_BufferPos, SeekOrigin::Begining);
+		m_Stream->Write(elements.get(), N);
 
 		m_BufferModified = false;
 	}
