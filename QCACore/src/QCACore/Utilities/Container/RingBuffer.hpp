@@ -22,6 +22,9 @@ namespace QCAC{
         T operator[](size_t index) const;
 
         void Add(T element);
+        void AddRange(T* elements, size_t offset, size_t count);
+        void GetRange(T* elements, size_t offset, size_t count);
+
         T PopFront();
         T PopBack();
 
@@ -110,6 +113,47 @@ namespace QCAC{
 
         m_Size++;
         m_Buffer[GetLocalIndex(m_Size - 1)] = element;
+    };
+
+    template<class T>
+    void RingBuffer<T>::AddRange(T* elements, size_t offset, size_t count)
+    {
+        if (m_Capacity - m_Size < count - offset)
+            throw RingBufferRangeException();
+
+        size_t frontPtrLocal = m_FrontPtr + offset;
+
+        while (count > 0) {
+            size_t countIter = std::min(m_Capacity - frontPtrLocal, count);
+
+            std::memcpy(m_Buffer.get() + frontPtrLocal, elements, countIter * sizeof(T));
+
+            frontPtrLocal = (frontPtrLocal + countIter) % m_Capacity;
+            elements += countIter;
+
+            count -= countIter;
+            m_Size += countIter;
+        }
+    };
+
+    template<class T>
+    void RingBuffer<T>::GetRange(T* elements, size_t offset, size_t count)
+    {
+        if (m_Size < offset + count)
+            throw RingBufferRangeException();
+
+        size_t frontPtrLocal = m_FrontPtr + offset;
+
+        while (count > 0) {
+            size_t countIter = std::min(m_Capacity - frontPtrLocal, count);
+
+            std::memcpy(elements, m_Buffer.get() + frontPtrLocal, countIter * sizeof(T));
+
+            frontPtrLocal = (frontPtrLocal + countIter) % m_Capacity;
+            elements += countIter;
+
+            count -= countIter;
+        }
     };
 
     template <class T>

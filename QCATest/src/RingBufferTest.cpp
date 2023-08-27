@@ -37,6 +37,56 @@ TEST(RingBuffer, SimplePop) {
 	ASSERT_EQ(buf.Front(), 2);
 }
 
+TEST(RingBuffer, AddRange) {
+	QCAC::RingBuffer<int> buf(3);
+
+	int arr[3] = { 1, 2, 3 };
+
+	buf.Add(1);
+	buf.PopFront();
+	buf.AddRange(arr, 0, 3);
+
+	ASSERT_EQ(buf.Size(), 3);
+	ASSERT_EQ(buf[0], 1);
+	ASSERT_EQ(buf[1], 2);
+	ASSERT_EQ(buf[2], 3);
+}
+
+TEST(RingBuffer, AddRangeOffset) {
+	QCAC::RingBuffer<int> buf(3);
+
+	int arr[2] = { 2, 3 };
+
+	buf.Add(1);
+	buf.PopFront();
+	buf.Add(1);
+	buf.AddRange(arr, 1, 2);
+
+	ASSERT_EQ(buf.Size(), 3);
+	ASSERT_EQ(buf[0], 1);
+	ASSERT_EQ(buf[1], 2);
+	ASSERT_EQ(buf[2], 3);
+}
+
+
+TEST(RingBuffer, GetRange) {
+	QCAC::RingBuffer<int> buf(3);
+	int arr[3] = { 0 };
+
+	buf.Add(1);
+	buf.PopFront();
+	buf.Add(1);
+	buf.Add(2);
+	buf.Add(3);
+
+	buf.GetRange(arr, 0, 3);
+
+	ASSERT_EQ(buf.Size(), 3);
+	ASSERT_EQ(arr[0], 1);
+	ASSERT_EQ(arr[1], 2);
+	ASSERT_EQ(arr[2], 3);
+}
+
 TEST(RingBuffer, RangeException) {
 	QCAC::RingBuffer<int> buf;
 

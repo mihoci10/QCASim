@@ -24,8 +24,9 @@ namespace QCAC {
 
 		std::shared_ptr<IStream<T>> m_Stream;
 
-		void FillBuffer();
+		void FillBuffer(size_t bufferPosition);
 		void FlushBuffer();
+		bool GetPositionInBuffer(size_t position);
 	};
 
 	template<class T>
@@ -43,33 +44,67 @@ namespace QCAC {
 	}
 
 	template<class T>
-	inline size_t BufferedStream<T>::Read(T* buffer, size_t count)
+	size_t BufferedStream<T>::Read(T* buffer, size_t count)
 	{
-		
+		while (count > 0) {
+			if (!GetPositionInBuffer(m_StreamPos))
+				FillBuffer(m_StreamPos);
+
+			size_t countIter = std::min(m_Buffer.Capacity() - m_StreamPos - m_BufferPos, count);
+
+			m_Buffer.GetRange(buffer, m_StreamPos - m_BufferPos, countIter);
+
+			m_StreamPos += countIter;
+			buffer += countIter;
+			count -= countIter;
+		}
+
+		return m_StreamPos;
 	}
 
 	template<class T>
-	inline size_t BufferedStream<T>::Write(T* buffer, size_t count)
+	size_t BufferedStream<T>::Write(T* buffer, size_t count)
 	{
-		return size_t();
+		while (count > 0) {
+			if (! GetPositionInBuffer(m_StreamPos))
+				FillBuffer(m_StreamPos);
+			
+			size_t countIter = std::min(m_Buffer.Capacity() - m_StreamPos - m_BufferPos, count);
+
+			m_Buffer.AddRange(buffer, m_StreamPos - m_BufferPos, countIter);
+			m_BufferModified = true;
+
+			m_StreamPos += countIter;
+			buffer += countIter;
+			count -= countIter;
+		}
+
+		return m_StreamPos;
 	}
 
 	template<class T>
-	inline void BufferedStream<T>::FillBuffer()
+	void BufferedStream<T>::FillBuffer(size_t bufferPosition)
 	{
+		if (m_BufferModified)
+			FlushBuffer();
+
+		m_BufferPos = bufferPosition;
+
 		m_Stream->Seek(m_BufferPos, SeekOrigin::Begining);
 		m_Buffer.Clear();
 
-		T element;
-		for (int i = 0; i < m_Buffer.Capacity(); i++)
-		{
-			m_Stream->Read(&element, 1);
-			m_Buffer.Add(element);
-		}
+		size_t N = m_Buffer.Capacity();
+
+		std::unique_ptr<T[]> elements = std::make_unique<T[]>(N);
+		m_Stream->Read(elements.get(), N);
+
+		m_Buffer.AddRange(elements.get(), 0, N);
+		
+		m_BufferModified = false;
 	}
 
 	template<class T>
-	inline void BufferedStream<T>::FlushBuffer()
+	void BufferedStream<T>::FlushBuffer()
 	{
 		m_Stream->Seek(m_BufferPos, SeekOrigin::Begining);
 
@@ -78,6 +113,14 @@ namespace QCAC {
 			T element = m_Buffer.PopFront();
 			m_Stream->Write(&element, 1);
 		}
+
+		m_BufferModified = false;
+	}
+
+	template<class T>
+	inline bool BufferedStream<T>::GetPositionInBuffer(size_t position)
+	{
+		return (position >= m_BufferPos) && (position <= m_BufferPos + m_Buffer.Size());
 	}
 
 }
