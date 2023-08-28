@@ -9,6 +9,7 @@ namespace QCAC {
 	class BufferedStream : public IStream<T> {
 	public:
 		BufferedStream(std::shared_ptr<IStream<T>> stream, size_t bufferCapacity = 1000);
+		~BufferedStream();
 
 		size_t Seek(int64_t offset, SeekOrigin origin) override;
 
@@ -37,6 +38,12 @@ namespace QCAC {
 		m_Buffer(RingBuffer<T>(bufferCapacity))
 	{
 		FillBuffer(m_StreamPos);
+	}
+	
+	template<class T>
+		BufferedStream<T>::~BufferedStream()
+	{
+		Commit();
 	}
 
 	template<class T>

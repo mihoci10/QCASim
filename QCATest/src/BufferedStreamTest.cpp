@@ -18,7 +18,6 @@ TEST(BufferedStream, SimpleWriteRead) {
 	char buf[4];
 
 	ASSERT_EQ(bufStream.Write("asdf", 4), 4);
-	bufStream.Commit();
 	ASSERT_EQ(bufStream.Seek(0, QCAC::SeekOrigin::Begining), 0);
 	ASSERT_EQ(bufStream.Read(buf, 4), 4);
 
