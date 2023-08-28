@@ -15,6 +15,8 @@ namespace QCAC {
 		size_t Read(T* buffer, size_t count) override;
 		size_t Write(T* buffer, size_t count) override;
 
+		void Commit();
+
 	private:
 		size_t m_StreamPos = 0;
 		size_t m_BufferPos = 0;
@@ -34,6 +36,7 @@ namespace QCAC {
 		m_Stream(stream),
 		m_Buffer(RingBuffer<T>(bufferCapacity))
 	{
+		FillBuffer(m_StreamPos);
 	}
 
 	template<class T>
@@ -83,6 +86,12 @@ namespace QCAC {
 	}
 
 	template<class T>
+	void BufferedStream<T>::Commit()
+	{
+		FlushBuffer();
+	}
+
+	template<class T>
 	void BufferedStream<T>::FillBuffer(size_t bufferPosition)
 	{
 		if (m_BufferModified)
@@ -118,7 +127,7 @@ namespace QCAC {
 	}
 
 	template<class T>
-	inline bool BufferedStream<T>::GetPositionInBuffer(size_t position)
+	bool BufferedStream<T>::GetPositionInBuffer(size_t position)
 	{
 		return (position >= m_BufferPos) && (position <= m_BufferPos + m_Buffer.Size());
 	}

@@ -1,26 +1,26 @@
 #include <gtest/gtest.h>
 
 #include <QCACore/Utilities/Stream/FileStream.hpp>
+#include <QCACore/Utilities/Stream/BufferedStream.hpp>
 #include <fstream>
 
-TEST(FileStream, CreateFromName){
-	QCAC::FileStream<char> stream("test.txt");
+TEST(BufferedStream, Create){
+	std::shared_ptr<QCAC::FileStream<char>> stream = 
+		std::make_shared<QCAC::FileStream<char>>("test.txt");
+	QCAC::BufferedStream<char> bufStream(stream);
 }
 
-TEST(FileStream, SimpleWrite) {
-	QCAC::FileStream<char> stream("test.txt");
-
-	ASSERT_EQ(stream.Write("asdf", 4), 4);
-}
-
-TEST(FileStream, SimpleWriteRead) {
-	QCAC::FileStream<char> stream("test.txt");
+TEST(BufferedStream, SimpleWriteRead) {
+	std::shared_ptr<QCAC::FileStream<char>> stream =
+		std::make_shared<QCAC::FileStream<char>>("test.txt");
+	QCAC::BufferedStream<char> bufStream(stream, 4);
 
 	char buf[4];
 
-	ASSERT_EQ(stream.Write("asdf", 4), 4);
-	ASSERT_EQ(stream.Seek(0, QCAC::SeekOrigin::Begining), 0);
-	ASSERT_EQ(stream.Read(buf, 4), 4);
+	ASSERT_EQ(bufStream.Write("asdf", 4), 4);
+	bufStream.Commit();
+	ASSERT_EQ(bufStream.Seek(0, QCAC::SeekOrigin::Begining), 0);
+	ASSERT_EQ(bufStream.Read(buf, 4), 4);
 
 	ASSERT_EQ(buf[0], 'a');
 	ASSERT_EQ(buf[1], 's');
@@ -28,7 +28,7 @@ TEST(FileStream, SimpleWriteRead) {
 	ASSERT_EQ(buf[3], 'f');
 }
 
-TEST(FileStream, ContinuousWriteRead) {
+TEST(BufferedStream, ContinuousWriteRead) {
 	QCAC::FileStream<char> stream("test.txt");
 
 	char buf[8];

@@ -53,9 +53,9 @@ namespace QCAC{
 			break;
 		}
 
-		m_Stream->seekg(offset, seekDir);
+		m_Stream->seekp(offset, seekDir);
 
-		return m_Stream->tellg();
+		return m_Stream->tellp();
 	}
 	template<class T>
 	inline size_t FileStream<T>::Read(T* buffer, size_t count)
@@ -67,6 +67,7 @@ namespace QCAC{
 	inline size_t FileStream<T>::Write(T* buffer, size_t count)
 	{
 		m_Stream->write(reinterpret_cast<char*>(buffer), sizeof(T) * count);
+		m_Stream->flush();
 		return m_Stream->tellp();
 	}
 }

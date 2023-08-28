@@ -118,11 +118,12 @@ namespace QCAC{
     template<class T>
     void RingBuffer<T>::AddRange(T* elements, size_t offset, size_t count)
     {
-        if (m_Capacity - m_Size < count - offset)
+        if (m_Capacity - offset < count)
             throw RingBufferRangeException();
 
         size_t frontPtrLocal = m_FrontPtr + offset;
 
+        m_Size = offset;
         while (count > 0) {
             size_t countIter = std::min(m_Capacity - frontPtrLocal, count);
 
