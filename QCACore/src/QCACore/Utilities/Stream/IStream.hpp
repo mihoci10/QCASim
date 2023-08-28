@@ -13,9 +13,9 @@ namespace QCAC{
 
 	template <class T>
 	class IStream {
+	public:
 		virtual ~IStream() {};
 
-	public:
 		virtual size_t Seek(int64_t offset, SeekOrigin origin) = 0;
 		
 		virtual size_t Read(T* buffer, size_t count) = 0;
