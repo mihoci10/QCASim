@@ -60,16 +60,18 @@ namespace QCAC{
 	template<class T>
 	inline size_t FileStream<T>::Read(T* buffer, size_t count)
 	{
+		size_t startOffset = m_Stream->tellg();
 		m_Stream->read(reinterpret_cast<char*>(buffer), sizeof(T) * count);
 		m_Stream->clear();
-		return m_Stream->tellg();
+		return static_cast<size_t>(m_Stream->tellg()) - startOffset;
 	}
 	template<class T>
 	inline size_t FileStream<T>::Write(T* buffer, size_t count)
 	{
+		size_t startOffset = m_Stream->tellp();
 		m_Stream->write(reinterpret_cast<char*>(buffer), sizeof(T) * count);
 		m_Stream->clear();
 		m_Stream->flush(); 
-		return m_Stream->tellp();
+		return static_cast<size_t>(m_Stream->tellp()) - startOffset;
 	}
 }

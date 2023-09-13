@@ -34,7 +34,7 @@ TEST(FileStream, ContinuousWriteRead) {
 	char buf[8];
 
 	ASSERT_EQ(stream.Write("asdf", 4), 4);
-	ASSERT_EQ(stream.Write("1234", 4), 8);
+	ASSERT_EQ(stream.Write("1234", 4), 4);
 	ASSERT_EQ(stream.Seek(0, QCAC::SeekOrigin::Begining), 0);
 	ASSERT_EQ(stream.Read(buf, 8), 8);
 
