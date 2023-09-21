@@ -188,7 +188,7 @@ namespace QCAS{
 
 			layout(location = 0) out vec4 outColor;
 
-			float HollowRectMask(vec2 pos, vec2 bandStart, vec2 bandStop, float fade = 0.01)
+			float HollowRectMask(vec2 pos, vec2 bandStart, vec2 bandStop, float fade)
 			{
 				vec2 value = abs(cache.LocalPos.xy - pos);
 
@@ -198,7 +198,7 @@ namespace QCAS{
 				return max(max(mask.x, mask.y), 0.0);
 			}
 
-			float HollowCircleMask(vec2 pos, float radiusStart, float radiusStop, float fade = 0.01)
+			float HollowCircleMask(vec2 pos, float radiusStart, float radiusStop, float fade)
 			{
 				radiusStop = max(radiusStart, radiusStop);
 				float value = length(cache.LocalPos.xy - pos);
@@ -212,12 +212,12 @@ namespace QCAS{
 			void main() {
 				vec2 fragSize = fwidth(cache.LocalPos.xy);
 
-				float mask = HollowRectMask(vec2(0), vec2(1) - (4 * fragSize), vec2(1));
+				float mask = HollowRectMask(vec2(0), vec2(1) - (4 * fragSize), vec2(1), 0.01);
 
-				mask += HollowCircleMask(vec2(0.5, 0.5), 0.2, 0.2 + (length(2*fragSize)));
-				mask += HollowCircleMask(vec2(0.5, -0.5), 0.2, 0.2 + (length(2*fragSize)));
-				mask += HollowCircleMask(vec2(-0.5, 0.5), 0.2, 0.2 + (length(2*fragSize)));
-				mask += HollowCircleMask(vec2(-0.5, -0.5), 0.2, 0.2 + (length(2*fragSize)));
+				mask += HollowCircleMask(vec2(0.5, 0.5), 0.2, 0.2 + (length(2*fragSize)), 0.01);
+				mask += HollowCircleMask(vec2(0.5, -0.5), 0.2, 0.2 + (length(2*fragSize)), 0.01);
+				mask += HollowCircleMask(vec2(-0.5, 0.5), 0.2, 0.2 + (length(2*fragSize)), 0.01);
+				mask += HollowCircleMask(vec2(-0.5, -0.5), 0.2, 0.2 + (length(2*fragSize)), 0.01);
 
 				mask += HollowCircleMask(vec2(0.5, 0.5), 0, cache.Polarization * (0.2 + (length(2*fragSize))), 0);
 				mask += HollowCircleMask(vec2(0.5, -0.5), 0, -cache.Polarization * (0.2 + (length(2*fragSize))), 0);
