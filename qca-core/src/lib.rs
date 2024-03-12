@@ -1,4 +1,5 @@
 pub mod sim;
+pub mod datafile;
 
 pub fn add(left: usize, right: usize) -> usize {
     left + right
@@ -48,5 +49,20 @@ mod tests {
         
         let mut simulator = Simulator::new(model, cells);
         simulator.run();
+    }
+
+    #[test]
+    fn serialize_01() {
+        let cells: Vec<QCACell> = (0..10).map(|i| {
+            QCACell{
+                pos_x: i as f64 * 20.0,
+                pos_y: 0.0,
+                clock: sim::CellClock::First,
+                typ: if i == 0 {CellType::Fixed} else {CellType::Normal},
+                polarization: if i == 0 {1.0} else {0.0}
+            }
+        }).collect();
+
+        println!("{}", serde_json::to_string(&cells).unwrap());
     }
 }

@@ -1,13 +1,15 @@
-#[derive(Clone, Copy)]
+use serde::{Serialize, Deserialize};
+
+#[derive(Clone, Copy, Serialize, Deserialize)]
 pub enum CellType{
     Normal, Input, Output, Fixed
 }
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Serialize, Deserialize)]
 pub enum CellClock{
     First, Second, Third, Fourth 
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Serialize, Deserialize)]
 pub struct QCACell{
     pub pos_x: f64,
     pub pos_y: f64,
