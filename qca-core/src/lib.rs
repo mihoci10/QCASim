@@ -32,4 +32,21 @@ mod tests {
         let mut simulator = Simulator::new(model, cells);
         simulator.run();
     }
+
+    #[test]
+    fn bistable_02() {
+        let model = Box::new(BistableModel::new());
+        let cells = (0..2).map(|i| {
+            QCACell{
+                pos_x: i as f64 * 20.0,
+                pos_y: i as f64 * 20.0,
+                clock: sim::CellClock::First,
+                typ: if i == 0 {CellType::Fixed} else {CellType::Normal},
+                polarization: if i == 0 {1.0} else {0.0}
+            }
+        }).collect();
+        
+        let mut simulator = Simulator::new(model, cells);
+        simulator.run();
+    }
 }
