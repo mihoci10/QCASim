@@ -7,7 +7,7 @@ pub fn add(left: usize, right: usize) -> usize {
 
 #[cfg(test)]
 mod tests {
-    use self::sim::{bistable::BistableModel, CellType, QCACell, Simulator};
+    use self::sim::{bistable::BistableModel, settings::*, CellType, QCACell, Simulator};
 
     use super::*;
     
@@ -64,5 +64,20 @@ mod tests {
         }).collect();
 
         println!("{}", serde_json::to_string(&cells).unwrap());
+    }
+
+    #[test]
+    fn serialize_02() {
+        let settings: OptionsList = vec![
+            OptionsEntry::Header { label: "Cell structure".to_string() },
+            OptionsEntry::Break,
+            OptionsEntry::Input { 
+                unique_id: "cell_size".to_string(), 
+                name: "Size".to_string(), 
+                description: "Side dimension of the cell in nm".to_string(), 
+                descriptor: InputDescriptor::NumberInput {} }
+        ]; 
+
+        println!("{}", serde_json::to_string(&settings).unwrap());
     }
 }

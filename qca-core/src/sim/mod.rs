@@ -1,5 +1,7 @@
 use serde::{Serialize, Deserialize};
 
+use self::settings::{OptionsList, OptionsValueList};
+
 #[derive(Clone, Copy, Serialize, Deserialize)]
 pub enum CellType{
     Normal, Input, Output, Fixed
@@ -18,10 +20,18 @@ pub struct QCACell{
     pub polarization: f64,
 }
 
+pub mod settings;
+
 pub trait SimulationModelTrait{
+    fn get_options_list(&self) -> OptionsList;
+    fn get_options_value_list(&self) -> OptionsValueList;
+    fn set_options_value_list(&mut self, options_value_list: OptionsValueList);
+
     fn initiate(&mut self, cells: Box<Vec<QCACell>>);
     fn pre_calculate(&mut self, clock_states: [f64; 4]);
     fn calculate(&mut self, cell_ind: usize) -> bool;
+
+    fn get_states(&mut self) -> Vec<f64>;
 }
 
 pub mod bistable;
@@ -51,6 +61,10 @@ impl Simulator{
                 }
 			}
         }
+    }
+
+    pub fn get_results(&mut self) -> Vec<f64> {
+        self.sim_model.get_states()
     }
 
 }

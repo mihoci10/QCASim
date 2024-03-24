@@ -1,6 +1,8 @@
-use std::{vec};
+use std::collections::HashMap;
 
-use super::{CellType, QCACell, SimulationModelTrait};
+use crate::sim::settings::{InputDescriptor, OptionsEntry};
+
+use super::{settings::{OptionValue, OptionsValueList}, CellType, QCACell, SimulationModelTrait};
 
 pub struct BistableModel {
     clock_states: [f64; 4],
@@ -9,6 +11,8 @@ pub struct BistableModel {
     polarizations: [Vec<f64>; 2],
     neighbor_indecies: Vec<Vec<usize>>,
     neighbour_kink_energy: Vec<Vec<f64>>,
+
+    options_value_list: OptionsValueList,
 }
 
 impl BistableModel{
@@ -21,6 +25,9 @@ impl BistableModel{
             polarizations: [vec![], vec![]],
             neighbor_indecies: vec![],
             neighbour_kink_energy: vec![],
+            options_value_list: HashMap::from([
+                ("cell_size".to_string(), OptionValue::Number { value: 18.0 })
+            ])
         }
     }
 
@@ -127,6 +134,30 @@ impl SimulationModelTrait for BistableModel{
                 f64::abs(new_polarization - old_polarization) <= 0.001
             }
         }
+    }
+    
+    fn get_states(&mut self) -> Vec<f64>{
+        return self.get_active_layer().clone();
+    }
+    
+    fn get_options_list(&self) -> super::settings::OptionsList {
+        vec![
+            OptionsEntry::Header { label: "Cell structure".to_string() },
+            OptionsEntry::Break,
+            OptionsEntry::Input { 
+                unique_id: "cell_size".to_string(), 
+                name: "Size".to_string(), 
+                description: "Side dimension of the cell in nm".to_string(), 
+                descriptor: InputDescriptor::NumberInput {} }
+        ]
+    }
+    
+    fn get_options_value_list(&self) -> super::settings::OptionsValueList {
+        self.options_value_list.clone()
+    }
+    
+    fn set_options_value_list(&mut self, options_value_list: super::settings::OptionsValueList) {
+        self.options_value_list = options_value_list;
     }
 
 }
