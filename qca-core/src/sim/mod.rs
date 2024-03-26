@@ -24,6 +24,7 @@ pub mod settings;
 
 pub trait SimulationModelTrait{
     fn get_name(&self) -> String;
+    fn get_unique_id(&self) -> String;
 
     fn get_options_list(&self) -> OptionsList;
     fn get_options_value_list(&self) -> OptionsValueList;
