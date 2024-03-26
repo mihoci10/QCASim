@@ -159,5 +159,9 @@ impl SimulationModelTrait for BistableModel{
     fn set_options_value_list(&mut self, options_value_list: super::settings::OptionsValueList) {
         self.options_value_list = options_value_list;
     }
+    
+    fn get_name(&self) -> String {
+        "Bistable".into()
+    }
 
 }

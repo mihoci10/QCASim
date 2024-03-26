@@ -23,6 +23,8 @@ pub struct QCACell{
 pub mod settings;
 
 pub trait SimulationModelTrait{
+    fn get_name(&self) -> String;
+
     fn get_options_list(&self) -> OptionsList;
     fn get_options_value_list(&self) -> OptionsValueList;
     fn set_options_value_list(&mut self, options_value_list: OptionsValueList);
