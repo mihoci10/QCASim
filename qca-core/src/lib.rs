@@ -7,7 +7,7 @@ pub fn add(left: usize, right: usize) -> usize {
 
 #[cfg(test)]
 mod tests {
-    use self::sim::{bistable::BistableModel, settings::*, CellType, QCACell, Simulator};
+    use self::sim::{bistable::BistableModel, run_simulation, settings::*, CellType, QCACell, SimulationModelTrait};
 
     use super::*;
     
@@ -19,7 +19,7 @@ mod tests {
 
     #[test]
     fn bistable_01() {
-        let model = Box::new(BistableModel::new());
+        let mut model: Box<dyn SimulationModelTrait> = Box::new(BistableModel::new());
         let cells = (0..10).map(|i| {
             QCACell{
                 pos_x: i as f64 * 20.0,
@@ -30,13 +30,12 @@ mod tests {
             }
         }).collect();
         
-        let mut simulator = Simulator::new(model, cells);
-        simulator.run();
+        run_simulation(&mut model, cells);
     }
 
     #[test]
     fn bistable_02() {
-        let model = Box::new(BistableModel::new());
+        let mut model: Box<dyn SimulationModelTrait> = Box::new(BistableModel::new());
         let cells = (0..2).map(|i| {
             QCACell{
                 pos_x: i as f64 * 20.0,
@@ -47,8 +46,7 @@ mod tests {
             }
         }).collect();
         
-        let mut simulator = Simulator::new(model, cells);
-        simulator.run();
+        run_simulation(&mut model, cells);
     }
 
     #[test]

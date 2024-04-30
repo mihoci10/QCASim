@@ -30,6 +30,10 @@ pub trait SimulationModelTrait{
     fn get_options_value_list(&self) -> OptionsValueList;
     fn set_options_value_list(&mut self, options_value_list: OptionsValueList);
 
+    fn create_instance(&self) -> Box<dyn SimulationModelInstanceTrait>;
+}
+
+pub trait SimulationModelInstanceTrait{
     fn initiate(&mut self, cells: Box<Vec<QCACell>>);
     fn pre_calculate(&mut self, clock_states: [f64; 4]);
     fn calculate(&mut self, cell_ind: usize) -> bool;
@@ -39,35 +43,22 @@ pub trait SimulationModelTrait{
 
 pub mod bistable;
 
-pub struct Simulator{
-    sim_model: Box<dyn SimulationModelTrait>,
-    cells: Vec<QCACell>,
-}
+pub fn run_simulation(sim_model: &mut Box<dyn SimulationModelTrait>, cells: Vec<QCACell>) -> Box<dyn SimulationModelInstanceTrait>{
+    let mut model_inst: Box<dyn SimulationModelInstanceTrait> = sim_model.create_instance();
 
-impl Simulator{
+    model_inst.initiate(Box::new(cells.clone()));
+    for _ in 0..10 {
+        model_inst.pre_calculate([0.0, 0.0, 0.0, 0.0]);
 
-    pub fn new(sim_model: Box<dyn SimulationModelTrait>, cells: Vec<QCACell>) -> Simulator{
-        Simulator{sim_model: sim_model, cells: cells}
-    }
+        let mut stable = false;
+        while !stable {
+            stable = true;
 
-    pub fn run(&mut self){
-        self.sim_model.initiate(Box::new(self.cells.clone()));
-        for _ in 0..10 {
-            self.sim_model.pre_calculate([0.0, 0.0, 0.0, 0.0]);
-
-            let mut stable = false;
-			while !stable {
-				stable = true;
-
-				for i in 0..self.cells.len() { 
-					stable &= self.sim_model.calculate(i)
-                }
-			}
+            for i in 0..cells.len() { 
+                stable &= model_inst.calculate(i)
+            }
         }
-    }
+    };
 
-    pub fn get_results(&mut self) -> Vec<f64> {
-        self.sim_model.get_states()
-    }
-
+    return model_inst;
 }
