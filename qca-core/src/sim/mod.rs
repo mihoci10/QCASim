@@ -1,14 +1,12 @@
 use serde::{Serialize, Deserialize};
+use serde_repr::{Deserialize_repr, Serialize_repr};
 
 use self::settings::{OptionsList, OptionsValueList};
 
-#[derive(Clone, Copy, Serialize, Deserialize)]
+#[derive(Clone, Copy, Serialize_repr, Deserialize_repr)]
+#[repr(u8)]
 pub enum CellType{
     Normal, Input, Output, Fixed
-}
-#[derive(Clone, Copy, Serialize, Deserialize)]
-pub enum CellClock{
-    First, Second, Third, Fourth 
 }
 
 #[derive(Clone, Copy, Serialize, Deserialize)]
@@ -16,7 +14,7 @@ pub struct QCACell{
     pub pos_x: f64,
     pub pos_y: f64,
     pub typ: CellType,
-    pub clock: CellClock,
+    pub clock_phase_shift: f64,
     pub polarization: f64,
 }
 

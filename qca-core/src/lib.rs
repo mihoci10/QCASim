@@ -24,7 +24,7 @@ mod tests {
             QCACell{
                 pos_x: i as f64 * 20.0,
                 pos_y: 0.0,
-                clock: sim::CellClock::First,
+                clock_phase_shift: 0.0,
                 typ: if i == 0 {CellType::Fixed} else {CellType::Normal},
                 polarization: if i == 0 {1.0} else {0.0}
             }
@@ -40,7 +40,7 @@ mod tests {
             QCACell{
                 pos_x: i as f64 * 20.0,
                 pos_y: i as f64 * 20.0,
-                clock: sim::CellClock::First,
+                clock_phase_shift: 0.0,
                 typ: if i == 0 {CellType::Fixed} else {CellType::Normal},
                 polarization: if i == 0 {1.0} else {0.0}
             }
@@ -55,7 +55,7 @@ mod tests {
             QCACell{
                 pos_x: i as f64 * 20.0,
                 pos_y: 0.0,
-                clock: sim::CellClock::First,
+                clock_phase_shift: 0.0,
                 typ: if i == 0 {CellType::Fixed} else {CellType::Normal},
                 polarization: if i == 0 {1.0} else {0.0}
             }
