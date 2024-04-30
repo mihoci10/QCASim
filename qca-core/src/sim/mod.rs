@@ -43,7 +43,7 @@ pub trait SimulationModelInstanceTrait{
 
 pub mod bistable;
 
-pub fn run_simulation(sim_model: &mut Box<dyn SimulationModelTrait>, cells: Vec<QCACell>) -> Box<dyn SimulationModelInstanceTrait>{
+pub fn run_simulation(sim_model: &Box<dyn SimulationModelTrait>, cells: Vec<QCACell>) -> Box<dyn SimulationModelInstanceTrait>{
     let mut model_inst: Box<dyn SimulationModelInstanceTrait> = sim_model.create_instance();
 
     model_inst.initiate(Box::new(cells.clone()));

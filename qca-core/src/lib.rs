@@ -19,7 +19,7 @@ mod tests {
 
     #[test]
     fn bistable_01() {
-        let mut model: Box<dyn SimulationModelTrait> = Box::new(BistableModel::new());
+        let model: Box<dyn SimulationModelTrait> = Box::new(BistableModel::new());
         let cells = (0..10).map(|i| {
             QCACell{
                 pos_x: i as f64 * 20.0,
@@ -30,12 +30,12 @@ mod tests {
             }
         }).collect();
         
-        run_simulation(&mut model, cells);
+        run_simulation(&model, cells);
     }
 
     #[test]
     fn bistable_02() {
-        let mut model: Box<dyn SimulationModelTrait> = Box::new(BistableModel::new());
+        let model: Box<dyn SimulationModelTrait> = Box::new(BistableModel::new());
         let cells = (0..2).map(|i| {
             QCACell{
                 pos_x: i as f64 * 20.0,
@@ -46,7 +46,7 @@ mod tests {
             }
         }).collect();
         
-        run_simulation(&mut model, cells);
+        run_simulation(&model, cells);
     }
 
     #[test]
