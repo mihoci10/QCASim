@@ -22,7 +22,7 @@ pub struct QCACell{
 
 pub mod settings;
 
-pub trait SimulationModelTrait{
+pub trait SimulationModelTrait: Sync + Send{
     fn get_name(&self) -> String;
     fn get_unique_id(&self) -> String;
 
