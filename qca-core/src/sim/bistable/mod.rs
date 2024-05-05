@@ -2,23 +2,35 @@ use std::collections::HashMap;
 
 use crate::sim::settings::{InputDescriptor, OptionsEntry};
 
-use super::{settings::{OptionValue, OptionsValueList}, CellType, QCACell, SimulationModelTrait};
+use super::{settings::{OptionValue, OptionsValueList}, CellType, QCACell, SimulationModelInstanceTrait, SimulationModelTrait};
 
 pub struct BistableModel {
+    options_value_list: OptionsValueList
+}
+
+pub struct BistableModelInstance {
     clock_states: [f64; 4],
     cells: Box<Vec<super::QCACell>>,
     active_layer: i8,
     polarizations: [Vec<f64>; 2],
     neighbor_indecies: Vec<Vec<usize>>,
-    neighbour_kink_energy: Vec<Vec<f64>>,
-
-    options_value_list: OptionsValueList,
+    neighbour_kink_energy: Vec<Vec<f64>>
 }
 
 impl BistableModel{
-
     pub fn new() -> Self{
         BistableModel{
+            options_value_list: HashMap::from([
+                ("cell_size".to_string(), OptionValue::Number { value: 18.0 })
+            ])
+        }
+    }
+}
+
+impl BistableModelInstance{
+
+    pub fn new() -> Self{
+        BistableModelInstance{
             clock_states: [0.0, 0.0, 0.0, 0.0],
             active_layer: 0,
             cells: Box::new(vec![]),
@@ -84,6 +96,41 @@ impl BistableModel{
 
 impl SimulationModelTrait for BistableModel{
 
+    fn get_options_list(&self) -> super::settings::OptionsList {
+        vec![
+            OptionsEntry::Header { label: "Cell structure".to_string() },
+            OptionsEntry::Break,
+            OptionsEntry::Input { 
+                unique_id: "cell_size".to_string(), 
+                name: "Size".to_string(), 
+                description: "Side dimension of the cell in nm".to_string(), 
+                descriptor: InputDescriptor::NumberInput {} }
+        ]
+    }
+    
+    fn get_options_value_list(&self) -> super::settings::OptionsValueList {
+        self.options_value_list.clone()
+    }
+    
+    fn set_options_value_list(&mut self, options_value_list: super::settings::OptionsValueList) {
+        self.options_value_list = options_value_list;
+    }
+    
+    fn get_name(&self) -> String {
+        "Bistable".into()
+    }
+    
+    fn get_unique_id(&self) -> String {
+        "bistable_model".into()
+    }
+    
+    fn create_instance(&self) -> Box<dyn super::SimulationModelInstanceTrait> {
+        Box::new(BistableModelInstance::new())
+    }
+
+}
+
+impl SimulationModelInstanceTrait for BistableModelInstance{
     fn initiate(&mut self, cells: Box<Vec<super::QCACell>>) {
         self.cells = cells;
 
@@ -102,7 +149,7 @@ impl SimulationModelTrait for BistableModel{
                 if i != j {
                     self.neighbor_indecies[i].push(j);
                     self.neighbour_kink_energy[i].push(
-                        BistableModel::determine_kink_energy(&self.cells[i], &self.cells[j])
+                        BistableModelInstance::determine_kink_energy(&self.cells[i], &self.cells[j])
                     );
                 }
             }
