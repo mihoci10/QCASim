@@ -15,6 +15,7 @@ pub enum CellClock{
 pub struct QCACell{
     pub pos_x: f64,
     pub pos_y: f64,
+    pub z_index: i32,
     pub typ: CellType,
     pub clock: CellClock,
     pub polarization: f64,

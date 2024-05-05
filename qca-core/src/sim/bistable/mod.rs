@@ -26,7 +26,12 @@ impl BistableModel{
             neighbor_indecies: vec![],
             neighbour_kink_energy: vec![],
             options_value_list: HashMap::from([
-                ("cell_size".to_string(), OptionValue::Number { value: 18.0 })
+                ("number_of_samples".to_string(), OptionValue::Number { value: 100.0 }),
+                ("convergence_tolerance".to_string(), OptionValue::Number { value: 1e-3 }),
+                ("radius".to_string(), OptionValue::Number { value: 65.0 }),
+                ("permitivity".to_string(), OptionValue::Number { value: 12.9 }),
+                ("max_iter".to_string(), OptionValue::Number { value: 100.0 }),
+                ("layer_separation".to_string(), OptionValue::Number { value: 11.5 }),
             ])
         }
     }
@@ -142,13 +147,42 @@ impl SimulationModelTrait for BistableModel{
     
     fn get_options_list(&self) -> super::settings::OptionsList {
         vec![
-            OptionsEntry::Header { label: "Cell structure".to_string() },
-            OptionsEntry::Break,
             OptionsEntry::Input { 
-                unique_id: "cell_size".to_string(), 
-                name: "Size".to_string(), 
-                description: "Side dimension of the cell in nm".to_string(), 
-                descriptor: InputDescriptor::NumberInput {} }
+                unique_id: "number_of_samples".to_string(), 
+                name: "Number of samples".to_string(), 
+                description: "The number of samples to be used in simulation".to_string(), 
+                descriptor: InputDescriptor::NumberInput {min: Some(1.0), max: None, unit: None, whole_num: true} 
+            },
+            OptionsEntry::Input { 
+                unique_id: "convergence_tolerance".to_string(), 
+                name: "Convergence tolerance".to_string(), 
+                description: "Tolerance for simulation convergence check".to_string(), 
+                descriptor: InputDescriptor::NumberInput {min: Some(0.0), max: Some(1.0), unit: None, whole_num: false} 
+            },
+            OptionsEntry::Input { 
+                unique_id: "radius".to_string(), 
+                name: "Radius of effect".to_string(), 
+                description: "Radius of effect for neighbouring cells".to_string(), 
+                descriptor: InputDescriptor::NumberInput {min: Some(0.0), max: None, unit: Some("nm".into()), whole_num: false} 
+            },
+            OptionsEntry::Input { 
+                unique_id: "permitivity".to_string(), 
+                name: "Relative permitivity".to_string(), 
+                description: "Permitivity of the relative medium".to_string(), 
+                descriptor: InputDescriptor::NumberInput {min: Some(0.0), max: None, unit: None, whole_num: false} 
+            },
+            OptionsEntry::Input { 
+                unique_id: "max_iter".to_string(), 
+                name: "Maximum iterations".to_string(), 
+                description: "Maximum number of iterations per sample".to_string(), 
+                descriptor: InputDescriptor::NumberInput {min: Some(0.0), max: None, unit: None, whole_num: true} 
+            },
+            OptionsEntry::Input { 
+                unique_id: "layer_separation".to_string(), 
+                name: "Layer separation".to_string(), 
+                description: "Separation between layers in nm".to_string(), 
+                descriptor: InputDescriptor::NumberInput {min: Some(0.0), max: None, unit: Some("nm".into()), whole_num: false} 
+            }
         ]
     }
     

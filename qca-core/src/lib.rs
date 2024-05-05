@@ -24,6 +24,7 @@ mod tests {
             QCACell{
                 pos_x: i as f64 * 20.0,
                 pos_y: 0.0,
+                z_index: 0,
                 clock: sim::CellClock::First,
                 typ: if i == 0 {CellType::Fixed} else {CellType::Normal},
                 polarization: if i == 0 {1.0} else {0.0}
@@ -41,6 +42,7 @@ mod tests {
             QCACell{
                 pos_x: i as f64 * 20.0,
                 pos_y: i as f64 * 20.0,
+                z_index: 0,
                 clock: sim::CellClock::First,
                 typ: if i == 0 {CellType::Fixed} else {CellType::Normal},
                 polarization: if i == 0 {1.0} else {0.0}
@@ -57,6 +59,7 @@ mod tests {
             QCACell{
                 pos_x: i as f64 * 20.0,
                 pos_y: 0.0,
+                z_index: 0,
                 clock: sim::CellClock::First,
                 typ: if i == 0 {CellType::Fixed} else {CellType::Normal},
                 polarization: if i == 0 {1.0} else {0.0}
@@ -75,7 +78,7 @@ mod tests {
                 unique_id: "cell_size".to_string(), 
                 name: "Size".to_string(), 
                 description: "Side dimension of the cell in nm".to_string(), 
-                descriptor: InputDescriptor::NumberInput {} }
+                descriptor: InputDescriptor::NumberInput {min: Some(1.0), max: Some(2.0), unit: Some("unit".into()), whole_num: true} }
         ]; 
 
         println!("{}", serde_json::to_string(&settings).unwrap());

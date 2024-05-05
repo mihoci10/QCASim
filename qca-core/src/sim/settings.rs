@@ -24,7 +24,7 @@ pub enum OptionsEntry{
 #[derive(Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum InputDescriptor{
-    NumberInput{},
+    NumberInput{min: Option<f32>, max: Option<f32>, unit: Option<String>, whole_num: bool},
     StringInput{},
     BoolInput{},
 }
