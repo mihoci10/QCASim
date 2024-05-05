@@ -1,8 +1,9 @@
-use std::collections::HashMap;
+use serde::{Deserialize, Serialize};
+use serde_inline_default::serde_inline_default;
 
 use crate::sim::settings::{InputDescriptor, OptionsEntry};
 
-use super::{settings::{OptionValue, OptionsValueList}, CellType, QCACell, SimulationModelTrait};
+use super::{CellType, QCACell, SimulationModelSettingsTrait, SimulationModelTrait};
 
 pub struct BistableModel {
     clock_states: [f64; 4],
@@ -11,7 +12,67 @@ pub struct BistableModel {
     polarizations: [Vec<f64>; 2],
     neighbor_indecies: Vec<Vec<usize>>,
     neighbour_kink_energy: Vec<Vec<f64>>,
-    options_value_list: OptionsValueList
+    settings: BistableModelSettings
+}
+
+
+#[serde_inline_default]
+#[derive(Serialize, Deserialize, Clone)]
+pub struct BistableModelSettings{
+    #[serde_inline_default(1000)]
+    num_samples: usize,
+
+    #[serde_inline_default(100)]
+    max_iter: usize,
+
+    #[serde_inline_default(3.8e-22)]
+    ampl_min: f64,
+
+    #[serde_inline_default(9.8e-22)]
+    ampl_max: f64,
+
+    #[serde_inline_default(2.0)]
+    ampl_fac: f64,
+
+    #[serde_inline_default(1e-3)]
+    convergence_tolerance: f64,
+
+    #[serde_inline_default(65.0)]
+    neighborhood_radius: f64,
+
+    #[serde_inline_default(12.9)]
+    relative_permitivity: f64,
+
+    #[serde_inline_default(11.5)]
+    layer_separation: f64
+}
+
+impl BistableModelSettings{
+    pub fn new() -> Self{
+        serde_json::from_str::<BistableModelSettings>("{}".into()).unwrap()
+    }
+}
+
+impl SimulationModelSettingsTrait for BistableModelSettings{
+    fn get_num_samples(&self) -> usize {
+        self.num_samples
+    }
+
+    fn get_clock_ampl_min(&self) -> f64 {
+        self.ampl_min
+    }
+
+    fn get_clock_ampl_max(&self) -> f64 {
+        self.ampl_max
+    }
+
+    fn get_clock_ampl_fac(&self) -> f64 {
+        self.ampl_fac
+    }
+
+    fn get_max_iter(&self) -> usize {
+        self.max_iter
+    }
 }
 
 impl BistableModel{
@@ -23,14 +84,7 @@ impl BistableModel{
             polarizations: [vec![], vec![]],
             neighbor_indecies: vec![],
             neighbour_kink_energy: vec![],
-            options_value_list: HashMap::from([
-                ("number_of_samples".to_string(), OptionValue::Number { value: 100.0 }),
-                ("convergence_tolerance".to_string(), OptionValue::Number { value: 1e-3 }),
-                ("radius".to_string(), OptionValue::Number { value: 65.0 }),
-                ("permitivity".to_string(), OptionValue::Number { value: 12.9 }),
-                ("max_iter".to_string(), OptionValue::Number { value: 100.0 }),
-                ("layer_separation".to_string(), OptionValue::Number { value: 11.5 }),
-            ])
+            settings: BistableModelSettings::new(),
         }
     }
 
@@ -85,7 +139,7 @@ impl SimulationModelTrait for BistableModel{
     fn get_options_list(&self) -> super::settings::OptionsList {
         vec![
             OptionsEntry::Input { 
-                unique_id: "number_of_samples".to_string(), 
+                unique_id: "num_samples".to_string(), 
                 name: "Number of samples".to_string(), 
                 description: "The number of samples to be used in simulation".to_string(), 
                 descriptor: InputDescriptor::NumberInput {min: Some(1.0), max: None, unit: None, whole_num: true} 
@@ -97,13 +151,13 @@ impl SimulationModelTrait for BistableModel{
                 descriptor: InputDescriptor::NumberInput {min: Some(0.0), max: Some(1.0), unit: None, whole_num: false} 
             },
             OptionsEntry::Input { 
-                unique_id: "radius".to_string(), 
+                unique_id: "neighborhood_radius".to_string(), 
                 name: "Radius of effect".to_string(), 
                 description: "Radius of effect for neighbouring cells".to_string(), 
                 descriptor: InputDescriptor::NumberInput {min: Some(0.0), max: None, unit: Some("nm".into()), whole_num: false} 
             },
             OptionsEntry::Input { 
-                unique_id: "permitivity".to_string(), 
+                unique_id: "relative_permitivity".to_string(), 
                 name: "Relative permitivity".to_string(), 
                 description: "Permitivity of the relative medium".to_string(), 
                 descriptor: InputDescriptor::NumberInput {min: Some(0.0), max: None, unit: None, whole_num: false} 
@@ -123,12 +177,22 @@ impl SimulationModelTrait for BistableModel{
         ]
     }
     
-    fn get_options_value_list(&self) -> super::settings::OptionsValueList {
-        self.options_value_list.clone()
+    fn get_deserialized_settings(&self) -> Result<String, String> {
+        match serde_json::to_string(&self.settings){
+            Ok(res) => Ok(res),
+            Err(err) => Err(err.to_string()),
+        }
     }
     
-    fn set_options_value_list(&mut self, options_value_list: super::settings::OptionsValueList) {
-        self.options_value_list = options_value_list;
+    fn set_serialized_settings(&mut self, settings_str: &String) -> Result<(), String>{
+        match serde_json::from_str::<BistableModelSettings>(settings_str) {
+            Ok(res) => 
+            {
+                self.settings = res; 
+                Ok(())
+            },
+            Err(err) => Err(err.to_string()),
+        }
     }
     
     fn get_name(&self) -> String {
@@ -198,6 +262,10 @@ impl SimulationModelTrait for BistableModel{
     
     fn get_states(&mut self) -> Vec<f64>{
         return self.get_active_layer().clone();
+    }
+    
+    fn get_settings(&self) -> Box<dyn super::SimulationModelSettingsTrait> {
+        Box::new(self.settings.clone()) as Box<dyn SimulationModelSettingsTrait>
     }
 
 }

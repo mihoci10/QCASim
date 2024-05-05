@@ -81,4 +81,26 @@ mod tests {
 
         println!("{}", serde_json::to_string(&settings).unwrap());
     }
+
+    #[test]
+    fn deserialize_bistable_settings() {
+        let model: Box<dyn SimulationModelTrait> = Box::new(BistableModel::new());
+        println!("{}", model.get_deserialized_settings().unwrap());
+    }
+
+    #[test]
+    fn serialize_bistable_settings() {
+        let mut model: Box<dyn SimulationModelTrait> = Box::new(BistableModel::new());
+
+        match model.set_serialized_settings(&"
+            {
+                \"num_samples\": 999
+            }
+        ".into()) {
+            Ok(_) => (),
+            Err(str) => println!("{}", str),
+        };
+
+        println!("{}", model.get_deserialized_settings().unwrap());
+    }
 }
