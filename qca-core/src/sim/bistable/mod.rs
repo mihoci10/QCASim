@@ -2,35 +2,21 @@ use std::collections::HashMap;
 
 use crate::sim::settings::{InputDescriptor, OptionsEntry};
 
-use super::{settings::{OptionValue, OptionsValueList}, CellType, QCACell, SimulationModelInstanceTrait, SimulationModelTrait};
+use super::{settings::{OptionValue, OptionsValueList}, CellType, QCACell, SimulationModelTrait};
 
 pub struct BistableModel {
-    options_value_list: OptionsValueList
-}
-
-pub struct BistableModelInstance {
     clock_states: [f64; 4],
     cells: Box<Vec<super::QCACell>>,
     active_layer: i8,
     polarizations: [Vec<f64>; 2],
     neighbor_indecies: Vec<Vec<usize>>,
-    neighbour_kink_energy: Vec<Vec<f64>>
+    neighbour_kink_energy: Vec<Vec<f64>>,
+    options_value_list: OptionsValueList
 }
 
 impl BistableModel{
     pub fn new() -> Self{
         BistableModel{
-            options_value_list: HashMap::from([
-                ("cell_size".to_string(), OptionValue::Number { value: 18.0 })
-            ])
-        }
-    }
-}
-
-impl BistableModelInstance{
-
-    pub fn new() -> Self{
-        BistableModelInstance{
             clock_states: [0.0, 0.0, 0.0, 0.0],
             active_layer: 0,
             cells: Box::new(vec![]),
@@ -98,102 +84,6 @@ impl SimulationModelTrait for BistableModel{
 
     fn get_options_list(&self) -> super::settings::OptionsList {
         vec![
-            OptionsEntry::Header { label: "Cell structure".to_string() },
-            OptionsEntry::Break,
-            OptionsEntry::Input { 
-                unique_id: "cell_size".to_string(), 
-                name: "Size".to_string(), 
-                description: "Side dimension of the cell in nm".to_string(), 
-                descriptor: InputDescriptor::NumberInput {} }
-        ]
-    }
-    
-    fn get_options_value_list(&self) -> super::settings::OptionsValueList {
-        self.options_value_list.clone()
-    }
-    
-    fn set_options_value_list(&mut self, options_value_list: super::settings::OptionsValueList) {
-        self.options_value_list = options_value_list;
-    }
-    
-    fn get_name(&self) -> String {
-        "Bistable".into()
-    }
-    
-    fn get_unique_id(&self) -> String {
-        "bistable_model".into()
-    }
-    
-    fn create_instance(&self) -> Box<dyn super::SimulationModelInstanceTrait> {
-        Box::new(BistableModelInstance::new())
-    }
-
-}
-
-impl SimulationModelInstanceTrait for BistableModelInstance{
-    fn initiate(&mut self, cells: Box<Vec<super::QCACell>>) {
-        self.cells = cells;
-
-        let tmp_polarizations: Vec<f64> = self.cells.iter().map(|c| {
-            c.polarization
-        }).collect();
-
-        self.active_layer = 0;
-        self.polarizations = [tmp_polarizations.clone(), tmp_polarizations.clone()];
-
-        self.neighbor_indecies = vec![Vec::new(); self.cells.len()];
-        self.neighbour_kink_energy = vec![Vec::new(); self.cells.len()];
-
-        for i in 0..self.cells.len() {
-            for j in 0..self.cells.len() {
-                if i != j {
-                    self.neighbor_indecies[i].push(j);
-                    self.neighbour_kink_energy[i].push(
-                        BistableModelInstance::determine_kink_energy(&self.cells[i], &self.cells[j])
-                    );
-                }
-            }
-        }
-    }
-
-    fn pre_calculate(&mut self, clock_states: [f64; 4]) {
-        self.clock_states = clock_states;
-        self.active_layer = i8::abs(self.active_layer - 1);
-    }
-
-    fn calculate(&mut self, cell_ind: usize) -> bool {
-        let c = &self.cells[cell_ind];
-        match c.typ {
-            CellType::Fixed => true,
-            _ => {
-                let old_polarization = self.get_active_layer()[cell_ind];
-
-                let mut polar_math = 0.0;
-                for i in 0..self.neighbor_indecies[cell_ind].len(){
-                    let neighbour_ind = self.neighbor_indecies[cell_ind][i];
-                    polar_math += self.neighbour_kink_energy[cell_ind][i] * self.get_inactive_layer()[neighbour_ind];
-                }
-
-                polar_math /= 2.0 * 9.800000e-022;
-
-                let new_polarization = 
-                    if polar_math > 1000.0 {1.0}
-                    else if polar_math < -1000.0 {-1.0}
-                    else if f64::abs(polar_math) < 0.001 {polar_math}
-                    else {polar_math / f64::sqrt(1.0 + polar_math * polar_math)};
-
-                self.get_active_layer()[cell_ind] = new_polarization;
-                f64::abs(new_polarization - old_polarization) <= 0.001
-            }
-        }
-    }
-    
-    fn get_states(&mut self) -> Vec<f64>{
-        return self.get_active_layer().clone();
-    }
-    
-    fn get_options_list(&self) -> super::settings::OptionsList {
-        vec![
             OptionsEntry::Input { 
                 unique_id: "number_of_samples".to_string(), 
                 name: "Number of samples".to_string(), 
@@ -239,6 +129,75 @@ impl SimulationModelInstanceTrait for BistableModelInstance{
     
     fn set_options_value_list(&mut self, options_value_list: super::settings::OptionsValueList) {
         self.options_value_list = options_value_list;
+    }
+    
+    fn get_name(&self) -> String {
+        "Bistable".into()
+    }
+    
+    fn get_unique_id(&self) -> String {
+        "bistable_model".into()
+    }
+
+    fn initiate(&mut self, cells: Box<Vec<super::QCACell>>) {
+        self.cells = cells;
+
+        let tmp_polarizations: Vec<f64> = self.cells.iter().map(|c| {
+            c.polarization
+        }).collect();
+
+        self.active_layer = 0;
+        self.polarizations = [tmp_polarizations.clone(), tmp_polarizations.clone()];
+
+        self.neighbor_indecies = vec![Vec::new(); self.cells.len()];
+        self.neighbour_kink_energy = vec![Vec::new(); self.cells.len()];
+
+        for i in 0..self.cells.len() {
+            for j in 0..self.cells.len() {
+                if i != j {
+                    self.neighbor_indecies[i].push(j);
+                    self.neighbour_kink_energy[i].push(
+                        BistableModel::determine_kink_energy(&self.cells[i], &self.cells[j])
+                    );
+                }
+            }
+        }
+    }
+
+    fn pre_calculate(&mut self, clock_states: [f64; 4]) {
+        self.clock_states = clock_states;
+        self.active_layer = i8::abs(self.active_layer - 1);
+    }
+
+    fn calculate(&mut self, cell_ind: usize) -> bool {
+        let c = &self.cells[cell_ind];
+        match c.typ {
+            CellType::Fixed => true,
+            _ => {
+                let old_polarization = self.get_active_layer()[cell_ind];
+
+                let mut polar_math = 0.0;
+                for i in 0..self.neighbor_indecies[cell_ind].len(){
+                    let neighbour_ind = self.neighbor_indecies[cell_ind][i];
+                    polar_math += self.neighbour_kink_energy[cell_ind][i] * self.get_inactive_layer()[neighbour_ind];
+                }
+
+                polar_math /= 2.0 * 9.800000e-022;
+
+                let new_polarization = 
+                    if polar_math > 1000.0 {1.0}
+                    else if polar_math < -1000.0 {-1.0}
+                    else if f64::abs(polar_math) < 0.001 {polar_math}
+                    else {polar_math / f64::sqrt(1.0 + polar_math * polar_math)};
+
+                self.get_active_layer()[cell_ind] = new_polarization;
+                f64::abs(new_polarization - old_polarization) <= 0.001
+            }
+        }
+    }
+    
+    fn get_states(&mut self) -> Vec<f64>{
+        return self.get_active_layer().clone();
     }
 
 }
