@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use serde::{Deserialize, Serialize};
 use serde_inline_default::serde_inline_default;
 
@@ -7,7 +9,9 @@ use super::{CellType, QCACell, SimulationModelSettingsTrait, SimulationModelTrai
 
 pub struct BistableModel {
     clock_states: [f64; 4],
+    input_states: Vec<f64>,
     cells: Box<Vec<super::QCACell>>,
+    cell_input_map: HashMap<usize, usize>,
     active_layer: i8,
     polarizations: [Vec<f64>; 2],
     neighbor_indecies: Vec<Vec<usize>>,
@@ -79,8 +83,10 @@ impl BistableModel{
     pub fn new() -> Self{
         BistableModel{
             clock_states: [0.0, 0.0, 0.0, 0.0],
+            input_states: vec![],
             active_layer: 0,
             cells: Box::new(vec![]),
+            cell_input_map: HashMap::new(),
             polarizations: [vec![], vec![]],
             neighbor_indecies: vec![],
             neighbour_kink_energy: vec![],
@@ -206,6 +212,16 @@ impl SimulationModelTrait for BistableModel{
     fn initiate(&mut self, cells: Box<Vec<super::QCACell>>) {
         self.cells = cells;
 
+        self.cell_input_map =  self.cells.iter()
+            .enumerate()
+            .filter(|(_, c)| {
+                c.typ == CellType::Input
+            })
+            .enumerate()
+            .map(|(j, (i, _))| {
+                (i, j)
+            }).collect();
+
         let tmp_polarizations: Vec<f64> = self.cells.iter().map(|c| {
             c.polarization
         }).collect();
@@ -228,15 +244,21 @@ impl SimulationModelTrait for BistableModel{
         }
     }
 
-    fn pre_calculate(&mut self, clock_states: [f64; 4]) {
+    fn pre_calculate(&mut self, clock_states: [f64; 4], input_states: Vec<f64>) {
         self.clock_states = clock_states;
+        self.input_states = input_states;
         self.active_layer = i8::abs(self.active_layer - 1);
     }
 
     fn calculate(&mut self, cell_ind: usize) -> bool {
-        let c = &self.cells[cell_ind];
+        let c = self.cells[cell_ind];
         match c.typ {
             CellType::Fixed => true,
+            CellType::Input => {
+                let input_index = *self.cell_input_map.get(&cell_ind).unwrap();
+                self.get_active_layer()[cell_ind] = *self.input_states.get(input_index).unwrap();
+                true
+            }
             _ => {
                 let old_polarization = self.get_active_layer()[cell_ind];
 
@@ -246,7 +268,9 @@ impl SimulationModelTrait for BistableModel{
                     polar_math += self.neighbour_kink_energy[cell_ind][i] * self.get_inactive_layer()[neighbour_ind];
                 }
 
-                polar_math /= 2.0 * 9.800000e-022;
+                let clock_index = (c.clock_phase_shift as i32 % 90) as usize;
+
+                polar_math /= 2.0 * self.clock_states[clock_index];
 
                 let new_polarization = 
                     if polar_math > 1000.0 {1.0}
@@ -255,7 +279,7 @@ impl SimulationModelTrait for BistableModel{
                     else {polar_math / f64::sqrt(1.0 + polar_math * polar_math)};
 
                 self.get_active_layer()[cell_ind] = new_polarization;
-                f64::abs(new_polarization - old_polarization) <= 0.001
+                f64::abs(new_polarization - old_polarization) <= self.settings.convergence_tolerance
             }
         }
     }

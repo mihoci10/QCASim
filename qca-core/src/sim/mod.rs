@@ -42,7 +42,7 @@ pub trait SimulationModelTrait: Sync + Send{
     fn set_serialized_settings(&mut self, settings_str: &String) -> Result<(), String>;
 
     fn initiate(&mut self, cells: Box<Vec<QCACell>>);
-    fn pre_calculate(&mut self, clock_states: [f64; 4]);
+    fn pre_calculate(&mut self, clock_states: [f64; 4], input_states: Vec<f64>);
     fn calculate(&mut self, cell_ind: usize) -> bool;
 
     fn get_states(&mut self) -> Vec<f64>;
@@ -50,15 +50,20 @@ pub trait SimulationModelTrait: Sync + Send{
 
 pub mod bistable;
 
-fn generate_clock_signal(num_samples: usize, num_inputs: usize, phase_shift_deg: f64, ampl_min: f64, ampl_max: f64, ampl_fac: f64) -> Vec<f64>{
+fn get_clock_values(num_samples: usize, num_inputs: usize, ampl_min: f64, ampl_max: f64, ampl_fac: f64) -> [f64; 4]{
     let prefactor = (ampl_max - ampl_min) * ampl_fac;
     let repetitions = f64::powi(2.0, num_inputs as i32);
     let clock_shift = ampl_max - ampl_min;
-    let phase_shift_rad = phase_shift_deg.to_radians();
 
-    (0..num_samples).map(|i| {
-        (prefactor * (repetitions * (i as f64) * ((2.0 * consts::PI) / num_samples as f64) - phase_shift_rad).cos() + clock_shift)
+    (0..4).map(|i| {
+        (prefactor * (repetitions * (i as f64) * ((2.0 * consts::PI) / num_samples as f64) - (consts::PI * (i as f64) / 2.0)).cos() + clock_shift)
         .clamp(ampl_min, ampl_max)
+    }).collect::<Vec<f64>>().try_into().unwrap()
+}
+
+fn get_input_values(num_samples: usize, cur_sample: usize, num_inputs: usize) -> Vec<f64>{
+    (0..num_inputs).map(|i| {
+        (-1.0 * (f64::powi(2.0, i as i32) * cur_sample as f64 * ((2.0 * consts::PI) / num_samples as f64)).sin()).signum()
     }).collect()
 }
 
@@ -66,51 +71,22 @@ pub fn run_simulation(sim_model: &mut Box<dyn SimulationModelTrait>, cells: Vec<
     let num_inputs = cells.iter().filter(|c| c.typ == CellType::Input).count();
     let model_settings = sim_model.get_settings();
 
-    let clock_arrays: [Vec<f64>; 4] = [
-        generate_clock_signal(
-            model_settings.get_num_samples(), 
-            num_inputs, 
-            0.0, 
-            model_settings.get_clock_ampl_min(), 
-            model_settings.get_clock_ampl_max(), 
-            model_settings.get_clock_ampl_fac()
-        ),
-        generate_clock_signal(
-            model_settings.get_num_samples(), 
-            num_inputs, 
-            90.0, 
-            model_settings.get_clock_ampl_min(), 
-            model_settings.get_clock_ampl_max(), 
-            model_settings.get_clock_ampl_fac()
-        ),
-        generate_clock_signal(
-            model_settings.get_num_samples(), 
-            num_inputs, 
-            180.0, 
-            model_settings.get_clock_ampl_min(), 
-            model_settings.get_clock_ampl_max(), 
-            model_settings.get_clock_ampl_fac()
-        ),
-        generate_clock_signal(
-            model_settings.get_num_samples(), 
-            num_inputs, 
-            270.0, 
-            model_settings.get_clock_ampl_min(), 
-            model_settings.get_clock_ampl_max(), 
-            model_settings.get_clock_ampl_fac()
-        ),
-    ];
-
     sim_model.initiate(Box::new(cells.clone()));
 
     for i in 0..model_settings.get_num_samples() {
         sim_model.pre_calculate(
-            [
-                *clock_arrays[0].get(i as usize).unwrap(), 
-                *clock_arrays[1].get(i as usize).unwrap(), 
-                *clock_arrays[2].get(i as usize).unwrap(), 
-                *clock_arrays[3].get(i as usize).unwrap()
-            ]
+            get_clock_values(
+                model_settings.get_num_samples(), 
+                num_inputs, 
+                model_settings.get_clock_ampl_min(),
+                model_settings.get_clock_ampl_max(), 
+                model_settings.get_clock_ampl_fac()
+            ),
+            get_input_values(
+                model_settings.get_num_samples(), 
+                i,
+                num_inputs
+            )
         );
 
         let mut stable = false;
