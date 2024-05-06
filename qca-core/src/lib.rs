@@ -75,13 +75,13 @@ mod tests {
     #[test]
     fn bistable_file_02() {
         let mut model: Box<dyn SimulationModelTrait> = Box::new(BistableModel::new());
-        let cells = (0..3).map(|i| {
+        let cells = (0..10).map(|i| {
             QCACell{
                 pos_x: i as f64 * 20.0,
                 pos_y: 0.0,
                 z_index: 0,
                 clock_phase_shift: 0.0,
-                typ: if i == 0 {CellType::Input} else if i == 2 {CellType::Output} else {CellType::Normal},
+                typ: if i == 0 {CellType::Input} else if i == 9 {CellType::Output} else {CellType::Normal},
                 polarization: 0.0
             }
         }).collect();
