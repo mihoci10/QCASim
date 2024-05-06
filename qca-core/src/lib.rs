@@ -7,7 +7,7 @@ pub fn add(left: usize, right: usize) -> usize {
 
 #[cfg(test)]
 mod tests {
-    use std::{fs::File, io::Write};
+    use std::{cell::Cell, fs::File, io::Write};
 
     use self::sim::{bistable::BistableModel, run_simulation, settings::*, CellType, QCACell, SimulationModelTrait};
 
@@ -39,14 +39,14 @@ mod tests {
     #[test]
     fn bistable_02() {
         let mut model: Box<dyn SimulationModelTrait> = Box::new(BistableModel::new());
-        let cells = (0..2).map(|i| {
+        let cells = (0..3).map(|i| {
             QCACell{
                 pos_x: i as f64 * 20.0,
-                pos_y: i as f64 * 20.0,
+                pos_y: 0.0,
                 z_index: 0,
                 clock_phase_shift: 0.0,
-                typ: if i == 0 {CellType::Input} else {CellType::Normal},
-                polarization: if i == 0 {0.0} else {0.0}
+                typ: if i == 0 {CellType::Input} else if i == 2 {CellType::Output} else {CellType::Normal},
+                polarization: 0.0
             }
         }).collect();
         
@@ -75,14 +75,14 @@ mod tests {
     #[test]
     fn bistable_file_02() {
         let mut model: Box<dyn SimulationModelTrait> = Box::new(BistableModel::new());
-        let cells = (0..2).map(|i| {
+        let cells = (0..3).map(|i| {
             QCACell{
                 pos_x: i as f64 * 20.0,
-                pos_y: i as f64 * 20.0,
+                pos_y: 0.0,
                 z_index: 0,
                 clock_phase_shift: 0.0,
-                typ: if i == 0 {CellType::Input} else {CellType::Output},
-                polarization: if i == 0 {0.0} else {0.0}
+                typ: if i == 0 {CellType::Input} else if i == 2 {CellType::Output} else {CellType::Normal},
+                polarization: 0.0
             }
         }).collect();
         

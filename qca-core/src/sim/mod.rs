@@ -89,19 +89,21 @@ pub fn run_simulation(sim_model: &mut Box<dyn SimulationModelTrait>, cells: Vec<
             model_settings.get_clock_ampl_fac()
         );
 
-        sim_model.pre_calculate(
-            &clock_states,
-            &get_input_values(
-                model_settings.get_num_samples(), 
-                i,
-                num_inputs
-            )
+        let input_states = get_input_values(
+            model_settings.get_num_samples(), 
+            i,
+            num_inputs
         );
 
         let mut stable = false;
         let mut j = 0;
         while !stable && j < model_settings.get_max_iter()  {
             stable = true;
+
+            sim_model.pre_calculate(
+                &clock_states,
+                &input_states
+            );
 
             for i in 0..cells.len() { 
                 stable &= sim_model.calculate(i)

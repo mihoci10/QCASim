@@ -260,7 +260,7 @@ impl SimulationModelTrait for BistableModel{
                 true
             }
             _ => {
-                let old_polarization = self.get_active_layer()[cell_ind];
+                let old_polarization = self.get_inactive_layer()[cell_ind];
 
                 let mut polar_math = 0.0;
                 for i in 0..self.neighbor_indecies[cell_ind].len(){
