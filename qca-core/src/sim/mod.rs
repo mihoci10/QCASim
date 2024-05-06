@@ -1,4 +1,4 @@
-use std::{f64::consts, io::Write};
+use std::{cell, f64::consts, io::Write};
 
 use serde::{Serialize, Deserialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
@@ -70,12 +70,13 @@ fn get_input_values(num_samples: usize, cur_sample: usize, num_inputs: usize) ->
 pub fn run_simulation(sim_model: &mut Box<dyn SimulationModelTrait>, cells: Vec<QCACell>, mut stream: Option<Box<dyn Write>> )
 {
     let num_inputs = cells.iter().filter(|c| c.typ == CellType::Input).count();
+    let num_outputs = cells.iter().filter(|c| c.typ == CellType::Output).count();
     let model_settings = sim_model.get_settings();
 
     sim_model.initiate(Box::new(cells.clone()));
     
     if let Some(s) = &mut stream {
-        let _ = s.write(&cells.len().to_le_bytes());
+        let _ = s.write(&(num_inputs + num_outputs).to_le_bytes());
     }
 
     for i in 0..model_settings.get_num_samples() {
@@ -110,8 +111,16 @@ pub fn run_simulation(sim_model: &mut Box<dyn SimulationModelTrait>, cells: Vec<
         }
 
         if let Some(s) = &mut stream {
-            for f in clock_states.iter().chain(sim_model.get_states().iter()){
+            for f in clock_states.iter(){
                 let _ = s.write(&f.to_le_bytes());
+            }
+
+            for t in [CellType::Input, CellType::Output]{
+                for (_, f) in sim_model.get_states().iter().enumerate()
+                                    .filter(|(i, _)| cells.get(*i).unwrap().typ == t)
+                {
+                    let _ = s.write(&f.to_le_bytes());
+                }
             }
         }
     };

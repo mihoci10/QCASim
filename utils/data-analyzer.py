@@ -39,6 +39,7 @@ ax1.plot(x, clocks[0], label='Clock 0', color='red')
 ax2.plot(x, outputs[0], label='Cell 1')
 ax2.plot(x, outputs[1], label='Cell 2')
 
+fig.legend()
 fig.set_size_inches(12,4)
 fig.tight_layout()
-fig.savefig('Analysis.pdf')
+plt.show()

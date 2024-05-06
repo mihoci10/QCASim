@@ -62,7 +62,7 @@ mod tests {
                 pos_y: i as f64 * 20.0,
                 z_index: 0,
                 clock_phase_shift: 0.0,
-                typ: if i == 0 {CellType::Input} else {CellType::Normal},
+                typ: if i == 0 {CellType::Input} else {CellType::Output},
                 polarization: if i == 0 {0.0} else {0.0}
             }
         }).collect();
@@ -81,7 +81,7 @@ mod tests {
                 pos_y: i as f64 * 20.0,
                 z_index: 0,
                 clock_phase_shift: 0.0,
-                typ: if i == 0 {CellType::Input} else {CellType::Normal},
+                typ: if i == 0 {CellType::Input} else {CellType::Output},
                 polarization: if i == 0 {0.0} else {0.0}
             }
         }).collect();
