@@ -20,7 +20,7 @@ fn main() {
     let cells = cells_deserialize(&contents);
     
     println!("Running simulation...");
-    run_simulation(&mut model, cells);
+    run_simulation(&mut model, cells, None);
 
     println!("Simulation results:");
 }

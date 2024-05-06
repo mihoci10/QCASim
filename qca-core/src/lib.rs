@@ -7,6 +7,8 @@ pub fn add(left: usize, right: usize) -> usize {
 
 #[cfg(test)]
 mod tests {
+    use std::{fs::File, io::Write};
+
     use self::sim::{bistable::BistableModel, run_simulation, settings::*, CellType, QCACell, SimulationModelTrait};
 
     use super::*;
@@ -31,7 +33,7 @@ mod tests {
             }
         }).collect();
         
-        run_simulation(&mut model, cells);
+        run_simulation(&mut model, cells, None);
     }
 
     #[test]
@@ -48,7 +50,45 @@ mod tests {
             }
         }).collect();
         
-        run_simulation(&mut model, cells);
+        run_simulation(&mut model, cells, None);
+    }
+
+    #[test]
+    fn bistable_file_01() {
+        let mut model: Box<dyn SimulationModelTrait> = Box::new(BistableModel::new());
+        let cells = (0..2).map(|i| {
+            QCACell{
+                pos_x: 0.0,
+                pos_y: i as f64 * 20.0,
+                z_index: 0,
+                clock_phase_shift: 0.0,
+                typ: if i == 0 {CellType::Fixed} else {CellType::Normal},
+                polarization: if i == 0 {1.0} else {0.0}
+            }
+        }).collect();
+        
+        let file = Box::new(File::create("bistable_file_01.bin").unwrap()) as Box<dyn Write>;
+
+        run_simulation(&mut model, cells, Some(file));
+    }
+
+    #[test]
+    fn bistable_file_02() {
+        let mut model: Box<dyn SimulationModelTrait> = Box::new(BistableModel::new());
+        let cells = (0..2).map(|i| {
+            QCACell{
+                pos_x: i as f64 * 20.0,
+                pos_y: i as f64 * 20.0,
+                z_index: 0,
+                clock_phase_shift: 0.0,
+                typ: if i == 0 {CellType::Fixed} else {CellType::Normal},
+                polarization: if i == 0 {1.0} else {0.0}
+            }
+        }).collect();
+        
+        let file = Box::new(File::create("bistable_file_02.bin").unwrap()) as Box<dyn Write>;
+        
+        run_simulation(&mut model, cells, Some(file));
     }
 
     #[test]

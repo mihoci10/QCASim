@@ -1,4 +1,4 @@
-use std::f64::consts;
+use std::{f64::consts, io::Write};
 
 use serde::{Serialize, Deserialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
@@ -42,7 +42,7 @@ pub trait SimulationModelTrait: Sync + Send{
     fn set_serialized_settings(&mut self, settings_str: &String) -> Result<(), String>;
 
     fn initiate(&mut self, cells: Box<Vec<QCACell>>);
-    fn pre_calculate(&mut self, clock_states: [f64; 4], input_states: Vec<f64>);
+    fn pre_calculate(&mut self, clock_states: &[f64; 4], input_states: &Vec<f64>);
     fn calculate(&mut self, cell_ind: usize) -> bool;
 
     fn get_states(&mut self) -> Vec<f64>;
@@ -50,13 +50,13 @@ pub trait SimulationModelTrait: Sync + Send{
 
 pub mod bistable;
 
-fn get_clock_values(num_samples: usize, num_inputs: usize, ampl_min: f64, ampl_max: f64, ampl_fac: f64) -> [f64; 4]{
+fn get_clock_values(num_samples: usize, cur_sample: usize, num_inputs: usize, ampl_min: f64, ampl_max: f64, ampl_fac: f64) -> [f64; 4]{
     let prefactor = (ampl_max - ampl_min) * ampl_fac;
     let repetitions = f64::powi(2.0, num_inputs as i32);
     let clock_shift = ampl_max - ampl_min;
 
     (0..4).map(|i| {
-        (prefactor * (repetitions * (i as f64) * ((2.0 * consts::PI) / num_samples as f64) - (consts::PI * (i as f64) / 2.0)).cos() + clock_shift)
+        (prefactor * (repetitions * (cur_sample as f64) * ((2.0 * consts::PI) / num_samples as f64) - (consts::PI * (i as f64) / 2.0)).cos() + clock_shift)
         .clamp(ampl_min, ampl_max)
     }).collect::<Vec<f64>>().try_into().unwrap()
 }
@@ -67,22 +67,30 @@ fn get_input_values(num_samples: usize, cur_sample: usize, num_inputs: usize) ->
     }).collect()
 }
 
-pub fn run_simulation(sim_model: &mut Box<dyn SimulationModelTrait>, cells: Vec<QCACell>){
+pub fn run_simulation(sim_model: &mut Box<dyn SimulationModelTrait>, cells: Vec<QCACell>, mut stream: Option<Box<dyn Write>> )
+{
     let num_inputs = cells.iter().filter(|c| c.typ == CellType::Input).count();
     let model_settings = sim_model.get_settings();
 
     sim_model.initiate(Box::new(cells.clone()));
+    
+    if let Some(s) = &mut stream {
+        let _ = s.write(&cells.len().to_le_bytes());
+    }
 
     for i in 0..model_settings.get_num_samples() {
+        let clock_states = get_clock_values(
+            model_settings.get_num_samples(), 
+            i,
+            num_inputs, 
+            model_settings.get_clock_ampl_min(),
+            model_settings.get_clock_ampl_max(), 
+            model_settings.get_clock_ampl_fac()
+        );
+
         sim_model.pre_calculate(
-            get_clock_values(
-                model_settings.get_num_samples(), 
-                num_inputs, 
-                model_settings.get_clock_ampl_min(),
-                model_settings.get_clock_ampl_max(), 
-                model_settings.get_clock_ampl_fac()
-            ),
-            get_input_values(
+            &clock_states,
+            &get_input_values(
                 model_settings.get_num_samples(), 
                 i,
                 num_inputs
@@ -100,5 +108,11 @@ pub fn run_simulation(sim_model: &mut Box<dyn SimulationModelTrait>, cells: Vec<
 
             j += 1;
         }
+
+        if let Some(s) = &mut stream {
+            for f in clock_states.iter().chain(sim_model.get_states().iter()){
+                let _ = s.write(&f.to_le_bytes());
+            }
+        }
     };
-}
+}   

@@ -244,9 +244,9 @@ impl SimulationModelTrait for BistableModel{
         }
     }
 
-    fn pre_calculate(&mut self, clock_states: [f64; 4], input_states: Vec<f64>) {
-        self.clock_states = clock_states;
-        self.input_states = input_states;
+    fn pre_calculate(&mut self, clock_states: &[f64; 4], input_states: &Vec<f64>) {
+        self.clock_states = clock_states.clone();
+        self.input_states = input_states.clone();
         self.active_layer = i8::abs(self.active_layer - 1);
     }
 
