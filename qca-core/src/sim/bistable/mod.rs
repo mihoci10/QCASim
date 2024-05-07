@@ -29,7 +29,7 @@ pub struct BistableModelSettings{
     #[serde_inline_default(100)]
     max_iter: usize,
 
-    #[serde_inline_default(3.8e-22)]
+    #[serde_inline_default(3.8e-23)]
     ampl_min: f64,
 
     #[serde_inline_default(9.8e-22)]
@@ -94,9 +94,9 @@ impl BistableModel{
         }
     }
 
-    fn determine_kink_energy(cell_a: &QCACell, cell_b: &QCACell) -> f64{
-        const QCHARGE_SQUAR_OVER_FOUR: f64 = 6.417423538e-39;
-        const FOUR_PI_EPSILON: f64 = 1.112650056e-10;
+    fn determine_kink_energy(cell_a: &QCACell, cell_b: &QCACell, permitivity: f64) -> f64{
+        const QCHARGE_SQUAR_OVER_FOUR: f64 = 6.41742353846709430467559076549e-39;
+        const FOUR_PI_EPSILON: f64 = 1.11265005597565794635320037482e-10;
     
         const SAME_POLARIZATION: [[f64; 4]; 4] =
         [ [  QCHARGE_SQUAR_OVER_FOUR, -QCHARGE_SQUAR_OVER_FOUR,  QCHARGE_SQUAR_OVER_FOUR, -QCHARGE_SQUAR_OVER_FOUR ],
@@ -110,8 +110,8 @@ impl BistableModel{
          [ -QCHARGE_SQUAR_OVER_FOUR,  QCHARGE_SQUAR_OVER_FOUR, -QCHARGE_SQUAR_OVER_FOUR,  QCHARGE_SQUAR_OVER_FOUR ],
          [  QCHARGE_SQUAR_OVER_FOUR, -QCHARGE_SQUAR_OVER_FOUR,  QCHARGE_SQUAR_OVER_FOUR, -QCHARGE_SQUAR_OVER_FOUR ] ];
     
-        const DOT_OFFSET_X: [f64; 4] = [-9.0, 9.0, 9.0, -9.0];
-        const DOT_OFFSET_Y: [f64; 4] = [-9.0, -9.0, 9.0, 9.0];
+        const DOT_OFFSET_X: [f64; 4] = [-4.5, 4.5, 4.5, -4.5];
+        const DOT_OFFSET_Y: [f64; 4] = [-4.5, -4.5, 4.5, 4.5];
         
         let mut energy_same: f64 = 0.0;
         let mut energy_diff: f64 = 0.0;
@@ -128,7 +128,7 @@ impl BistableModel{
             }
         }
     
-        return (1.0 / (FOUR_PI_EPSILON * 12.900000)) * (energy_diff - energy_same);
+        return (1.0 / (FOUR_PI_EPSILON * permitivity)) * (energy_diff - energy_same);
     }
 
     fn get_active_layer(&mut self) -> &mut Vec<f64>{
@@ -236,8 +236,9 @@ impl SimulationModelTrait for BistableModel{
             for j in 0..self.cells.len() {
                 if i != j {
                     self.neighbor_indecies[i].push(j);
+                    let permitivity = self.settings.relative_permitivity;
                     self.neighbour_kink_energy[i].push(
-                        BistableModel::determine_kink_energy(&self.cells[i], &self.cells[j])
+                        BistableModel::determine_kink_energy(&self.cells[i], &self.cells[j], permitivity)
                     );
                 }
             }
@@ -270,7 +271,7 @@ impl SimulationModelTrait for BistableModel{
 
                 let clock_index = (c.clock_phase_shift as i32 % 90) as usize;
 
-                polar_math /= 2.0 * self.clock_states[clock_index];
+                polar_math /= 2.0 * self.clock_states[clock_index]; 
 
                 let new_polarization = 
                     if polar_math > 1000.0 {1.0}
