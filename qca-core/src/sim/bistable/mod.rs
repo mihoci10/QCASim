@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{cell, collections::HashMap};
 
 use serde::{Deserialize, Serialize};
 use serde_inline_default::serde_inline_default;
@@ -31,7 +31,7 @@ pub struct BistableModelSettings{
 
     #[serde_inline_default(3.8e-23)]
     ampl_min: f64,
-
+    
     #[serde_inline_default(9.8e-22)]
     ampl_max: f64,
 
@@ -92,6 +92,14 @@ impl BistableModel{
             neighbour_kink_energy: vec![],
             settings: BistableModelSettings::new(),
         }
+    }
+
+    fn cell_distance(cell_a: &QCACell, cell_b: &QCACell, layer_separation: f64) -> f64{
+        (
+            (cell_a.pos_x - cell_b.pos_x).powf(2.0) + 
+            (cell_a.pos_y - cell_b.pos_y).powf(2.0) + 
+            (layer_separation * (cell_a.z_index - cell_b.z_index) as f64).powf(2.0)
+        ).sqrt()
     }
 
     fn determine_kink_energy(cell_a: &QCACell, cell_b: &QCACell, permitivity: f64) -> f64{
@@ -234,7 +242,12 @@ impl SimulationModelTrait for BistableModel{
 
         for i in 0..self.cells.len() {
             for j in 0..self.cells.len() {
-                if i != j {
+                if (i != j) && 
+                    BistableModel::cell_distance(
+                        &self.cells[i], 
+                        &self.cells[j], 
+                        self.settings.layer_separation)
+                    <= self.settings.neighborhood_radius {
                     self.neighbor_indecies[i].push(j);
                     let permitivity = self.settings.relative_permitivity;
                     self.neighbour_kink_energy[i].push(
