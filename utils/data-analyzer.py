@@ -3,7 +3,12 @@ import numpy as np
 import struct
 import matplotlib.pyplot as plt
 
-filename = "D:\\Projects\\QCASim\\qca-core\\bistable_file_02.bin" #sys.argv[1]
+#filename = "D:\\Projects\\QCASim\\qca-core\\bistable_file_02.bin" #sys.argv[1]
+#filename = 'majority.bin'
+if len(sys.argv) < 2:
+    print('Error, missing argument')
+    exit(-1)
+filename = sys.argv[1]
 
 output_count = 0
 clocks = [[], [], [], []]
@@ -31,15 +36,16 @@ for i in range(len(clocks)):
 for i in range(len(outputs)):
     outputs[i] = np.array(outputs[i])
 
-fig, ax1 = plt.subplots()
-ax2 = ax1.twinx()
+fig, axs = plt.subplots(len(clocks) + len(outputs))
 
-ax1.plot(x, clocks[0], label='Clock 0', color='red')
+for i in range(len(clocks)):
+    axs[i].plot(x, clocks[i])
+    axs[i].set_title(f'Clock {i+1}')
 
-ax2.plot(x, outputs[0], label='Cell 1')
-ax2.plot(x, outputs[1], label='Cell 2')
+for i in range(len(outputs)):
+    axs[len(clocks) + i].plot(x, outputs[i])
+    axs[len(clocks) + i].set_title(f'Cell {i+1}')
 
-fig.legend()
-fig.set_size_inches(12,4)
+fig.set_size_inches(10,15)
 fig.tight_layout()
-plt.show()
+fig.savefig(f'{filename.split(".")[0]}.pdf')
