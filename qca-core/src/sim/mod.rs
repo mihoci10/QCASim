@@ -32,8 +32,8 @@ pub trait SimulationModelSettingsTrait{
 }
 
 pub trait SimulationModelTrait: Sync + Send{
-    fn get_name() -> String where Self: Sized;
-    fn get_unique_id() -> String where Self: Sized;
+    fn get_name(&self) -> String;
+    fn get_unique_id(&self) -> String;
 
     fn get_settings(&self) -> Box<dyn SimulationModelSettingsTrait>;
 

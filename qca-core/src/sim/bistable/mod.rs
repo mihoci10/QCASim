@@ -209,11 +209,11 @@ impl SimulationModelTrait for BistableModel{
         }
     }
     
-    fn get_name() -> String {
+    fn get_name(&self) -> String {
         "Bistable".into()
     }
     
-    fn get_unique_id() -> String {
+    fn get_unique_id(&self) -> String {
         "bistable_model".into()
     }
 
