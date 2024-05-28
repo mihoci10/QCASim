@@ -58,7 +58,7 @@ mod tests {
         let mut model: Box<dyn SimulationModelTrait> = Box::new(BistableModel::new());
         let cells = (0..2).map(|i| {
             QCACell{
-                pos_x: 0.0,
+                pos_x: i as f64 * 20.0,
                 pos_y: i as f64 * 20.0,
                 z_index: 0,
                 clock_phase_shift: 0.0,
