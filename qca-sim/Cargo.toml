@@ -7,3 +7,4 @@ edition = "2021"
 
 [dependencies]
 qca-core = {path = "../qca-core"}
+serde_json = "1.0.117"
