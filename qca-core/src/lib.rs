@@ -1,5 +1,10 @@
+use semver::{BuildMetadata, Prerelease, Version};
+
 pub mod sim;
 pub mod datafile;
+
+pub const QCA_CORE_VERSION: Version = 
+    Version{major: 1, minor: 0, patch: 0, pre: Prerelease::EMPTY, build: BuildMetadata::EMPTY};
 
 pub fn add(left: usize, right: usize) -> usize {
     left + right
