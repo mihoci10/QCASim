@@ -49,6 +49,7 @@ pub trait SimulationModelTrait: Sync + Send{
 }
 
 pub mod bistable;
+pub mod full_basis;
 
 fn get_clock_values(num_samples: usize, cur_sample: usize, num_inputs: usize, ampl_min: f64, ampl_max: f64, ampl_fac: f64) -> [f64; 4]{
     let prefactor = (ampl_max - ampl_min) * ampl_fac;

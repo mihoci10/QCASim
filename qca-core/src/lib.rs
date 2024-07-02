@@ -12,7 +12,9 @@ pub fn add(left: usize, right: usize) -> usize {
 
 #[cfg(test)]
 mod tests {
-    use std::{cell::Cell, fs::File, io::Write};
+    use std::{fs::File, io::Write};
+
+    use sim::full_basis::QCACellInternal;
 
     use self::sim::{bistable::BistableModel, run_simulation, settings::*, CellType, QCACell, SimulationModelTrait};
 
@@ -20,8 +22,7 @@ mod tests {
     
     #[test]
     fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
+        let cell = QCACellInternal::<8>::new(0.0, 20.0, -0.03);
     }
 
     #[test]
