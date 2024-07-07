@@ -1,4 +1,4 @@
-use std::{cell, f64::consts, io::Write};
+use std::{f64::consts, io::Write};
 
 use serde::{Serialize, Deserialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
@@ -13,12 +13,19 @@ pub enum CellType{
 
 #[derive(Clone, Copy, Serialize, Deserialize, Debug)]
 pub struct QCACell{
-    pub pos_x: f64,
-    pub pos_y: f64,
-    pub z_index: i32,
+    pub position: [f64; 3],
+    pub rotation: f64,
     pub typ: CellType,
-    pub clock_phase_shift: f64,
-    pub polarization: f64,
+    pub clock_phase_shift: f64, 
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct QCACellArchitecture{
+    pub side_length: f64,
+    pub dot_diameter: f64,
+    pub dot_count: u8,
+    pub dot_positions: Vec<[f64; 3]>,
+    pub dot_tunnels: Vec<(u8, u8)>,
 }
 
 pub mod settings;
