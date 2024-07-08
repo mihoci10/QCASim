@@ -96,10 +96,11 @@ impl BistableModel{
 
     fn cell_distance(cell_a: &QCACell, cell_b: &QCACell, layer_separation: f64) -> f64{
         (
-            (cell_a.pos_x - cell_b.pos_x).powf(2.0) + 
-            (cell_a.pos_y - cell_b.pos_y).powf(2.0) + 
-            (layer_separation * (cell_a.z_index - cell_b.z_index) as f64).powf(2.0)
+            (cell_a.position[0] - cell_b.position[0]).powf(2.0) + 
+            (cell_a.position[1] - cell_b.position[1]).powf(2.0) + 
+            (cell_a.position[2] - cell_b.position[2]).powf(2.0)
         ).sqrt()
+
     }
 
     fn determine_kink_energy(cell_a: &QCACell, cell_b: &QCACell, permitivity: f64) -> f64{
@@ -126,8 +127,8 @@ impl BistableModel{
     
         for i in 0..4 {
             for j in 0..4 {
-                let x: f64 = f64::abs(cell_a.pos_x + DOT_OFFSET_X[i] - (cell_b.pos_x + DOT_OFFSET_X[j]));
-                let y: f64 = f64::abs(cell_a.pos_y + DOT_OFFSET_Y[i] - (cell_b.pos_y + DOT_OFFSET_Y[j]));
+                let x: f64 = f64::abs(cell_a.position[0] + DOT_OFFSET_X[i] - (cell_b.position[0] + DOT_OFFSET_X[j]));
+                let y: f64 = f64::abs(cell_a.position[1] + DOT_OFFSET_Y[i] - (cell_b.position[1] + DOT_OFFSET_Y[j]));
     
                 let dist = 1e-9 * f64::sqrt(x * x + y * y);
     
@@ -231,7 +232,10 @@ impl SimulationModelTrait for BistableModel{
             }).collect();
 
         let tmp_polarizations: Vec<f64> = self.cells.iter().map(|c| {
-            c.polarization
+            (c.dot_probability_distribution[0] -  c.dot_probability_distribution[1] + 
+                c.dot_probability_distribution[2] - c.dot_probability_distribution[3]) / 
+                    c.dot_probability_distribution.iter().sum::<f64>()
+                
         }).collect();
 
         self.active_layer = 0;
@@ -265,7 +269,7 @@ impl SimulationModelTrait for BistableModel{
     }
 
     fn calculate(&mut self, cell_ind: usize) -> bool {
-        let c = self.cells[cell_ind];
+        let c = self.cells[cell_ind].clone();
         match c.typ {
             CellType::Fixed => true,
             CellType::Input => {
