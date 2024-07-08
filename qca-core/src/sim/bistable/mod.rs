@@ -5,7 +5,7 @@ use serde_inline_default::serde_inline_default;
 
 use crate::sim::settings::{InputDescriptor, OptionsEntry};
 
-use super::{CellType, QCACell, SimulationModelSettingsTrait, SimulationModelTrait};
+use super::{CellType, QCACell, QCACellArchitecture, SimulationModelSettingsTrait, SimulationModelTrait};
 
 pub struct BistableModel {
     clock_states: [f64; 4],
@@ -94,7 +94,7 @@ impl BistableModel{
         }
     }
 
-    fn cell_distance(cell_a: &QCACell, cell_b: &QCACell, layer_separation: f64) -> f64{
+    fn cell_distance(cell_a: &QCACell, cell_b: &QCACell) -> f64{
         (
             (cell_a.position[0] - cell_b.position[0]).powf(2.0) + 
             (cell_a.position[1] - cell_b.position[1]).powf(2.0) + 
@@ -218,7 +218,7 @@ impl SimulationModelTrait for BistableModel{
         "bistable_model".into()
     }
 
-    fn initiate(&mut self, cells: Box<Vec<super::QCACell>>) {
+    fn initiate(&mut self, architecture: Box<QCACellArchitecture>, cells: Box<Vec<QCACell>>) {
         self.cells = cells;
 
         self.cell_input_map =  self.cells.iter()
@@ -249,8 +249,7 @@ impl SimulationModelTrait for BistableModel{
                 if (i != j) && 
                     BistableModel::cell_distance(
                         &self.cells[i], 
-                        &self.cells[j], 
-                        self.settings.layer_separation)
+                        &self.cells[j])
                     <= self.settings.neighborhood_radius {
                     self.neighbor_indecies[i].push(j);
                     let permitivity = self.settings.relative_permitivity;
@@ -300,10 +299,6 @@ impl SimulationModelTrait for BistableModel{
                 f64::abs(new_polarization - old_polarization) <= self.settings.convergence_tolerance
             }
         }
-    }
-    
-    fn get_states(&mut self) -> Vec<f64>{
-        return self.get_active_layer().clone();
     }
     
     fn get_settings(&self) -> Box<dyn super::SimulationModelSettingsTrait> {

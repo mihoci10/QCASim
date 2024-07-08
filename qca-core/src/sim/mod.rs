@@ -20,7 +20,7 @@ pub struct QCACell{
     pub dot_probability_distribution: Vec<f64>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct QCACellArchitecture{
     pub side_length: f64,
     pub dot_diameter: f64,
@@ -75,8 +75,6 @@ pub trait SimulationModelTrait: Sync + Send{
     fn initiate(&mut self, architecture: Box<QCACellArchitecture>, cells: Box<Vec<QCACell>>);
     fn pre_calculate(&mut self, clock_states: &[f64; 4], input_states: &Vec<f64>);
     fn calculate(&mut self, cell_ind: usize) -> bool;
-
-    fn get_states(&mut self) -> Vec<f64>;
 }
 
 pub mod bistable;
@@ -99,13 +97,13 @@ fn get_input_values(num_samples: usize, cur_sample: usize, num_inputs: usize) ->
     }).collect()
 }
 
-pub fn run_simulation(sim_model: &mut Box<dyn SimulationModelTrait>, cells: Vec<QCACell>, mut stream: Option<Box<dyn Write>> )
+pub fn run_simulation(sim_model: &mut Box<dyn SimulationModelTrait>, cells: Vec<QCACell>, architecture: QCACellArchitecture, mut stream: Option<Box<dyn Write>> )
 {
     let num_inputs = cells.iter().filter(|c| c.typ == CellType::Input).count();
     let num_outputs = cells.iter().filter(|c| c.typ == CellType::Output).count();
     let model_settings = sim_model.get_settings();
 
-    sim_model.initiate(Box::new(cells.clone()));
+    sim_model.initiate(Box::new(architecture), Box::new(cells.clone()));
     
     if let Some(s) = &mut stream {
         let _ = s.write(&(num_inputs + num_outputs).to_le_bytes());
@@ -149,13 +147,13 @@ pub fn run_simulation(sim_model: &mut Box<dyn SimulationModelTrait>, cells: Vec<
                 let _ = s.write(&f.to_le_bytes());
             }
 
-            for t in [CellType::Input, CellType::Output]{
-                for (_, f) in sim_model.get_states().iter().enumerate()
-                                    .filter(|(i, _)| cells.get(*i).unwrap().typ == t)
-                {
-                    let _ = s.write(&f.to_le_bytes());
-                }
-            }
+            // for t in [CellType::Input, CellType::Output]{
+            //     for (_, f) in sim_model.get_states().iter().enumerate()
+            //                         .filter(|(i, _)| cells.get(*i).unwrap().typ == t)
+            //     {
+            //         let _ = s.write(&f.to_le_bytes());
+            //     }
+            // }
         }
     };
 }   

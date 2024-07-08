@@ -1,7 +1,6 @@
-use core::{arch, panic};
-use std::{cell::{self, Cell}, collections::HashMap, f64::consts::PI, fs, os::windows::io::IntoRawSocket, sync::Arc};
+use std::{cell, f64::consts::PI, fs};
 
-use nalgebra::{distance, DMatrix, DMatrixView, DVector, DVectorView, Point2, Point3, SVector, SVectorView};
+use nalgebra::{distance, DMatrix, DMatrixView, DVector, DVectorView, Point3, Schur};
 use serde::{Deserialize, Serialize};
 use serde_inline_default::serde_inline_default;
 
@@ -9,10 +8,17 @@ use crate::sim::settings::{InputDescriptor, OptionsEntry};
 
 use super::{CellType, QCACell, QCACellArchitecture, SimulationModelSettingsTrait, SimulationModelTrait};
 
-#[derive(Debug)]
+fn calculate_vq(relative_permittivity: f64) -> f64 {
+    const CHARGE: f64 = 1.6021e-19;
+    const VACUUM_PERMITTIVITY: f64 = 8.8542e-12;
+
+    // CHARGE.powf(2.0) / (4.0 * PI * VACUUM_PERMITTIVITY * relative_permittivity)
+    143.8
+}
+
+#[derive(Debug, Clone)]
 pub struct QCACellInternal{
     cell: Box<QCACell>,
-    architecture: Box<QCACellArchitecture>,
 
     //The full hamilton matrix
     hamilton_matrix: DMatrix<f64>,
@@ -24,23 +30,28 @@ pub struct QCACellInternal{
     //Potential energy at each dot
     dot_potential: DVector<f64>,
     dot_charge_probability: DVector<f64>,
+
+    basis_matrix: DMatrix<f64>
 }
 
 impl QCACellInternal{
-    pub fn new(cell: Box<QCACell>, architecture: Box<QCACellArchitecture>) -> Self{
+    pub fn new(cell: Box<QCACell>, architecture: &Box<QCACellArchitecture>, relative_permittivity: f64) -> Self{
         let n: usize = architecture.dot_count as usize;
         let tunneling_matrix = Self::generate_tunneling_matrix(&architecture, 1.0);
         let basis_matrix = Self::generate_basis_matrix(n);
         let dot_potential: DVector<f64> = DVector::zeros(n);
+
+        let vq = calculate_vq(relative_permittivity);
+        let eq = vq / (architecture.dot_diameter / 3.0);
 
         let static_hamilton_matrix = 
             DMatrix::<f64>::from_iterator(n*n, n*n, (0..n*n).map(|i| {
                 (0..n*n).map(|j| {
                     Self::hamilton_term_1(n, 1.0, dot_potential.as_view(), basis_matrix.row(i).transpose().as_view(), basis_matrix.row(j).transpose().as_view())
                     +
-                    Self::hamilton_term_3(n, 43.14, basis_matrix.row(i).transpose().as_view(), basis_matrix.row(j).transpose().as_view())
+                    Self::hamilton_term_3(n, eq, basis_matrix.row(i).transpose().as_view(), basis_matrix.row(j).transpose().as_view())
                     +
-                    Self::hamilton_term_4(&cell, &architecture, 143.8, basis_matrix.row(i).transpose().as_view(), basis_matrix.row(j).transpose().as_view())
+                    Self::hamilton_term_4(&cell, &architecture, vq, basis_matrix.row(i).transpose().as_view(), basis_matrix.row(j).transpose().as_view())
                 }).collect::<Vec<f64>>()
             }).flatten());
 
@@ -50,14 +61,16 @@ impl QCACellInternal{
             }).collect::<Vec<f64>>()
         }).flatten());
 
+        fs::write("output.txt", format!("{}", &static_hamilton_matrix + &dynamic_hamilton_matrix));
+
         QCACellInternal{
             cell: cell,
-            architecture: architecture,
             hamilton_matrix: &static_hamilton_matrix + &dynamic_hamilton_matrix,
             static_hamilton_matrix: static_hamilton_matrix,
             dynamic_hamilton_matrix: dynamic_hamilton_matrix,
             dot_potential: dot_potential,
             dot_charge_probability: DVector::<f64>::from_vec(vec![2.0 / n as f64; n]),
+            basis_matrix: basis_matrix
         }
     }
 
@@ -66,9 +79,9 @@ impl QCACellInternal{
         let y = architecture.dot_positions[dot_index][1];
 
         Point3::new(
-            x * cell.rotation.cos() - y * cell.rotation.sin(),
-            y * cell.rotation.cos() + x * cell.rotation.sin(),
-            0.0
+            cell.position[0] + x * cell.rotation.cos() - y * cell.rotation.sin(),
+            cell.position[1] + y * cell.rotation.cos() + x * cell.rotation.sin(),
+            cell.position[2]
         )
     }
 
@@ -269,7 +282,7 @@ pub struct FullBasisModelSettings{
     #[serde_inline_default(65.0)]
     neighborhood_radius: f64,
 
-    #[serde_inline_default(12.9)]
+    #[serde_inline_default(10.0)]
     relative_permitivity: f64,
 
     #[serde_inline_default(11.5)]
@@ -310,6 +323,7 @@ impl FullBasisModel{
             clock_states: [0.0, 0.0, 0.0, 0.0],
             input_states: vec![],
             cells: vec![],
+            architecture: Box::new(QCACellArchitecture::new(18.0, 5.0, 8, 18.0/2.0)),
             settings: FullBasisModelSettings::new(),
         }
     }
@@ -386,7 +400,7 @@ impl SimulationModelTrait for FullBasisModel{
 
     fn initiate(&mut self, architecture: Box<QCACellArchitecture>, cells: Box<Vec<QCACell>>) {
         self.cells = cells.iter().map(|c| {
-            QCACellInternal::new(Box::new(c.clone()), architecture)
+            QCACellInternal::new(Box::new(c.clone()), &architecture, self.settings.relative_permitivity)
         }).collect();
         self.architecture = architecture;     
     }
@@ -398,36 +412,79 @@ impl SimulationModelTrait for FullBasisModel{
 
     fn calculate(&mut self, cell_ind: usize) -> bool {
         let n = self.architecture.dot_count as usize;
-        let internal_cell = &self.cells[cell_ind];
+        let ro_plus = 2.0 / n as f64;
+
+        let mut internal_cell = self.cells.get(cell_ind).unwrap().clone();
+        let clock_index = (internal_cell.cell.clock_phase_shift as i32 % 90) as usize;
+        let clock_value = self.clock_states[clock_index];
         
         let old_charge_probability = internal_cell.dot_charge_probability.clone();
 
         if internal_cell.cell.typ == CellType::Normal {
-            let clock_index = (internal_cell.cell.clock_phase_shift as i32 % 90) as usize;
             internal_cell.hamilton_matrix = 
-                internal_cell.static_hamilton_matrix + internal_cell.dynamic_hamilton_matrix * self.clock_states[clock_index];
+                &internal_cell.static_hamilton_matrix + &internal_cell.dynamic_hamilton_matrix * clock_value;
         }
 
         match internal_cell.cell.typ {
             CellType::Input => todo!(),
-            CellType::Fixed => todo!(),
+            CellType::Fixed => {
+                internal_cell.dot_potential = DVector::from_vec(internal_cell.cell.dot_probability_distribution.clone());
+            },
             CellType::Normal | CellType::Output => {
                 internal_cell.dot_potential = DVector::zeros(n);
                 for (ind, c) in self.cells.iter().enumerate(){
                     if ind != cell_ind{
                         for i in 0..n {
                             for j in 0..n{
-                                let dot_off_i = QCACellInternal::get_dot_position(i, &internal_cell.cell, &internal_cell.architecture);
-                                let dot_off_j = QCACellInternal::get_dot_position(j, &c.cell, &c.architecture);
-                                let cell_pos_i = Point3::new(internal_cell.cell.position[0], internal_cell.cell.position[1], internal_cell.cell.position[2]);
-                                let cell_pos_j = Point3::new(c.cell.position[0], c.cell.position[1], c.cell.position[2]);
+                                let dot_pos_i = QCACellInternal::get_dot_position(i, &internal_cell.cell, &self.architecture);
+                                let dot_pos_j = QCACellInternal::get_dot_position(j, &c.cell, &self.architecture);
 
-                                let distance = distance(cell_pos_i + dot_off_i, p2)
+                                let distance = distance(&dot_pos_i,& dot_pos_j);
+
+                                internal_cell.dot_potential[i] += (
+                                    calculate_vq(self.settings.relative_permitivity) * 
+                                    (c.dot_charge_probability[j] - ro_plus)
+                                ) / distance;
                             }
                         }
                     }
                 }
-            },
+            }
+        }
+
+        for i in 0..n*n {
+            internal_cell.hamilton_matrix[(i, i)] = QCACellInternal::hamilton_term_1(
+                n, 1.0,
+                internal_cell.dot_potential.as_view(), 
+                internal_cell.basis_matrix.row(i).transpose().as_view(),
+                internal_cell.basis_matrix.row(i).transpose().as_view(), 
+            ) + &internal_cell.static_hamilton_matrix[(i, i)];
+        }
+
+        if clock_value != self.settings.ampl_max {
+            let decomposition = Schur::new(internal_cell.hamilton_matrix.clone());
+            let eigenvalues = decomposition.eigenvalues().unwrap();
+            let sorted_eigenvalue = eigenvalues.iter()
+                .enumerate().min_by(|a, b| a.1.partial_cmp(b.1).unwrap()).unwrap();
+
+            let psi = decomposition.unpack().0.column(sorted_eigenvalue.0)
+                .map(|value| value.powf(2.0));
+
+            internal_cell.dot_charge_probability = DVector::from_vec((0..n).map(|i| {
+                let mut charge_probability = 0.0;
+                for j in 0..n*n{
+                    for spin in 0..=1 {
+                        charge_probability +=
+                            QCACellInternal::count_operator(
+                                n, i, spin, 
+                                internal_cell.basis_matrix.row(j).transpose().as_view()
+                            )
+                            *
+                            psi[j];
+                    }
+                }
+                charge_probability
+            }).collect());
         }
 
         let mut stable: bool = true;
@@ -436,6 +493,10 @@ impl SimulationModelTrait for FullBasisModel{
                 stable = false;
             }
         }
+
+        fs::write("state.txt", format!("{}: {}", cell_ind, internal_cell.dot_charge_probability));
+
+        self.cells[cell_ind] = internal_cell;
 
         return stable;
     }
