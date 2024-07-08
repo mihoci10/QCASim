@@ -261,7 +261,7 @@ pub struct FullBasisModel {
 #[serde_inline_default]
 #[derive(Serialize, Deserialize, Clone)]
 pub struct FullBasisModelSettings{
-    #[serde_inline_default(1000)]
+    #[serde_inline_default(100)]
     num_samples: usize,
 
     #[serde_inline_default(100)]
@@ -279,14 +279,8 @@ pub struct FullBasisModelSettings{
     #[serde_inline_default(1e-3)]
     convergence_tolerance: f64,
 
-    #[serde_inline_default(65.0)]
-    neighborhood_radius: f64,
-
     #[serde_inline_default(10.0)]
     relative_permitivity: f64,
-
-    #[serde_inline_default(11.5)]
-    layer_separation: f64
 }
 
 impl FullBasisModelSettings{
@@ -428,7 +422,7 @@ impl SimulationModelTrait for FullBasisModel{
         match internal_cell.cell.typ {
             CellType::Input => todo!(),
             CellType::Fixed => {
-                internal_cell.dot_potential = DVector::from_vec(internal_cell.cell.dot_probability_distribution.clone());
+                internal_cell.dot_charge_probability = DVector::from_vec(internal_cell.cell.dot_probability_distribution.clone());
             },
             CellType::Normal | CellType::Output => {
                 internal_cell.dot_potential = DVector::zeros(n);
@@ -452,39 +446,44 @@ impl SimulationModelTrait for FullBasisModel{
             }
         }
 
-        for i in 0..n*n {
-            internal_cell.hamilton_matrix[(i, i)] = QCACellInternal::hamilton_term_1(
-                n, 1.0,
-                internal_cell.dot_potential.as_view(), 
-                internal_cell.basis_matrix.row(i).transpose().as_view(),
-                internal_cell.basis_matrix.row(i).transpose().as_view(), 
-            ) + &internal_cell.static_hamilton_matrix[(i, i)];
-        }
+        if internal_cell.cell.typ != CellType::Fixed{
+            
+            for i in 0..n*n {
+                internal_cell.hamilton_matrix[(i, i)] = QCACellInternal::hamilton_term_1(
+                    n, 1.0,
+                    internal_cell.dot_potential.as_view(), 
+                    internal_cell.basis_matrix.row(i).transpose().as_view(),
+                    internal_cell.basis_matrix.row(i).transpose().as_view(), 
+                ) + &internal_cell.static_hamilton_matrix[(i, i)];
+            }
 
-        if clock_value != self.settings.ampl_max {
-            let decomposition = Schur::new(internal_cell.hamilton_matrix.clone());
-            let eigenvalues = decomposition.eigenvalues().unwrap();
-            let sorted_eigenvalue = eigenvalues.iter()
-                .enumerate().min_by(|a, b| a.1.partial_cmp(b.1).unwrap()).unwrap();
+            if clock_value != self.settings.ampl_max {
+                let decomposition = Schur::new(internal_cell.hamilton_matrix.clone());
+                let eigenvalues = decomposition.eigenvalues().unwrap();
+                let sorted_eigenvalue = eigenvalues.iter()
+                    .enumerate().min_by(|a, b| a.1.partial_cmp(b.1).unwrap()).unwrap();
 
-            let psi = decomposition.unpack().0.column(sorted_eigenvalue.0)
-                .map(|value| value.powf(2.0));
+                let psi = decomposition.unpack().0.column(sorted_eigenvalue.0)
+                    .map(|value| value.powf(2.0));
 
-            internal_cell.dot_charge_probability = DVector::from_vec((0..n).map(|i| {
-                let mut charge_probability = 0.0;
-                for j in 0..n*n{
-                    for spin in 0..=1 {
-                        charge_probability +=
-                            QCACellInternal::count_operator(
-                                n, i, spin, 
-                                internal_cell.basis_matrix.row(j).transpose().as_view()
-                            )
-                            *
-                            psi[j];
+                internal_cell.dot_charge_probability = DVector::from_vec((0..n).map(|i| {
+                    let mut charge_probability = 0.0;
+                    for j in 0..n*n{
+                        for spin in 0..=1 {
+                            charge_probability +=
+                                QCACellInternal::count_operator(
+                                    n, i, spin, 
+                                    internal_cell.basis_matrix.row(j).transpose().as_view()
+                                )
+                                *
+                                psi[j];
+                        }
                     }
-                }
-                charge_probability
-            }).collect());
+                    charge_probability
+                }).collect());
+            } else{
+                fs::write(format!("state_{}.txt", cell_ind), format!("{}: {}", cell_ind, internal_cell.dot_charge_probability));
+            }
         }
 
         let mut stable: bool = true;
@@ -493,8 +492,6 @@ impl SimulationModelTrait for FullBasisModel{
                 stable = false;
             }
         }
-
-        fs::write("state.txt", format!("{}: {}", cell_ind, internal_cell.dot_charge_probability));
 
         self.cells[cell_ind] = internal_cell;
 

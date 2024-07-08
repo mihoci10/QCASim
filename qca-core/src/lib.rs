@@ -48,7 +48,7 @@ mod tests {
         }).collect::<Vec<QCACell>>();
         let architecture = QCACellArchitecture::new(60.0, 10.0, 8, 20.0);
 
-        cells[0].dot_probability_distribution = vec![1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0];
+        cells[0].dot_probability_distribution = vec![0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0];
 
         run_simulation(&mut sim_model, cells, architecture, None);
     }
