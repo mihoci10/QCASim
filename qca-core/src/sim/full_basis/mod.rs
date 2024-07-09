@@ -61,8 +61,6 @@ impl QCACellInternal{
             }).collect::<Vec<f64>>()
         }).flatten());
 
-        fs::write("output.txt", format!("{}", &static_hamilton_matrix + &dynamic_hamilton_matrix));
-
         QCACellInternal{
             cell: cell,
             hamilton_matrix: &static_hamilton_matrix + &dynamic_hamilton_matrix,
@@ -414,10 +412,8 @@ impl SimulationModelTrait for FullBasisModel{
         
         let old_charge_probability = internal_cell.dot_charge_probability.clone();
 
-        if internal_cell.cell.typ == CellType::Normal {
-            internal_cell.hamilton_matrix = 
-                &internal_cell.static_hamilton_matrix + &internal_cell.dynamic_hamilton_matrix * clock_value;
-        }
+        internal_cell.hamilton_matrix = 
+            &internal_cell.static_hamilton_matrix + &internal_cell.dynamic_hamilton_matrix * clock_value;
 
         match internal_cell.cell.typ {
             CellType::Input => todo!(),
@@ -457,7 +453,7 @@ impl SimulationModelTrait for FullBasisModel{
                 ) + &internal_cell.static_hamilton_matrix[(i, i)];
             }
 
-            if clock_value != self.settings.ampl_max {
+            if clock_value != self.settings.ampl_max{
                 let decomposition = Schur::new(internal_cell.hamilton_matrix.clone());
                 let eigenvalues = decomposition.eigenvalues().unwrap();
                 let sorted_eigenvalue = eigenvalues.iter()
@@ -481,8 +477,6 @@ impl SimulationModelTrait for FullBasisModel{
                     }
                     charge_probability
                 }).collect());
-            } else{
-                fs::write(format!("state_{}.txt", cell_ind), format!("{}: {}", cell_ind, internal_cell.dot_charge_probability));
             }
         }
 
@@ -500,6 +494,10 @@ impl SimulationModelTrait for FullBasisModel{
     
     fn get_settings(&self) -> Box<dyn super::SimulationModelSettingsTrait> {
         Box::new(self.settings.clone()) as Box<dyn SimulationModelSettingsTrait>
+    }
+    
+    fn get_states(&self, cell_ind: usize) -> Vec<f64> {
+        self.cells[cell_ind].dot_charge_probability.data.as_vec().to_vec()
     }
 
 }

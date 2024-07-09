@@ -304,5 +304,9 @@ impl SimulationModelTrait for BistableModel{
     fn get_settings(&self) -> Box<dyn super::SimulationModelSettingsTrait> {
         Box::new(self.settings.clone()) as Box<dyn SimulationModelSettingsTrait>
     }
+    
+    fn get_states(&self, cell_ind: usize) -> Vec<f64> {
+        todo!()
+    }
 
 }
