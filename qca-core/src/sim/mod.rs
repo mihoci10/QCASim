@@ -88,7 +88,7 @@ fn get_clock_values(num_samples: usize, cur_sample: usize, num_inputs: usize, am
     let clock_shift = ampl_max - ampl_min;
 
     (0..4).map(|i| {
-        (prefactor * (repetitions * (cur_sample as f64) * ((2.0 * consts::PI) / num_samples as f64) - (consts::PI * (i as f64) / 2.0)).cos() + clock_shift)
+        (prefactor * (repetitions * (cur_sample as f64) * ((2.0 * consts::PI) / num_samples as f64) - (consts::PI * (i as f64) / 2.0) - consts::PI).cos() + clock_shift)
         .clamp(ampl_min, ampl_max)
     }).collect::<Vec<f64>>().try_into().unwrap()
 }

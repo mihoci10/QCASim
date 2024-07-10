@@ -259,7 +259,7 @@ pub struct FullBasisModel {
 #[serde_inline_default]
 #[derive(Serialize, Deserialize, Clone)]
 pub struct FullBasisModelSettings{
-    #[serde_inline_default(1000)]
+    #[serde_inline_default(50)]
     num_samples: usize,
 
     #[serde_inline_default(100)]
