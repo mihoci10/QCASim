@@ -80,4 +80,26 @@ mod tests {
 
         run_simulation(&mut sim_model, cells, architecture, Some(file));
     }
+
+    #[test]
+    fn full_basis_line_clocked() {
+        let mut sim_model: Box<dyn SimulationModelTrait> = Box::new(FullBasisModel::new());
+
+        let mut cells = (0..5).map(|i| {
+            QCACell{
+                clock_phase_shift: 90.0 * i as f64, 
+                dot_probability_distribution: vec![0.0; 8], 
+                position: [60.0 * i as f64, 0.0, 0.0], 
+                rotation: 0.0, 
+                typ: ( if i == 0 { CellType::Fixed } else { CellType::Output })
+            }
+        }).collect::<Vec<QCACell>>();
+        let architecture = QCACellArchitecture::new(60.0, 10.0, 8, 20.0);
+
+        cells[0].dot_probability_distribution = vec![1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0];
+
+        let file = Box::new(File::create("full_basis_line_clocked.bin").unwrap()) as Box<dyn Write>;
+
+        run_simulation(&mut sim_model, cells, architecture, Some(file));
+    }
 }

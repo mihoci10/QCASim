@@ -1,6 +1,6 @@
 use std::{cell, f64::consts::PI, fs};
 
-use nalgebra::{distance, DMatrix, DMatrixView, DVector, DVectorView, Point3, Schur};
+use nalgebra::{distance, DMatrix, DMatrixView, DVector, DVectorView, Point3, RealField, Schur};
 use serde::{Deserialize, Serialize};
 use serde_inline_default::serde_inline_default;
 
@@ -259,7 +259,7 @@ pub struct FullBasisModel {
 #[serde_inline_default]
 #[derive(Serialize, Deserialize, Clone)]
 pub struct FullBasisModelSettings{
-    #[serde_inline_default(50)]
+    #[serde_inline_default(1000)]
     num_samples: usize,
 
     #[serde_inline_default(100)]
@@ -407,7 +407,7 @@ impl SimulationModelTrait for FullBasisModel{
         let ro_plus = 2.0 / n as f64;
 
         let mut internal_cell = self.cells.get(cell_ind).unwrap().clone();
-        let clock_index = (internal_cell.cell.clock_phase_shift as i32 % 90) as usize;
+        let clock_index = (internal_cell.cell.clock_phase_shift.rem_euclid(360.0) / 90.0) as usize;
         let clock_value = self.clock_states[clock_index];
         
         let old_charge_probability = internal_cell.dot_charge_probability.clone();
@@ -454,29 +454,30 @@ impl SimulationModelTrait for FullBasisModel{
             }
 
             if (clock_value - self.settings.ampl_max).abs() >= 1e-3 {
-                let decomposition = Schur::new(internal_cell.hamilton_matrix.clone());
-                if let Some(eigenvalues) =  decomposition.eigenvalues() {
-                    let sorted_eigenvalue = eigenvalues.iter()
-                        .enumerate().min_by(|a, b| a.1.partial_cmp(b.1).unwrap()).unwrap();
+                if let Some(decomposition) = Schur::try_new(internal_cell.hamilton_matrix.clone(), 1e-3, 100){
+                    if let Some(eigenvalues) =  decomposition.eigenvalues() {
+                        let sorted_eigenvalue = eigenvalues.iter()
+                            .enumerate().min_by(|a, b| a.1.partial_cmp(b.1).unwrap()).unwrap();
 
-                    let psi = decomposition.unpack().0.column(sorted_eigenvalue.0)
-                        .map(|value| value.powf(2.0));
+                        let psi = decomposition.unpack().0.column(sorted_eigenvalue.0)
+                            .map(|value| value.powf(2.0));
 
-                    internal_cell.dot_charge_probability = DVector::from_vec((0..n).map(|i| {
-                        let mut charge_probability = 0.0;
-                        for j in 0..n*n{
-                            for spin in 0..=1 {
-                                charge_probability +=
-                                    QCACellInternal::count_operator(
-                                        n, i, spin, 
-                                        internal_cell.basis_matrix.row(j).transpose().as_view()
-                                    )
-                                    *
-                                    psi[j];
+                        internal_cell.dot_charge_probability = DVector::from_vec((0..n).map(|i| {
+                            let mut charge_probability = 0.0;
+                            for j in 0..n*n{
+                                for spin in 0..=1 {
+                                    charge_probability +=
+                                        QCACellInternal::count_operator(
+                                            n, i, spin, 
+                                            internal_cell.basis_matrix.row(j).transpose().as_view()
+                                        )
+                                        *
+                                        psi[j];
+                                }
                             }
-                        }
-                        charge_probability
-                    }).collect());
+                            charge_probability
+                        }).collect());
+                    }
                 }
             }
         }
