@@ -13,7 +13,7 @@ pub fn add(left: usize, right: usize) -> usize {
 #[cfg(test)]
 mod tests {
 
-    use std::{fs::File, io::Write};
+    use std::{f64::consts::PI, fs::File, io::Write};
 
     use sim::{full_basis::{FullBasisModel, QCACellInternal}, run_simulation, QCACellArchitecture, SimulationModelTrait};
 
@@ -94,9 +94,10 @@ mod tests {
                 typ: ( if i == 0 { CellType::Fixed } else { CellType::Output })
             }
         }).collect::<Vec<QCACell>>();
-        let architecture = QCACellArchitecture::new(60.0, 10.0, 8, 20.0);
+        let r: f64 = (20.0 * 2.0 / 3.0)/(2.0 * (PI / 8.0).sin()) as f64;
+        let architecture = QCACellArchitecture::new(60.0, 10.0, 8, r);
 
-        cells[0].dot_probability_distribution = vec![1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0];
+        cells[0].dot_probability_distribution = vec![0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0];
 
         let file = Box::new(File::create("full_basis_line_clocked.bin").unwrap()) as Box<dyn Write>;
 
