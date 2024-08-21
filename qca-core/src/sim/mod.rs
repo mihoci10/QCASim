@@ -1,4 +1,4 @@
-use std::{f64::consts::{self, PI}, io::Write, ops::Rem};
+use std::{cell, f64::consts::{self, PI}, io::Write, ops::Rem};
 
 use serde::{Serialize, Deserialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
@@ -11,9 +11,16 @@ pub enum CellType{
     Normal, Input, Output, Fixed
 }
 
+
+#[derive(Clone, Serialize, Deserialize, Debug, Hash, PartialEq, Eq)]
+pub struct QCACellIndex{
+    pub layer: usize,
+    pub cell: usize,
+}
+
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct QCACell{
-    pub position: [f64; 3],
+    pub position: [f64; 2],
     pub rotation: f64,
     pub typ: CellType,
     pub clock_phase_shift: f64, 
@@ -27,6 +34,32 @@ pub struct QCACellArchitecture{
     pub dot_count: u8,
     pub dot_positions: Vec<[f64; 2]>,
     pub dot_tunnels: Vec<(u8, u8)>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct QCALayer{
+    pub z_position: f64,
+    pub cell_architecture: QCACellArchitecture,
+    pub cells: Vec<QCACell>,
+}
+
+impl QCACellIndex{
+    pub fn new(layer: usize, cell: usize) -> Self{
+        QCACellIndex{
+            layer: layer,
+            cell: cell
+        }
+    }
+}
+
+impl QCALayer{
+    pub fn new(z_position: f64, cell_architecture: QCACellArchitecture) -> Self{
+        QCALayer{
+            z_position: z_position,
+            cell_architecture: cell_architecture,
+            cells: Vec::<QCACell>::new()
+        }
+    }
 }
 
 impl QCACellArchitecture {
@@ -72,14 +105,14 @@ pub trait SimulationModelTrait: Sync + Send{
     fn get_deserialized_settings(&self) -> Result<String, String>;
     fn set_serialized_settings(&mut self, settings_str: &String) -> Result<(), String>;
 
-    fn initiate(&mut self, architecture: Box<QCACellArchitecture>, cells: Box<Vec<QCACell>>);
+    fn initiate(&mut self, layers: Box<Vec<QCALayer>>);
     fn pre_calculate(&mut self, clock_states: &[f64; 4], input_states: &Vec<f64>);
-    fn calculate(&mut self, cell_ind: usize) -> bool;
+    fn calculate(&mut self, cell_index: QCACellIndex) -> bool;
 
-    fn get_states(&self, cell_ind: usize) -> Vec<f64>;
+    fn get_states(&self, cell_index: QCACellIndex) -> Vec<f64>;
 }
 
-pub mod bistable;
+//pub mod bistable;
 pub mod full_basis;
 
 fn get_clock_values(num_samples: usize, cur_sample: usize, num_inputs: usize, ampl_min: f64, ampl_max: f64, ampl_fac: f64) -> [f64; 4]{
@@ -118,14 +151,15 @@ fn get_input_values(num_samples: usize, cur_sample: usize, num_inputs: usize) ->
     }).collect()
 }
 
-pub fn run_simulation(sim_model: &mut Box<dyn SimulationModelTrait>, cells: Vec<QCACell>, architecture: QCACellArchitecture, mut stream: Option<Box<dyn Write>> )
+pub fn run_simulation(sim_model: &mut Box<dyn SimulationModelTrait>, layers: Vec<QCALayer>, mut stream: Option<Box<dyn Write>> )
 {
-    let n: usize = architecture.dot_count as usize;
-    let num_inputs = cells.iter().filter(|c| c.typ == CellType::Input).count();
-    let num_outputs = cells.iter().filter(|c| c.typ == CellType::Output).count();
+    //TODO: ugly workaround
+    let n: usize = layers[0].cell_architecture.dot_count as usize;
+    let num_inputs: usize = layers.iter().map(|layer| layer.cells.iter().filter(|c| c.typ == CellType::Input).count()).sum();
+    let num_outputs: usize = layers.iter().map(|layer| layer.cells.iter().filter(|c| c.typ == CellType::Output).count()).sum();
     let model_settings = sim_model.get_settings();
 
-    sim_model.initiate(Box::new(architecture), Box::new(cells.clone()));
+    sim_model.initiate( Box::new(layers.clone()));
     
     if let Some(s) = &mut stream {
         let _ = s.write(&(num_inputs + num_outputs).to_le_bytes());
@@ -158,8 +192,10 @@ pub fn run_simulation(sim_model: &mut Box<dyn SimulationModelTrait>, cells: Vec<
                 &input_states
             );
 
-            for i in 0..cells.len() { 
-                stable &= sim_model.calculate(i)
+            for l in 0..layers.len() { 
+                for c in 0..layers[l].cells.len() {
+                    stable &= sim_model.calculate(QCACellIndex::new(l, c));
+                }
             }
 
             j += 1;
@@ -171,14 +207,17 @@ pub fn run_simulation(sim_model: &mut Box<dyn SimulationModelTrait>, cells: Vec<
             }
 
             for t in [CellType::Input, CellType::Output]{
-                for (i, c) in cells.iter().enumerate(){
-                    if c.typ == t {
-                        let distribution = sim_model.get_states(i);
-                        for p in 0..n/4 {
-                           let val: f64 = 
-                            (distribution[p + 0] + distribution[p + (n/2)] - distribution[p + (n/4)] - distribution[p + (n/2) + (n/4)]) 
-                            / distribution.iter().sum::<f64>();
-                           let _ = s.write(&val.to_le_bytes());
+                for l in 0..layers.len() { 
+                    for c in 0..layers[l].cells.len() {
+                        let cell_index = QCACellIndex::new(l, c);
+                        if layers[l].cells[c].typ == t {
+                            let distribution = sim_model.get_states(cell_index);
+                            for p in 0..n/4 {
+                               let val: f64 = 
+                                (distribution[p + 0] + distribution[p + (n/2)] - distribution[p + (n/4)] - distribution[p + (n/2) + (n/4)]) 
+                                / distribution.iter().sum::<f64>();
+                               let _ = s.write(&val.to_le_bytes());
+                            }
                         }
                     }
                 }

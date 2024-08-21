@@ -1,12 +1,12 @@
-use std::{cell, f64::consts::PI, fs};
+use std::{cell, collections::HashMap};
 
-use nalgebra::{distance, DMatrix, DMatrixView, DVector, DVectorView, Point3, RealField, Schur};
+use nalgebra::{distance, DMatrix, DMatrixView, DVector, DVectorView, Point3, Schur};
 use serde::{Deserialize, Serialize};
 use serde_inline_default::serde_inline_default;
 
 use crate::sim::settings::{InputDescriptor, OptionsEntry};
 
-use super::{CellType, QCACell, QCACellArchitecture, SimulationModelSettingsTrait, SimulationModelTrait};
+use super::{CellType, QCACell, QCACellArchitecture, QCACellIndex, QCALayer, SimulationModelSettingsTrait, SimulationModelTrait};
 
 fn calculate_vq(relative_permittivity: f64) -> f64 {
     const CHARGE: f64 = 1.6021e-19;
@@ -19,6 +19,7 @@ fn calculate_vq(relative_permittivity: f64) -> f64 {
 #[derive(Debug, Clone)]
 pub struct QCACellInternal{
     cell: Box<QCACell>,
+    z_position: f64,
 
     //The full hamilton matrix
     hamilton_matrix: DMatrix<f64>,
@@ -35,14 +36,14 @@ pub struct QCACellInternal{
 }
 
 impl QCACellInternal{
-    pub fn new(cell: Box<QCACell>, architecture: &Box<QCACellArchitecture>, relative_permittivity: f64) -> Self{
-        let n: usize = architecture.dot_count as usize;
-        let tunneling_matrix = Self::generate_tunneling_matrix(&architecture, 1.0);
+    pub fn new(cell: Box<QCACell>, layer: &QCALayer, relative_permittivity: f64) -> Self{
+        let n: usize = layer.cell_architecture.dot_count as usize;
+        let tunneling_matrix = Self::generate_tunneling_matrix(&layer, 1.0);
         let basis_matrix = Self::generate_basis_matrix(n);
         let dot_potential: DVector<f64> = DVector::zeros(n);
 
         let vq = calculate_vq(relative_permittivity);
-        let eq = vq / (architecture.dot_diameter / 3.0);
+        let eq = vq / (layer.cell_architecture.dot_diameter / 3.0);
 
         let static_hamilton_matrix = 
             DMatrix::<f64>::from_iterator(n*n, n*n, (0..n*n).map(|i| {
@@ -51,7 +52,7 @@ impl QCACellInternal{
                     +
                     Self::hamilton_term_3(n, eq, basis_matrix.row(i).transpose().as_view(), basis_matrix.row(j).transpose().as_view())
                     +
-                    Self::hamilton_term_4(&cell, &architecture, vq, basis_matrix.row(i).transpose().as_view(), basis_matrix.row(j).transpose().as_view())
+                    Self::hamilton_term_4(&cell, &layer, vq, basis_matrix.row(i).transpose().as_view(), basis_matrix.row(j).transpose().as_view())
                 }).collect::<Vec<f64>>()
             }).flatten());
 
@@ -63,6 +64,7 @@ impl QCACellInternal{
 
         QCACellInternal{
             cell: cell,
+            z_position: layer.z_position,
             hamilton_matrix: &static_hamilton_matrix + &dynamic_hamilton_matrix,
             static_hamilton_matrix: static_hamilton_matrix,
             dynamic_hamilton_matrix: dynamic_hamilton_matrix,
@@ -72,24 +74,24 @@ impl QCACellInternal{
         }
     }
 
-    fn get_dot_position(dot_index: usize, cell: &Box<QCACell>, architecture: &Box<QCACellArchitecture>) -> Point3<f64>{
-        let x = architecture.dot_positions[dot_index][0];
-        let y = architecture.dot_positions[dot_index][1];
+    fn get_dot_position(dot_index: usize, cell: &Box<QCACell>, layer: &QCALayer) -> Point3<f64>{
+        let x = layer.cell_architecture.dot_positions[dot_index][0];
+        let y = layer.cell_architecture.dot_positions[dot_index][1];
 
         Point3::new(
             cell.position[0] + x * cell.rotation.cos() - y * cell.rotation.sin(),
             cell.position[1] + y * cell.rotation.cos() + x * cell.rotation.sin(),
-            cell.position[2]
+            layer.z_position
         )
     }
 
-    fn generate_tunneling_matrix(architecture: &Box<QCACellArchitecture>, energy: f64) -> DMatrix<f64>{
+    fn generate_tunneling_matrix(layer: &QCALayer , energy: f64) -> DMatrix<f64>{
         let mut tunneling_matrix = DMatrix::<f64>::zeros(
-            architecture.dot_count as usize, 
-            architecture.dot_count as usize
+            layer.cell_architecture.dot_count as usize, 
+            layer.cell_architecture.dot_count as usize
         );
 
-        architecture.dot_tunnels.iter().for_each(|(a, b)| {
+        layer.cell_architecture.dot_tunnels.iter().for_each(|(a, b)| {
             tunneling_matrix[(*a as usize, *b as usize)] = energy;
             tunneling_matrix[(*b as usize, *a as usize)] = energy;
         });
@@ -227,16 +229,16 @@ impl QCACellInternal{
 
     fn hamilton_term_4(
         cell: &Box<QCACell>,
-        architecture: &Box<QCACellArchitecture>,
+        layer: &QCALayer,
         vq: f64, 
         basis_vector_i: DVectorView<f64>, 
         basis_vector_j: DVectorView<f64>) -> f64 {
-            (0..architecture.dot_count as usize).map(|i| {
+            (0..layer.cell_architecture.dot_count as usize).map(|i| {
                 (0..i).map(|j| {
                     (0..=1).map(|spin| {
                         if basis_vector_i == basis_vector_j{
-                            Self::coulumb_operator(architecture.dot_count as usize, i, j, spin, basis_vector_j) *
-                            (vq / distance(&Self::get_dot_position(i, cell, architecture), &Self::get_dot_position(j, cell, architecture)))
+                            Self::coulumb_operator(layer.cell_architecture.dot_count as usize, i, j, spin, basis_vector_j) *
+                            (vq / distance(&Self::get_dot_position(i, cell, layer), &Self::get_dot_position(j, cell, layer)))
                         }
                         else{
                             0.0
@@ -250,9 +252,9 @@ impl QCACellInternal{
 pub struct FullBasisModel {
     clock_states: [f64; 4],
     input_states: Vec<f64>,
-    cells: Vec<QCACellInternal>,
-    architecture: Box<QCACellArchitecture>,
-    settings: FullBasisModelSettings
+    settings: FullBasisModelSettings,
+    index_cells_map: HashMap<QCACellIndex, QCACellInternal>,
+    layer_map: HashMap<usize, QCALayer>,
 }
 
 
@@ -314,9 +316,9 @@ impl FullBasisModel{
         FullBasisModel{
             clock_states: [0.0, 0.0, 0.0, 0.0],
             input_states: vec![],
-            cells: vec![],
-            architecture: Box::new(QCACellArchitecture::new(18.0, 5.0, 8, 18.0/2.0)),
             settings: FullBasisModelSettings::new(),
+            index_cells_map: HashMap::new(),
+            layer_map: HashMap::new()
         }
     }
 }
@@ -390,11 +392,19 @@ impl SimulationModelTrait for FullBasisModel{
         "full_basis_model".into()
     }
 
-    fn initiate(&mut self, architecture: Box<QCACellArchitecture>, cells: Box<Vec<QCACell>>) {
-        self.cells = cells.iter().map(|c| {
-            QCACellInternal::new(Box::new(c.clone()), &architecture, self.settings.relative_permitivity)
-        }).collect();
-        self.architecture = architecture;     
+    fn initiate(&mut self, layers: Box<Vec<QCALayer>>) {
+        self.index_cells_map.clear();
+        self.layer_map.clear();
+
+        layers.iter().enumerate().for_each(|(i, layer)| {
+            self.layer_map.insert(i, layer.clone());
+            layer.cells.iter().enumerate().for_each(|(j, c)| {
+                self.index_cells_map.insert(
+                    QCACellIndex::new(i, j),
+                    QCACellInternal::new(Box::new(c.clone()), layer, self.settings.relative_permitivity)
+                );
+            })
+        });
     }
 
     fn pre_calculate(&mut self, clock_states: &[f64; 4], input_states: &Vec<f64>) {
@@ -402,11 +412,12 @@ impl SimulationModelTrait for FullBasisModel{
         self.input_states = input_states.clone();
     }
 
-    fn calculate(&mut self, cell_ind: usize) -> bool {
-        let n = self.architecture.dot_count as usize;
+    fn calculate(&mut self, cell_ind: QCACellIndex) -> bool {
+        let layer = self.layer_map.get(&cell_ind.layer).unwrap();
+        let n = layer.cell_architecture.dot_count as usize;
         let ro_plus = 2.0 / n as f64;
 
-        let mut internal_cell = self.cells.get(cell_ind).unwrap().clone();
+        let mut internal_cell = self.index_cells_map.get(&cell_ind).unwrap().clone();
         let clock_index = (internal_cell.cell.clock_phase_shift.rem_euclid(360.0) / 90.0) as usize;
         let clock_value = self.clock_states[clock_index];
         
@@ -422,12 +433,12 @@ impl SimulationModelTrait for FullBasisModel{
             },
             CellType::Normal | CellType::Output => {
                 internal_cell.dot_potential = DVector::zeros(n);
-                for (ind, c) in self.cells.iter().enumerate(){
-                    if ind != cell_ind{
+                for (ind, c) in self.index_cells_map.iter(){
+                    if *ind != cell_ind{
                         for i in 0..n {
                             for j in 0..n{
-                                let dot_pos_i = QCACellInternal::get_dot_position(i, &internal_cell.cell, &self.architecture);
-                                let dot_pos_j = QCACellInternal::get_dot_position(j, &c.cell, &self.architecture);
+                                let dot_pos_i = QCACellInternal::get_dot_position(i, &internal_cell.cell, layer);
+                                let dot_pos_j = QCACellInternal::get_dot_position(j, &c.cell, layer);
 
                                 let distance = distance(&dot_pos_i,& dot_pos_j);
 
@@ -483,13 +494,13 @@ impl SimulationModelTrait for FullBasisModel{
         }
 
         let mut stable: bool = true;
-        for i in 0..self.architecture.dot_count as usize {
+        for i in 0..n as usize {
             if (internal_cell.dot_charge_probability[i] - old_charge_probability[i]).abs() > self.settings.convergence_tolerance{
                 stable = false;
             }
         }
 
-        self.cells[cell_ind] = internal_cell;
+        self.index_cells_map.insert(cell_ind, internal_cell);
 
         return stable;
     }
@@ -498,8 +509,8 @@ impl SimulationModelTrait for FullBasisModel{
         Box::new(self.settings.clone()) as Box<dyn SimulationModelSettingsTrait>
     }
     
-    fn get_states(&self, cell_ind: usize) -> Vec<f64> {
-        self.cells[cell_ind].dot_charge_probability.data.as_vec().to_vec()
+    fn get_states(&self, cell_ind: QCACellIndex) -> Vec<f64> {
+        self.index_cells_map.get(&cell_ind).unwrap().dot_charge_probability.data.as_vec().to_vec()
     }
 
 }
