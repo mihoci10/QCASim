@@ -14,7 +14,7 @@ pub fn add(left: usize, right: usize) -> usize {
 mod tests {
 
     use std::{f64::consts::PI, fs::File, io::Write};
-
+    use std::collections::HashMap;
     use sim::{full_basis::{FullBasisModel, QCACellInternal}, run_simulation, QCACellArchitecture, QCALayer, SimulationModelTrait};
 
     use self::sim::{CellType, QCACell};
@@ -30,15 +30,22 @@ mod tests {
             rotation: 0.0, 
             typ: CellType::Normal
         };
-        let layer = QCALayer::new(0.0, QCACellArchitecture::new(60.0, 10.0, 8, 20.0));
+        let cell_architecture = QCACellArchitecture::new(60.0, 10.0, 8, 20.0);
+        let cell_architecture_id: String = "cell_arch_1".to_string();
+        let layer = QCALayer::new("Layer 1".to_string(), cell_architecture_id, 0.0);
 
-        let cell_internal = QCACellInternal::new(Box::new(cell), &layer, 10.0);
+        let cell_internal = QCACellInternal::new(Box::new(cell), &layer, &cell_architecture, 10.0);
     }
 
     #[test]
     fn full_basis_line() {
         let mut sim_model: Box<dyn SimulationModelTrait> = Box::new(FullBasisModel::new());
-        let mut layer = QCALayer::new(0.0, QCACellArchitecture::new(60.0, 10.0, 8, 20.0));
+
+        let cell_architecture = QCACellArchitecture::new(60.0, 10.0, 8, 20.0);
+        let cell_architecture_id: String = "cell_arch_1".to_string();
+        let mut layer = QCALayer::new("Layer 1".to_string(), cell_architecture_id.clone(), 0.0);
+        let mut cell_architectures_map = HashMap::<String, QCACellArchitecture>::new();
+        cell_architectures_map.insert(cell_architecture_id, cell_architecture);
 
         layer.cells = (0..3).map(|i| {
             QCACell{
@@ -56,13 +63,18 @@ mod tests {
 
         let file = Box::new(File::create("full_basis_line.bin").unwrap()) as Box<dyn Write>;
 
-        run_simulation(&mut sim_model, vec![layer], Some(file));
+        run_simulation(&mut sim_model, vec![layer], cell_architectures_map, Some(file));
     }
 
     #[test]
     fn full_basis_negation() {
         let mut sim_model: Box<dyn SimulationModelTrait> = Box::new(FullBasisModel::new());
-        let mut layer = QCALayer::new(0.0, QCACellArchitecture::new(60.0, 10.0, 8, 20.0));
+
+        let cell_architecture = QCACellArchitecture::new(60.0, 10.0, 8, 20.0);
+        let cell_architecture_id: String = "cell_arch_1".to_string();
+        let mut layer = QCALayer::new("Layer 1".to_string(), cell_architecture_id.clone(), 0.0);
+        let mut cell_architectures_map = HashMap::<String, QCACellArchitecture>::new();
+        cell_architectures_map.insert(cell_architecture_id, cell_architecture);
 
         layer.cells = (0..2).map(|i| {
             QCACell{
@@ -80,14 +92,19 @@ mod tests {
 
         let file = Box::new(File::create("full_basis_negation.bin").unwrap()) as Box<dyn Write>;
 
-        run_simulation(&mut sim_model, vec![layer], Some(file));
+        run_simulation(&mut sim_model, vec![layer], cell_architectures_map, Some(file));
     }
 
     #[test]
     fn full_basis_line_clocked() {
         let mut sim_model: Box<dyn SimulationModelTrait> = Box::new(FullBasisModel::new());
         let r: f64 = (20.0 * 2.0 / 3.0)/(2.0 * (PI / 8.0).sin()) as f64;
-        let mut layer = QCALayer::new(0.0, QCACellArchitecture::new(60.0, 10.0, 8, r));
+
+        let cell_architecture = QCACellArchitecture::new(60.0, 10.0, 8, r);
+        let cell_architecture_id: String = "cell_arch_1".to_string();
+        let mut layer = QCALayer::new("Layer 1".to_string(), cell_architecture_id.clone(), 0.0);
+        let mut cell_architectures_map = HashMap::<String, QCACellArchitecture>::new();
+        cell_architectures_map.insert(cell_architecture_id, cell_architecture);
 
         layer.cells = (0..5).map(|i| {
             QCACell{
@@ -103,6 +120,6 @@ mod tests {
 
         let file = Box::new(File::create("full_basis_line_clocked.bin").unwrap()) as Box<dyn Write>;
 
-        run_simulation(&mut sim_model, vec![layer], Some(file));
+        run_simulation(&mut sim_model, vec![layer], cell_architectures_map, Some(file));
     }
 }

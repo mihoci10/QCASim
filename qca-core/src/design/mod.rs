@@ -20,6 +20,6 @@ pub struct QCADesign {
     #[serde_inline_default(None)]
     selected_simulation_model_id: Option<String>,
 
-    #[serde_inline_default(HashMap::new())]
+    #[serde_inline_default(HashMap::<String, QCACellArchitecture>::new())]
     cell_architectures: HashMap<String, QCACellArchitecture>,
 }
