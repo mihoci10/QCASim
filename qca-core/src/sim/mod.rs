@@ -1,5 +1,5 @@
 use std::{cell, f64::consts::{self, PI}, io::Write, ops::Rem};
-
+use std::collections::HashMap;
 use serde::{Serialize, Deserialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
 
@@ -38,9 +38,10 @@ pub struct QCACellArchitecture{
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct QCALayer{
-    pub z_position: f64,
-    pub cell_architecture: QCACellArchitecture,
+    pub name: String,
+    pub cell_architecture_id: String,
     pub cells: Vec<QCACell>,
+    pub z_position: f64,
 }
 
 impl QCACellIndex{
@@ -53,11 +54,12 @@ impl QCACellIndex{
 }
 
 impl QCALayer{
-    pub fn new(z_position: f64, cell_architecture: QCACellArchitecture) -> Self{
-        QCALayer{
-            z_position: z_position,
-            cell_architecture: cell_architecture,
-            cells: Vec::<QCACell>::new()
+    pub fn new(name: String, cell_architecture_id: String, z_position: f64) -> Self {
+        QCALayer {
+            name,
+            cell_architecture_id,
+            cells: Vec::new(),
+            z_position,
         }
     }
 }
@@ -105,7 +107,7 @@ pub trait SimulationModelTrait: Sync + Send{
     fn get_deserialized_settings(&self) -> Result<String, String>;
     fn set_serialized_settings(&mut self, settings_str: &String) -> Result<(), String>;
 
-    fn initiate(&mut self, layers: Box<Vec<QCALayer>>);
+    fn initiate(&mut self, layers: Box<Vec<QCALayer>>, qca_architetures_map: HashMap<String, QCACellArchitecture>);
     fn pre_calculate(&mut self, clock_states: &[f64; 4], input_states: &Vec<f64>);
     fn calculate(&mut self, cell_index: QCACellIndex) -> bool;
 
@@ -151,15 +153,16 @@ fn get_input_values(num_samples: usize, cur_sample: usize, num_inputs: usize) ->
     }).collect()
 }
 
-pub fn run_simulation(sim_model: &mut Box<dyn SimulationModelTrait>, layers: Vec<QCALayer>, mut stream: Option<Box<dyn Write>> )
+pub fn run_simulation(sim_model: &mut Box<dyn SimulationModelTrait>, layers: Vec<QCALayer>, architectures: HashMap<String, QCACellArchitecture>, mut stream: Option<Box<dyn Write>> )
 {
+    let cell_architecture: QCACellArchitecture = architectures.get(&layers[0].cell_architecture_id).unwrap().clone();
     //TODO: ugly workaround
-    let n: usize = layers[0].cell_architecture.dot_count as usize;
+    let n: usize = cell_architecture.dot_count as usize;
     let num_inputs: usize = layers.iter().map(|layer| layer.cells.iter().filter(|c| c.typ == CellType::Input).count()).sum();
     let num_outputs: usize = layers.iter().map(|layer| layer.cells.iter().filter(|c| c.typ == CellType::Output).count()).sum();
     let model_settings = sim_model.get_settings();
 
-    sim_model.initiate( Box::new(layers.clone()));
+    sim_model.initiate( Box::new(layers.clone()), architectures.clone());
     
     if let Some(s) = &mut stream {
         let _ = s.write(&(num_inputs + num_outputs).to_le_bytes());
