@@ -58,7 +58,7 @@ mod tests {
         layer.cells[0].dot_probability_distribution = vec![1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0];
         layer.cells.last_mut().unwrap().typ = CellType::Output;
 
-        let file = Box::new(File::create("full_basis_line.bin").unwrap()) as Box<dyn Write>;
+        let file = Box::new(File::create("full_basis_line.qcs").unwrap()) as Box<dyn Write>;
 
         run_simulation(&mut sim_model, vec![layer], cell_architectures_map, Some(file));
     }
@@ -87,7 +87,7 @@ mod tests {
         layer.cells[0].dot_probability_distribution = vec![0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0];
         layer.cells.last_mut().unwrap().typ = CellType::Output;
 
-        let file = Box::new(File::create("full_basis_negation.bin").unwrap()) as Box<dyn Write>;
+        let file = Box::new(File::create("full_basis_negation.qcs").unwrap()) as Box<dyn Write>;
 
         run_simulation(&mut sim_model, vec![layer], cell_architectures_map, Some(file));
     }
@@ -115,7 +115,7 @@ mod tests {
 
         layer.cells[0].dot_probability_distribution = vec![0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0];
 
-        let file = Box::new(File::create("full_basis_line_clocked.bin").unwrap()) as Box<dyn Write>;
+        let file = Box::new(File::create("full_basis_line_clocked.qcs").unwrap()) as Box<dyn Write>;
 
         run_simulation(&mut sim_model, vec![layer], cell_architectures_map, Some(file));
     }
