@@ -3,10 +3,11 @@ use std::{cell, collections::HashMap};
 use nalgebra::{distance, DMatrix, DMatrixView, DVector, DVectorView, Point3, Schur};
 use serde::{Deserialize, Serialize};
 use serde_inline_default::serde_inline_default;
-
+use crate::sim::cell::QCACell;
+use crate::sim::model::SimulationModelSettingsTrait;
 use crate::sim::settings::{InputDescriptor, OptionsEntry};
 
-use super::{CellType, QCACell, QCACellArchitecture, QCACellIndex, QCALayer, SimulationModelSettingsTrait, SimulationModelTrait};
+use super::{CellType, QCACellArchitecture, QCACellIndex, QCALayer, SimulationModelTrait};
 
 fn calculate_vq(relative_permittivity: f64) -> f64 {
     const CHARGE: f64 = 1.6021e-19;
@@ -250,16 +251,6 @@ impl QCACellInternal{
     }
 }
 
-pub struct FullBasisModel {
-    clock_states: [f64; 4],
-    input_states: Vec<f64>,
-    settings: FullBasisModelSettings,
-    index_cells_map: HashMap<QCACellIndex, QCACellInternal>,
-    layer_map: HashMap<usize, QCALayer>,
-    cell_architectures_map: HashMap<String, QCACellArchitecture>,
-}
-
-
 #[serde_inline_default]
 #[derive(Serialize, Deserialize, Clone)]
 pub struct FullBasisModelSettings{
@@ -271,7 +262,7 @@ pub struct FullBasisModelSettings{
 
     #[serde_inline_default(0.0000237177)]
     ampl_min: f64,
-    
+
     #[serde_inline_default(2.0)]
     ampl_max: f64,
 
@@ -283,6 +274,15 @@ pub struct FullBasisModelSettings{
 
     #[serde_inline_default(10.0)]
     relative_permitivity: f64,
+}
+
+pub struct FullBasisModel {
+    clock_states: [f64; 4],
+    input_states: Vec<f64>,
+    settings: FullBasisModelSettings,
+    index_cells_map: HashMap<QCACellIndex, QCACellInternal>,
+    layer_map: HashMap<usize, QCALayer>,
+    cell_architectures_map: HashMap<String, QCACellArchitecture>,
 }
 
 impl FullBasisModelSettings{
@@ -510,7 +510,7 @@ impl SimulationModelTrait for FullBasisModel{
         return stable;
     }
     
-    fn get_settings(&self) -> Box<dyn super::SimulationModelSettingsTrait> {
+    fn get_settings(&self) -> Box<dyn SimulationModelSettingsTrait> {
         Box::new(self.settings.clone()) as Box<dyn SimulationModelSettingsTrait>
     }
     

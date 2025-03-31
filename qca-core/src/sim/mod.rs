@@ -1,118 +1,16 @@
-use std::{cell, f64::consts::{self, PI}, io::Write, ops::Rem};
+use std::{f64::consts::{self, PI}, io::Write, ops::Rem};
 use std::collections::HashMap;
 use serde::{Serialize, Deserialize};
-use serde_repr::{Deserialize_repr, Serialize_repr};
-
-use self::settings::OptionsList;
-
-#[derive(Clone, Copy, Serialize_repr, Deserialize_repr, PartialEq, Debug)]
-#[repr(u8)]
-pub enum CellType{
-    Normal, Input, Output, Fixed
-}
-
-
-#[derive(Clone, Serialize, Deserialize, Debug, Hash, PartialEq, Eq)]
-pub struct QCACellIndex{
-    pub layer: usize,
-    pub cell: usize,
-}
-
-#[derive(Clone, Serialize, Deserialize, Debug)]
-pub struct QCACell{
-    pub position: [f64; 2],
-    pub rotation: f64,
-    pub typ: CellType,
-    pub clock_phase_shift: f64, 
-    pub dot_probability_distribution: Vec<f64>,
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct QCACellArchitecture{
-    pub side_length: f64,
-    pub dot_diameter: f64,
-    pub dot_count: u8,
-    pub dot_positions: Vec<[f64; 2]>,
-    pub dot_tunnels: Vec<(u8, u8)>,
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct QCALayer{
-    pub name: String,
-    pub cell_architecture_id: String,
-    pub cells: Vec<QCACell>,
-    pub z_position: f64,
-}
-
-impl QCACellIndex{
-    pub fn new(layer: usize, cell: usize) -> Self{
-        QCACellIndex{
-            layer: layer,
-            cell: cell
-        }
-    }
-}
-
-impl QCALayer{
-    pub fn new(name: String, cell_architecture_id: String, z_position: f64) -> Self {
-        QCALayer {
-            name,
-            cell_architecture_id,
-            cells: Vec::new(),
-            z_position,
-        }
-    }
-}
-
-impl QCACellArchitecture {
-    pub fn new(side_length: f64, dot_diameter: f64, dot_count: u8, dot_radius: f64) -> Self{
-        QCACellArchitecture{
-            side_length: side_length,
-            dot_diameter: dot_diameter,
-            dot_count: dot_count,
-            dot_positions: (0..dot_count).map(|i| {
-                let angle = (2.0 * PI / dot_count as f64) * i as f64;
-                [
-                    angle.cos() * dot_radius,
-                    angle.sin() * dot_radius,
-                ]
-            }).collect(),
-            dot_tunnels: (0..dot_count).map(|i| {
-                (
-                    (i as i16 - 1).rem_euclid(dot_count as i16) as u8,
-                    (i as i16 + 1).rem_euclid(dot_count as i16) as u8,
-                )
-            }).collect()
-        }
-    }
-}
+use crate::sim::architecture::QCACellArchitecture;
+use crate::sim::cell::{CellType, QCACellIndex};
+use crate::sim::layer::QCALayer;
+use crate::sim::model::SimulationModelTrait;
 
 pub mod settings;
-
-pub trait SimulationModelSettingsTrait{
-    fn get_num_samples(&self) -> usize;
-    fn get_clock_ampl_min(&self) -> f64;
-    fn get_clock_ampl_max(&self) -> f64;
-    fn get_clock_ampl_fac(&self) -> f64;
-    fn get_max_iter(&self) -> usize;
-}
-
-pub trait SimulationModelTrait: Sync + Send{
-    fn get_name(&self) -> String;
-    fn get_unique_id(&self) -> String;
-
-    fn get_settings(&self) -> Box<dyn SimulationModelSettingsTrait>;
-
-    fn get_options_list(&self) -> OptionsList;
-    fn get_deserialized_settings(&self) -> Result<String, String>;
-    fn set_serialized_settings(&mut self, settings_str: &String) -> Result<(), String>;
-
-    fn initiate(&mut self, layers: Box<Vec<QCALayer>>, qca_architetures_map: HashMap<String, QCACellArchitecture>);
-    fn pre_calculate(&mut self, clock_states: &[f64; 4], input_states: &Vec<f64>);
-    fn calculate(&mut self, cell_index: QCACellIndex) -> bool;
-
-    fn get_states(&self, cell_index: QCACellIndex) -> Vec<f64>;
-}
+pub mod cell;
+pub mod layer;
+pub mod architecture;
+pub mod model;
 
 //pub mod bistable;
 pub mod full_basis;

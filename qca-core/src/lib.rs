@@ -15,10 +15,11 @@ mod tests {
 
     use std::{f64::consts::PI, fs::File, io::Write};
     use std::collections::HashMap;
-    use sim::{full_basis::{FullBasisModel, QCACellInternal}, run_simulation, QCACellArchitecture, QCALayer, SimulationModelTrait};
-
-    use self::sim::{CellType, QCACell};
-
+    use sim::{full_basis::{FullBasisModel, QCACellInternal}, run_simulation};
+    use crate::sim::architecture::QCACellArchitecture;
+    use crate::sim::cell::{CellType, QCACell};
+    use crate::sim::layer::QCALayer;
+    use crate::sim::model::SimulationModelTrait;
     use super::*;
     
     #[test]

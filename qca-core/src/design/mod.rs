@@ -2,8 +2,8 @@ use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 use serde_inline_default::serde_inline_default;
-
-use crate::sim::{QCACellArchitecture, QCALayer};
+use crate::sim::layer::QCALayer;
+use crate::sim::architecture::QCACellArchitecture;
 
 #[serde_inline_default]
 #[derive(Serialize, Deserialize, Debug)]
