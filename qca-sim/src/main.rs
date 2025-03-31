@@ -24,7 +24,7 @@ fn main() {
     sim_model.set_serialized_settings(&qca_design.simulation_model_settings.get("full_basis_model").unwrap().to_string())
         .expect("Deserialization failed!");
 
-    let file = Box::new(File::create(format!("{}.bin", filename)).unwrap()) as Box<dyn Write>;
+    let file = Box::new(File::create(format!("{}.bin", "output")).unwrap()) as Box<dyn Write>;
 
     run_simulation(&mut sim_model, qca_design.layers, qca_design.cell_architectures, Some(file));
 }

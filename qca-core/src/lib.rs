@@ -47,7 +47,7 @@ mod tests {
         layer.cells = (0..3).map(|i| {
             QCACell{
                 clock_phase_shift: 0.0, 
-                dot_probability_distribution: vec![0.0; 8], 
+                dot_probability_distribution: vec![0.25; 8],
                 position: [60.0 * i as f64, 0.0], 
                 rotation: 0.0, 
                 typ: ( if i == 0 { CellType::Fixed } else { CellType::Normal })

@@ -354,12 +354,6 @@ impl SimulationModelTrait for FullBasisModel{
                 descriptor: InputDescriptor::NumberInput {min: Some(0.0), max: Some(1.0), unit: None, whole_num: false}
             },
             OptionsEntry::Input {
-                unique_id: "neighborhood_radius".to_string(),
-                name: "Radius of effect".to_string(),
-                description: "Radius of effect for neighbouring cells".to_string(),
-                descriptor: InputDescriptor::NumberInput {min: Some(0.0), max: None, unit: Some("nm".into()), whole_num: false}
-            },
-            OptionsEntry::Input {
                 unique_id: "relative_permitivity".to_string(),
                 name: "Relative permitivity".to_string(),
                 description: "Permitivity of the relative medium".to_string(),
