@@ -6,10 +6,6 @@ pub mod design;
 pub const QCA_CORE_VERSION: Version = 
     Version{major: 1, minor: 0, patch: 0, pre: Prerelease::EMPTY, build: BuildMetadata::EMPTY};
 
-pub fn add(left: usize, right: usize) -> usize {
-    left + right
-}
-
 #[cfg(test)]
 mod tests {
 
@@ -59,7 +55,7 @@ mod tests {
         }).collect::<Vec<QCACell>>();
         
 
-        layer.cells[0].dot_probability_distribution = vec![0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0];
+        layer.cells[0].dot_probability_distribution = vec![1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0];
         layer.cells.last_mut().unwrap().typ = CellType::Output;
 
         let file = Box::new(File::create("full_basis_line.bin").unwrap()) as Box<dyn Write>;

@@ -1,8 +1,7 @@
 use std::env;
 use std::fs;
 
-use qca_core::sim::*;
-use qca_core::sim::bistable::BistableModel;
+use qca_core::design::*;
 
 fn main() {
     let args: Vec<_> = env::args().collect();
@@ -15,12 +14,7 @@ fn main() {
     println!("Selected file: {}", filename);
     let contents = fs::read_to_string(filename).unwrap();
 
-    let mut model: Box<dyn SimulationModelTrait> = Box::new(BistableModel::new());
+    let qca_design: qca_core::design::QCADesign = serde_json::from_str(&contents).unwrap();
 
-    if let Ok(cells) = serde_json::from_str::<Vec<QCACell>>(&contents) {    
-        println!("Running simulation...");
-        run_simulation(&mut model, cells, None);
-
-        println!("Simulation results:");
-    }
+    dbg!(qca_design);
 }

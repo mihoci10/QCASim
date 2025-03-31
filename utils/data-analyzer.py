@@ -1,3 +1,4 @@
+import os
 import sys
 import numpy as np
 import struct
@@ -52,6 +53,8 @@ for i in range(len(outputs)):
         axs[len(clocks) + i].plot(x, outputs[i][p], label='{p}')
     axs[len(clocks) + i].set_title(f'Cell {i+1}')
 
+out_name = os.path.splitext(os.path.basename(filename))[0]
+
 fig.set_size_inches(10,15)
 fig.tight_layout()
-fig.savefig(f'Report_{filename.split(".")[0]}.pdf')
+fig.savefig(f'Report_{out_name}.pdf')
