@@ -327,72 +327,75 @@ impl FullBasisModel{
 }
 
 impl SimulationModelTrait for FullBasisModel{
+    fn get_name(&self) -> String {
+        "Full basis".into()
+    }
+
+    fn get_unique_id(&self) -> String {
+        "full_basis_model".into()
+    }
+
+    fn get_settings(&self) -> Box<dyn SimulationModelSettingsTrait> {
+        Box::new(self.settings.clone()) as Box<dyn SimulationModelSettingsTrait>
+    }
 
     fn get_options_list(&self) -> super::settings::OptionsList {
         vec![
-            OptionsEntry::Input { 
-                unique_id: "num_samples".to_string(), 
-                name: "Number of samples".to_string(), 
-                description: "The number of samples to be used in simulation".to_string(), 
-                descriptor: InputDescriptor::NumberInput {min: Some(1.0), max: None, unit: None, whole_num: true} 
+            OptionsEntry::Input {
+                unique_id: "num_samples".to_string(),
+                name: "Number of samples".to_string(),
+                description: "The number of samples to be used in simulation".to_string(),
+                descriptor: InputDescriptor::NumberInput {min: Some(1.0), max: None, unit: None, whole_num: true}
             },
-            OptionsEntry::Input { 
-                unique_id: "convergence_tolerance".to_string(), 
-                name: "Convergence tolerance".to_string(), 
-                description: "Tolerance for simulation convergence check".to_string(), 
-                descriptor: InputDescriptor::NumberInput {min: Some(0.0), max: Some(1.0), unit: None, whole_num: false} 
+            OptionsEntry::Input {
+                unique_id: "convergence_tolerance".to_string(),
+                name: "Convergence tolerance".to_string(),
+                description: "Tolerance for simulation convergence check".to_string(),
+                descriptor: InputDescriptor::NumberInput {min: Some(0.0), max: Some(1.0), unit: None, whole_num: false}
             },
-            OptionsEntry::Input { 
-                unique_id: "neighborhood_radius".to_string(), 
-                name: "Radius of effect".to_string(), 
-                description: "Radius of effect for neighbouring cells".to_string(), 
-                descriptor: InputDescriptor::NumberInput {min: Some(0.0), max: None, unit: Some("nm".into()), whole_num: false} 
+            OptionsEntry::Input {
+                unique_id: "neighborhood_radius".to_string(),
+                name: "Radius of effect".to_string(),
+                description: "Radius of effect for neighbouring cells".to_string(),
+                descriptor: InputDescriptor::NumberInput {min: Some(0.0), max: None, unit: Some("nm".into()), whole_num: false}
             },
-            OptionsEntry::Input { 
-                unique_id: "relative_permitivity".to_string(), 
-                name: "Relative permitivity".to_string(), 
-                description: "Permitivity of the relative medium".to_string(), 
-                descriptor: InputDescriptor::NumberInput {min: Some(0.0), max: None, unit: None, whole_num: false} 
+            OptionsEntry::Input {
+                unique_id: "relative_permitivity".to_string(),
+                name: "Relative permitivity".to_string(),
+                description: "Permitivity of the relative medium".to_string(),
+                descriptor: InputDescriptor::NumberInput {min: Some(0.0), max: None, unit: None, whole_num: false}
             },
-            OptionsEntry::Input { 
-                unique_id: "max_iter".to_string(), 
-                name: "Maximum iterations".to_string(), 
-                description: "Maximum number of iterations per sample".to_string(), 
-                descriptor: InputDescriptor::NumberInput {min: Some(0.0), max: None, unit: None, whole_num: true} 
+            OptionsEntry::Input {
+                unique_id: "max_iter".to_string(),
+                name: "Maximum iterations".to_string(),
+                description: "Maximum number of iterations per sample".to_string(),
+                descriptor: InputDescriptor::NumberInput {min: Some(0.0), max: None, unit: None, whole_num: true}
             },
-            OptionsEntry::Input { 
-                unique_id: "layer_separation".to_string(), 
-                name: "Layer separation".to_string(), 
-                description: "Separation between layers in nm".to_string(), 
-                descriptor: InputDescriptor::NumberInput {min: Some(0.0), max: None, unit: Some("nm".into()), whole_num: false} 
+            OptionsEntry::Input {
+                unique_id: "layer_separation".to_string(),
+                name: "Layer separation".to_string(),
+                description: "Separation between layers in nm".to_string(),
+                descriptor: InputDescriptor::NumberInput {min: Some(0.0), max: None, unit: Some("nm".into()), whole_num: false}
             }
         ]
     }
-    
+
     fn get_deserialized_settings(&self) -> Result<String, String> {
         match serde_json::to_string(&self.settings){
             Ok(res) => Ok(res),
             Err(err) => Err(err.to_string()),
         }
     }
-    
+
     fn set_serialized_settings(&mut self, settings_str: &String) -> Result<(), String>{
         match serde_json::from_str::<FullBasisModelSettings>(settings_str) {
-            Ok(res) => 
+            Ok(res) =>
             {
-                self.settings = res; 
+                self.settings = res;
                 Ok(())
             },
             Err(err) => Err(err.to_string()),
         }
-    }
-    
-    fn get_name(&self) -> String {
-        "Full basis".into()
-    }
-    
-    fn get_unique_id(&self) -> String {
-        "full_basis_model".into()
     }
 
     fn initiate(&mut self, layers: Box<Vec<QCALayer>>, qca_architetures_map: HashMap<String, QCACellArchitecture>) {
@@ -425,10 +428,10 @@ impl SimulationModelTrait for FullBasisModel{
         let mut internal_cell = self.index_cells_map.get(&cell_ind).unwrap().clone();
         let clock_index = (internal_cell.cell.clock_phase_shift.rem_euclid(360.0) / 90.0) as usize;
         let clock_value = self.clock_states[clock_index];
-        
+
         let old_charge_probability = internal_cell.dot_charge_probability.clone();
 
-        internal_cell.hamilton_matrix = 
+        internal_cell.hamilton_matrix =
             &internal_cell.static_hamilton_matrix + &internal_cell.dynamic_hamilton_matrix * clock_value;
 
         match internal_cell.cell.typ {
@@ -448,7 +451,7 @@ impl SimulationModelTrait for FullBasisModel{
                                 let distance = distance(&dot_pos_i,& dot_pos_j);
 
                                 internal_cell.dot_potential[i] += (
-                                    calculate_vq(self.settings.relative_permitivity) * 
+                                    calculate_vq(self.settings.relative_permitivity) *
                                     (c.dot_charge_probability[j] - ro_plus)
                                 ) / distance;
                             }
@@ -459,13 +462,13 @@ impl SimulationModelTrait for FullBasisModel{
         }
 
         if internal_cell.cell.typ != CellType::Fixed{
-            
+
             for i in 0..n*n {
                 internal_cell.hamilton_matrix[(i, i)] = QCACellInternal::hamilton_term_1(
                     n, 1.0,
-                    internal_cell.dot_potential.as_view(), 
+                    internal_cell.dot_potential.as_view(),
                     internal_cell.basis_matrix.row(i).transpose().as_view(),
-                    internal_cell.basis_matrix.row(i).transpose().as_view(), 
+                    internal_cell.basis_matrix.row(i).transpose().as_view(),
                 ) + &internal_cell.static_hamilton_matrix[(i, i)];
             }
 
@@ -484,7 +487,7 @@ impl SimulationModelTrait for FullBasisModel{
                                 for spin in 0..=1 {
                                     charge_probability +=
                                         QCACellInternal::count_operator(
-                                            n, i, spin, 
+                                            n, i, spin,
                                             internal_cell.basis_matrix.row(j).transpose().as_view()
                                         )
                                         *
@@ -508,10 +511,6 @@ impl SimulationModelTrait for FullBasisModel{
         self.index_cells_map.insert(cell_ind, internal_cell);
 
         return stable;
-    }
-    
-    fn get_settings(&self) -> Box<dyn SimulationModelSettingsTrait> {
-        Box::new(self.settings.clone()) as Box<dyn SimulationModelSettingsTrait>
     }
     
     fn get_states(&self, cell_ind: QCACellIndex) -> Vec<f64> {
