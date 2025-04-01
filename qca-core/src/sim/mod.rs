@@ -2,7 +2,7 @@ use std::{f64::consts::{self, PI}, io::Write, ops::Rem};
 use std::collections::HashMap;
 use serde::{Serialize, Deserialize};
 use crate::sim::architecture::QCACellArchitecture;
-use crate::sim::cell::{CellType, QCACellIndex};
+use crate::sim::cell::{dot_probability_distribution_to_polarization, CellType, QCACellIndex};
 use crate::sim::clock::get_clock_values;
 use crate::sim::input_generator::get_input_values;
 use crate::sim::layer::QCALayer;
@@ -81,11 +81,9 @@ pub fn run_simulation(sim_model: &mut Box<dyn SimulationModelTrait>, layers: Vec
                         let cell_index = QCACellIndex::new(l, c);
                         if layers[l].cells[c].typ == t {
                             let distribution = sim_model.get_states(cell_index);
-                            for p in 0..n/4 {
-                               let val: f64 = 
-                                (distribution[p + 0] + distribution[p + (n/2)] - distribution[p + (n/4)] - distribution[p + (n/2) + (n/4)]) 
-                                / distribution.iter().sum::<f64>();
-                               let _ = s.write(&val.to_le_bytes());
+                            let polarization = dot_probability_distribution_to_polarization(&distribution);
+                            for p in 0..polarization.len() {
+                                let _ = s.write(&polarization[p].to_le_bytes());
                             }
                         }
                     }
