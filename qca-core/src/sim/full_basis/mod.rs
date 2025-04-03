@@ -3,7 +3,7 @@ use std::{cell, collections::HashMap};
 use nalgebra::{distance, DMatrix, DMatrixView, DVector, DVectorView, Point3, Schur};
 use serde::{Deserialize, Serialize};
 use serde_inline_default::serde_inline_default;
-use crate::sim::cell::QCACell;
+use crate::sim::cell::{polarization_to_dot_probability_distribution, QCACell};
 use crate::sim::model::SimulationModelSettingsTrait;
 use crate::sim::settings::{InputDescriptor, OptionsEntry};
 
@@ -283,6 +283,7 @@ pub struct FullBasisModel {
     index_cells_map: HashMap<QCACellIndex, QCACellInternal>,
     layer_map: HashMap<usize, QCALayer>,
     cell_architectures_map: HashMap<String, QCACellArchitecture>,
+    cell_input_map: HashMap<QCACellIndex, usize>,
 }
 
 impl FullBasisModelSettings{
@@ -321,7 +322,8 @@ impl FullBasisModel{
             settings: FullBasisModelSettings::new(),
             index_cells_map: HashMap::new(),
             layer_map: HashMap::new(),
-            cell_architectures_map: HashMap::new()
+            cell_architectures_map: HashMap::new(),
+            cell_input_map: HashMap::new()
         }
     }
 }
@@ -397,6 +399,8 @@ impl SimulationModelTrait for FullBasisModel{
         self.layer_map.clear();
         self.cell_architectures_map = qca_architetures_map.clone();
 
+        let mut cell_input_cnt = 0;
+
         layers.iter().enumerate().for_each(|(i, layer)| {
             self.layer_map.insert(i, layer.clone());
             layer.cells.iter().enumerate().for_each(|(j, c)| {
@@ -404,6 +408,10 @@ impl SimulationModelTrait for FullBasisModel{
                     QCACellIndex::new(i, j),
                     QCACellInternal::new(Box::new(c.clone()), layer, qca_architetures_map.get(&layer.cell_architecture_id).unwrap(), self.settings.relative_permitivity)
                 );
+                if c.typ == CellType::Input {
+                    self.cell_input_map.insert(QCACellIndex::new(i, j), cell_input_cnt);
+                    cell_input_cnt += 1;
+                }
             })
         });
     }
@@ -429,7 +437,13 @@ impl SimulationModelTrait for FullBasisModel{
             &internal_cell.static_hamilton_matrix + &internal_cell.dynamic_hamilton_matrix * clock_value;
 
         match internal_cell.cell.typ {
-            CellType::Input => todo!(),
+            CellType::Input => {
+                let cell_state_num = n / 4;
+                let input_i = self.cell_input_map.get(&cell_ind).unwrap();
+                let input = self.input_states[(cell_state_num * input_i)..(cell_state_num * input_i + cell_state_num)].to_vec();
+                let input_distribution = polarization_to_dot_probability_distribution(input.as_slice());
+                internal_cell.dot_charge_probability = DVector::from_vec(input_distribution);
+            },
             CellType::Fixed => {
                 internal_cell.dot_charge_probability = DVector::from_vec(internal_cell.cell.dot_probability_distribution.clone());
             },
@@ -455,7 +469,8 @@ impl SimulationModelTrait for FullBasisModel{
             }
         }
 
-        if internal_cell.cell.typ != CellType::Fixed{
+        if matches!(internal_cell.cell.typ, CellType::Normal | CellType::Output)
+        {
 
             for i in 0..n*n {
                 internal_cell.hamilton_matrix[(i, i)] = QCACellInternal::hamilton_term_1(

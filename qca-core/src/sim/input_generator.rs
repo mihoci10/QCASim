@@ -1,7 +1,35 @@
 use std::f64::consts;
 
-pub fn get_input_values(num_samples: usize, cur_sample: usize, num_inputs: usize) -> Vec<f64>{
-    (0..num_inputs).map(|i| {
-        (-1.0 * (f64::powi(2.0, i as i32) * cur_sample as f64 * ((2.0 * consts::PI) / num_samples as f64)).sin()).signum()
+fn square_signal_function(x: f64, frequency: f64) -> f64{
+    (x * frequency * 2.0 * consts::PI).sin().signum()
+}
+
+pub fn generate_cell_input(num_states: usize, num_samples: usize, frequency: f64) -> Vec<f64> {
+    (0..num_samples).map(|i| {
+        let segment_size = num_samples / num_states;
+        let segment_i = i / segment_size;
+        let x = i as f64 / segment_size as f64;
+        (0..num_states).map(|j| {
+            if j == segment_i {
+                square_signal_function(x, frequency)
+            }
+            else {
+                0.0
+            }
+        }).collect::<Vec<f64>>()
+    }).flatten().collect()
+}
+
+pub fn generate_cell_input_sample(num_states: usize, sample: usize, num_samples: usize, frequency: f64) -> Vec<f64> {
+    let segment_size = num_samples / num_states;
+    let segment_i = sample / segment_size;
+    let x = sample as f64 / segment_size as f64;
+    (0..num_states).map(|i| {
+        if i == segment_i {
+            square_signal_function(x, frequency)
+        }
+        else {
+            0.0
+        }
     }).collect()
 }

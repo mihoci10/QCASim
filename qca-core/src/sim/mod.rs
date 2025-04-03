@@ -4,7 +4,7 @@ use serde::{Serialize, Deserialize};
 use crate::sim::architecture::QCACellArchitecture;
 use crate::sim::cell::{dot_probability_distribution_to_polarization, CellType, QCACellIndex};
 use crate::sim::clock::get_clock_values;
-use crate::sim::input_generator::get_input_values;
+use crate::sim::input_generator::{generate_cell_input, generate_cell_input_sample};
 use crate::sim::layer::QCALayer;
 use crate::sim::model::SimulationModelTrait;
 
@@ -38,18 +38,16 @@ pub fn run_simulation(sim_model: &mut Box<dyn SimulationModelTrait>, layers: Vec
     for i in 0..model_settings.get_num_samples() {
         let clock_states = get_clock_values(
             model_settings.get_num_samples(),
-            i,
+            i * 4 * 2,
             num_inputs,
             model_settings.get_clock_ampl_min(),
             model_settings.get_clock_ampl_max(),
             model_settings.get_clock_ampl_fac()
         );
 
-        let input_states = get_input_values(
-            model_settings.get_num_samples(), 
-            i,
-            num_inputs
-        );
+        let input_states = (0..num_inputs).map(|j| {
+            generate_cell_input_sample(n/4, i, model_settings.get_num_samples(), f64::powi(2.0, j as i32))
+        }).flatten().collect::<Vec<f64>>();
 
         let mut stable = false;
         let mut j = 0;
