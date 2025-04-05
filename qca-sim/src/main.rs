@@ -5,7 +5,7 @@ use std::io::Write;
 use qca_core::design::*;
 use qca_core::sim::full_basis::FullBasisModel;
 use qca_core::sim::model::SimulationModelTrait;
-use qca_core::sim::run_simulation;
+use qca_core::sim::{run_simulation, run_simulation_async, SimulationProgress};
 
 fn main() {
     let args: Vec<_> = env::args().collect();
@@ -24,7 +24,15 @@ fn main() {
     sim_model.set_serialized_settings(&qca_design.simulation_model_settings.get("full_basis_model").unwrap().to_string())
         .expect("Deserialization failed!");
 
-    let file = Box::new(File::create(format!("{}.qcs", "output")).unwrap()) as Box<dyn Write>;
+    let file = Box::new(File::create(format!("{}.qcs", "output")).unwrap()) as Box<dyn Write + Send>;
 
-    run_simulation(&mut sim_model, qca_design.layers, qca_design.cell_architectures, Some(file));
+    let (handle, progress_rx, cancel_tx) = run_simulation_async(sim_model, qca_design.layers, qca_design.cell_architectures, Some(file));
+
+    for progress in progress_rx{
+        match progress{
+            SimulationProgress::Initializing => println!("Initializing"),
+            SimulationProgress::Running { current_sample, total_samples } => {println!("\rSample {} of {}", current_sample, total_samples)}
+            SimulationProgress::Deinitializng => {println!("Finishing")}
+        }
+    }
 }

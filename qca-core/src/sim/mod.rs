@@ -1,6 +1,10 @@
 use std::{f64::consts::{self, PI}, io::Write, ops::Rem};
 use std::collections::HashMap;
+use std::sync::{Arc, mpsc, Mutex};
+use std::sync::mpsc::{Receiver, Sender};
+use std::thread::JoinHandle;
 use serde::{Serialize, Deserialize};
+use tokio::sync::oneshot;
 use crate::sim::architecture::QCACellArchitecture;
 use crate::sim::cell::{dot_probability_distribution_to_polarization, CellType, QCACellIndex};
 use crate::sim::clock::get_clock_values;
@@ -19,8 +23,36 @@ pub mod full_basis;
 pub mod clock;
 pub mod input_generator;
 
-pub fn run_simulation(sim_model: &mut Box<dyn SimulationModelTrait>, layers: Vec<QCALayer>, architectures: HashMap<String, QCACellArchitecture>, mut stream: Option<Box<dyn Write>> )
+pub enum SimulationProgress{
+    Initializing,
+    Running { current_sample: usize, total_samples: usize},
+    Deinitializng
+}
+pub enum SimulationCancelRequest{}
+
+fn send_progress(progress: SimulationProgress, tx: &Option<Sender<SimulationProgress>>){
+    if let Some(tx) = &tx{
+        let _ = tx.send(progress);
+    }
+}
+
+fn check_cancelled(rx: &mut Option<oneshot::Receiver<SimulationCancelRequest>>) -> bool {
+    match rx {
+        Some(ref mut rrx) => rrx.try_recv().is_ok(),
+        None => false
+    }
+}
+
+fn run_simulation_internal(
+    sim_model: &mut Box<dyn SimulationModelTrait>,
+    layers: Vec<QCALayer>,
+    architectures: HashMap<String, QCACellArchitecture>,
+    mut stream: Option<Box<dyn Write + Send>>,
+    progress_tx: Option<Sender<SimulationProgress>>,
+    cancel_rx: &mut Option<oneshot::Receiver<SimulationCancelRequest>>
+)
 {
+    send_progress(SimulationProgress::Initializing, &progress_tx);
     let cell_architecture: QCACellArchitecture = architectures.get(&layers[0].cell_architecture_id).unwrap().clone();
     //TODO: ugly workaround
     let n: usize = cell_architecture.dot_count as usize;
@@ -36,6 +68,15 @@ pub fn run_simulation(sim_model: &mut Box<dyn SimulationModelTrait>, layers: Vec
     }
 
     for i in 0..model_settings.get_num_samples() {
+        if check_cancelled(cancel_rx){
+            break;
+        }
+        send_progress(
+            SimulationProgress::Running {
+                current_sample: i,
+                total_samples: model_settings.get_num_samples()
+            }, &progress_tx);
+
         let clock_states = get_clock_values(
             model_settings.get_num_samples(),
             i * 4 * 2,
@@ -89,4 +130,29 @@ pub fn run_simulation(sim_model: &mut Box<dyn SimulationModelTrait>, layers: Vec
             }
         }
     };
+    send_progress(SimulationProgress::Deinitializng, &progress_tx);
+}
+
+pub fn run_simulation(
+    sim_model: &mut Box<dyn SimulationModelTrait>,
+    layers: Vec<QCALayer>,
+    architectures: HashMap<String, QCACellArchitecture>,
+    stream: Option<Box<dyn Write + Send>>){
+    run_simulation_internal(sim_model, layers, architectures, stream, None, &mut None);
+}
+
+pub fn run_simulation_async(
+    mut sim_model: Box<dyn SimulationModelTrait>,
+    layers: Vec<QCALayer>,
+    architectures: HashMap<String, QCACellArchitecture>,
+    stream: Option<Box<dyn Write + Send>>
+) -> (JoinHandle<()>, Receiver<SimulationProgress>, oneshot::Sender<SimulationCancelRequest>) {
+
+    let (progress_tx, progress_rx) = mpsc::channel::<SimulationProgress>();
+    let (cancel_tx, mut cancel_rx) = oneshot::channel::<SimulationCancelRequest>();
+    let thread_handler = std::thread::spawn(move || {
+        run_simulation_internal(&mut sim_model, layers, architectures, stream, Some(progress_tx), &mut Some(cancel_rx));
+    });
+
+    (thread_handler, progress_rx, cancel_tx)
 }
