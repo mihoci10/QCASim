@@ -60,7 +60,7 @@ mod tests {
 
         let file = Box::new(File::create("full_basis_line.qcs").unwrap()) as Box<dyn Write>;
 
-        run_simulation(&mut sim_model, vec![layer], cell_architectures_map, Some(file));
+        run_simulation(sim_model, vec![layer], cell_architectures_map, Some(file));
     }
 
     #[test]
@@ -89,7 +89,7 @@ mod tests {
 
         let file = Box::new(File::create("full_basis_negation.qcs").unwrap()) as Box<dyn Write>;
 
-        run_simulation(&mut sim_model, vec![layer], cell_architectures_map, Some(file));
+        run_simulation(sim_model, vec![layer], cell_architectures_map, Some(file));
     }
 
     #[test]
@@ -117,6 +117,6 @@ mod tests {
 
         let file = Box::new(File::create("full_basis_line_clocked.qcs").unwrap()) as Box<dyn Write>;
 
-        run_simulation(&mut sim_model, vec![layer], cell_architectures_map, Some(file));
+        run_simulation(sim_model, vec![layer], cell_architectures_map, Some(file));
     }
 }
