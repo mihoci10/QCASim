@@ -44,7 +44,7 @@ fn check_cancelled(rx: &mut Option<oneshot::Receiver<SimulationCancelRequest>>) 
 }
 
 fn run_simulation_internal(
-    sim_model: &mut Box<dyn SimulationModelTrait>,
+    mut sim_model: Box<dyn SimulationModelTrait>,
     layers: Vec<QCALayer>,
     architectures: HashMap<String, QCACellArchitecture>,
     mut stream: Option<Box<dyn Write + Send>>,
@@ -134,7 +134,7 @@ fn run_simulation_internal(
 }
 
 pub fn run_simulation(
-    sim_model: &mut Box<dyn SimulationModelTrait>,
+    sim_model: Box<dyn SimulationModelTrait>,
     layers: Vec<QCALayer>,
     architectures: HashMap<String, QCACellArchitecture>,
     stream: Option<Box<dyn Write + Send>>){
@@ -142,7 +142,7 @@ pub fn run_simulation(
 }
 
 pub fn run_simulation_async(
-    mut sim_model: Box<dyn SimulationModelTrait>,
+    sim_model: Box<dyn SimulationModelTrait>,
     layers: Vec<QCALayer>,
     architectures: HashMap<String, QCACellArchitecture>,
     stream: Option<Box<dyn Write + Send>>
@@ -151,7 +151,7 @@ pub fn run_simulation_async(
     let (progress_tx, progress_rx) = mpsc::channel::<SimulationProgress>();
     let (cancel_tx, mut cancel_rx) = oneshot::channel::<SimulationCancelRequest>();
     let thread_handler = std::thread::spawn(move || {
-        run_simulation_internal(&mut sim_model, layers, architectures, stream, Some(progress_tx), &mut Some(cancel_rx));
+        run_simulation_internal(sim_model, layers, architectures, stream, Some(progress_tx), &mut Some(cancel_rx));
     });
 
     (thread_handler, progress_rx, cancel_tx)
