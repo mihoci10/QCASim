@@ -1,9 +1,10 @@
 use semver::{BuildMetadata, Prerelease, Version};
 
-pub mod sim;
+pub mod simulation;
 pub mod design;
+mod objects;
 
-pub const QCA_CORE_VERSION: Version = 
+pub const QCA_CORE_VERSION: Version =
     Version{major: 1, minor: 0, patch: 0, pre: Prerelease::EMPTY, build: BuildMetadata::EMPTY};
 
 #[cfg(test)]
@@ -11,11 +12,11 @@ mod tests {
 
     use std::{f64::consts::PI, fs::File, io::Write};
     use std::collections::HashMap;
-    use sim::{full_basis::{FullBasisModel, QCACellInternal}, run_simulation};
-    use crate::sim::architecture::QCACellArchitecture;
-    use crate::sim::cell::{CellType, QCACell};
-    use crate::sim::layer::QCALayer;
-    use crate::sim::model::SimulationModelTrait;
+    use simulation::{full_basis::{FullBasisModel, QCACellInternal}, run_simulation};
+    use crate::objects::architecture::QCACellArchitecture;
+    use crate::objects::cell::{CellType, QCACell};
+    use crate::objects::layer::QCALayer;
+    use crate::simulation::model::SimulationModelTrait;
     use super::*;
     
     #[test]

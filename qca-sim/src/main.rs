@@ -3,9 +3,11 @@ use std::fs;
 use std::fs::File;
 use std::io::Write;
 use qca_core::design::*;
-use qca_core::sim::full_basis::FullBasisModel;
-use qca_core::sim::model::SimulationModelTrait;
-use qca_core::sim::{run_simulation, run_simulation_async, SimulationProgress};
+use qca_core::design::file::QCADesign;
+use qca_core::simulation::full_basis::FullBasisModel;
+use qca_core::simulation::model::SimulationModelTrait;
+use qca_core::simulation::{run_simulation, run_simulation_async, SimulationProgress};
+use qca_core::simulation::file::write_to_file;
 
 fn main() {
     let args: Vec<_> = env::args().collect();
@@ -35,4 +37,6 @@ fn main() {
             SimulationProgress::Deinitializng => {println!("Finishing")}
         }
     }
+
+    write_to_file("output_new.tar", &serde_json::from_str(&contents).unwrap());
 }

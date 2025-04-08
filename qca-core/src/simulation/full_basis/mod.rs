@@ -3,9 +3,9 @@ use std::{cell, collections::HashMap};
 use nalgebra::{distance, DMatrix, DMatrixView, DVector, DVectorView, Point3, Schur};
 use serde::{Deserialize, Serialize};
 use serde_inline_default::serde_inline_default;
-use crate::sim::cell::{polarization_to_dot_probability_distribution, QCACell};
-use crate::sim::model::SimulationModelSettingsTrait;
-use crate::sim::settings::{InputDescriptor, OptionsEntry};
+use crate::objects::cell::{polarization_to_dot_probability_distribution, QCACell};
+use crate::simulation::model::SimulationModelSettingsTrait;
+use crate::simulation::settings::{InputDescriptor, OptionsEntry};
 
 use super::{CellType, QCACellArchitecture, QCACellIndex, QCALayer, SimulationModelTrait};
 

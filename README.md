@@ -25,7 +25,7 @@ cargo build
 To run a simulation, use the following command:
 
 ```bash
-cargo run --bin qca-sim -- path/to/design.json
+cargo run --bin qca-simulation -- path/to/design.json
 ```
 
 ### Analyzing results

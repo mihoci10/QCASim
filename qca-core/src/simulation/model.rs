@@ -1,8 +1,8 @@
 use std::collections::HashMap;
-use crate::sim::architecture::QCACellArchitecture;
-use crate::sim::cell::{QCACellIndex};
-use crate::sim::layer::QCALayer;
-use crate::sim::settings::OptionsList;
+use crate::objects::architecture::QCACellArchitecture;
+use crate::objects::cell::{QCACellIndex};
+use crate::objects::layer::QCALayer;
+use crate::simulation::settings::OptionsList;
 
 pub trait SimulationModelSettingsTrait{
     fn get_num_samples(&self) -> usize;

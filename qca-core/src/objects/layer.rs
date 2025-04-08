@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use crate::sim::cell::QCACell;
+use crate::objects::cell::QCACell;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct QCALayer{

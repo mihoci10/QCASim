@@ -1,27 +1,23 @@
-use std::{f64::consts::{self, PI}, io::Write, ops::Rem};
+use std::{io::Write, ops::Rem};
 use std::collections::HashMap;
-use std::sync::{Arc, mpsc, Mutex};
+use std::sync::mpsc;
 use std::sync::mpsc::{Receiver, Sender};
 use std::thread::JoinHandle;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use tokio::sync::oneshot;
-use crate::sim::architecture::QCACellArchitecture;
-use crate::sim::cell::{dot_probability_distribution_to_polarization, CellType, QCACellIndex};
-use crate::sim::clock::get_clock_values;
-use crate::sim::input_generator::{generate_cell_input, generate_cell_input_sample};
-use crate::sim::layer::QCALayer;
-use crate::sim::model::SimulationModelTrait;
+use crate::objects::architecture::QCACellArchitecture;
+use crate::objects::cell::{dot_probability_distribution_to_polarization, CellType, QCACellIndex};
+use crate::objects::clock::get_clock_values;
+use crate::objects::input_generator::generate_cell_input_sample;
+use crate::objects::layer::QCALayer;
+use crate::simulation::model::SimulationModelTrait;
 
 pub mod settings;
-pub mod cell;
-pub mod layer;
-pub mod architecture;
 pub mod model;
 
 //pub mod bistable;
 pub mod full_basis;
-pub mod clock;
-pub mod input_generator;
+pub mod file;
 
 pub enum SimulationProgress{
     Initializing,
