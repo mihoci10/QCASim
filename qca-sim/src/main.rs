@@ -6,7 +6,7 @@ use qca_core::design::*;
 use qca_core::design::file::QCADesign;
 use qca_core::simulation::full_basis::FullBasisModel;
 use qca_core::simulation::model::SimulationModelTrait;
-use qca_core::simulation::{run_simulation, run_simulation_async, SimulationProgress};
+use qca_core::simulation::{run_simulation, run_simulation_async, SimulationCancelRequest, SimulationProgress};
 use qca_core::simulation::file::write_to_file;
 
 fn main() {

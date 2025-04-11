@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::fs::File;
+use chrono::{DateTime, Duration, Local, TimeDelta};
 use serde::{Deserialize, Serialize};
 use serde_inline_default::serde_inline_default;
 use serde_json::Value;
@@ -10,11 +11,18 @@ use crate::objects::architecture::QCACellArchitecture;
 
 pub const SIMULATION_FILE_EXTENSION: &str = "qcs";
 
+#[derive(Serialize, Deserialize, Debug)]
+#[serde_inline_default]
 pub struct QCASimulationMetadata{
+    #[serde_inline_default("unknown".to_string())]
+    pub qca_core_version: String,
 
+    pub start_time: DateTime<Local>,
+    pub duration: TimeDelta,
 }
 
-pub struct QCASimulation {
+pub struct QCASimulationData {
+    pub cells_data: Vec<>
 }
 
 pub fn write_to_file(filename: &str, design: &QCADesign) -> Result<(), String> {

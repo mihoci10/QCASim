@@ -19,12 +19,14 @@ pub mod model;
 pub mod full_basis;
 pub mod file;
 
+#[derive(Debug)]
 pub enum SimulationProgress{
     Initializing,
     Running { current_sample: usize, total_samples: usize},
     Deinitializng
 }
-pub enum SimulationCancelRequest{}
+#[derive(Debug)]
+pub struct SimulationCancelRequest{}
 
 fn send_progress(progress: SimulationProgress, tx: &Option<Sender<SimulationProgress>>){
     if let Some(tx) = &tx{
