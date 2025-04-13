@@ -522,8 +522,8 @@ impl SimulationModelTrait for FullBasisModel{
         return stable;
     }
     
-    fn get_states(&self, cell_ind: QCACellIndex) -> Vec<f64> {
-        self.index_cells_map.get(&cell_ind).unwrap().dot_charge_probability.data.as_vec().to_vec()
+    fn get_states(&self, cell_ind: &QCACellIndex) -> Vec<f64> {
+        self.index_cells_map.get(cell_ind).unwrap().dot_charge_probability.data.as_vec().to_vec()
     }
 
 }

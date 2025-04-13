@@ -7,7 +7,7 @@ use qca_core::design::file::QCADesign;
 use qca_core::simulation::full_basis::FullBasisModel;
 use qca_core::simulation::model::SimulationModelTrait;
 use qca_core::simulation::{run_simulation, run_simulation_async, SimulationCancelRequest, SimulationProgress};
-use qca_core::simulation::file::write_to_file;
+use qca_core::simulation::file::{SIMULATION_FILE_EXTENSION, write_to_file};
 
 fn main() {
     let args: Vec<_> = env::args().collect();
@@ -28,7 +28,7 @@ fn main() {
 
     let file = Box::new(File::create(format!("{}.qcs", "output")).unwrap()) as Box<dyn Write + Send>;
 
-    let (handle, progress_rx, cancel_tx) = run_simulation_async(sim_model, qca_design.layers, qca_design.cell_architectures, Some(file));
+    let (handle, progress_rx, cancel_tx) = run_simulation_async(sim_model, qca_design.layers, qca_design.cell_architectures);
 
     for progress in progress_rx{
         match progress{
@@ -38,5 +38,7 @@ fn main() {
         }
     }
 
-    write_to_file("output_new.tar", &serde_json::from_str(&contents).unwrap());
+    let simulation_data = handle.join().unwrap();
+
+    write_to_file(format!("output.{}", "tar").as_str(), &serde_json::from_str(&contents).unwrap(), &simulation_data).unwrap();
 }

@@ -26,5 +26,5 @@ pub trait SimulationModelTrait: Sync + Send{
     fn pre_calculate(&mut self, clock_states: &[f64; 4], input_states: &Vec<f64>);
     fn calculate(&mut self, cell_index: QCACellIndex) -> bool;
 
-    fn get_states(&self, cell_index: QCACellIndex) -> Vec<f64>;
+    fn get_states(&self, cell_index: &QCACellIndex) -> Vec<f64>;
 }

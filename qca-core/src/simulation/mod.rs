@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use std::sync::mpsc;
 use std::sync::mpsc::{Receiver, Sender};
 use std::thread::JoinHandle;
+use chrono::Local;
 use serde::{Deserialize, Serialize};
 use tokio::sync::oneshot;
 use crate::objects::architecture::QCACellArchitecture;
@@ -10,6 +11,7 @@ use crate::objects::cell::{dot_probability_distribution_to_polarization, CellTyp
 use crate::objects::clock::get_clock_values;
 use crate::objects::input_generator::generate_cell_input_sample;
 use crate::objects::layer::QCALayer;
+use crate::simulation::file::{QCACellData, QCASimulationData, QCASimulationMetadata};
 use crate::simulation::model::SimulationModelTrait;
 
 pub mod settings;
@@ -45,12 +47,12 @@ fn run_simulation_internal(
     mut sim_model: Box<dyn SimulationModelTrait>,
     layers: Vec<QCALayer>,
     architectures: HashMap<String, QCACellArchitecture>,
-    mut stream: Option<Box<dyn Write + Send>>,
     progress_tx: Option<Sender<SimulationProgress>>,
     cancel_rx: &mut Option<oneshot::Receiver<SimulationCancelRequest>>
-)
+) -> QCASimulationData
 {
     send_progress(SimulationProgress::Initializing, &progress_tx);
+    let mut simulation_data = QCASimulationData::new();
     let cell_architecture: QCACellArchitecture = architectures.get(&layers[0].cell_architecture_id).unwrap().clone();
     //TODO: ugly workaround
     let n: usize = cell_architecture.dot_count as usize;
@@ -58,12 +60,22 @@ fn run_simulation_internal(
     let num_outputs: usize = layers.iter().map(|layer| layer.cells.iter().filter(|c| c.typ == CellType::Output).count()).sum();
     let model_settings = sim_model.get_settings();
 
-    sim_model.initiate( Box::new(layers.clone()), architectures.clone());
-    
-    if let Some(s) = &mut stream {
-        let _ = s.write(&(num_inputs + num_outputs).to_le_bytes());
-        let _ = s.write(&(n / 4).to_le_bytes());
+    for i in 0..layers.len()
+    {
+        for j in 0..layers[i].cells.len()
+        {
+            let cell = &layers[i].cells[j];
+            if matches!(cell.typ, CellType::Input | CellType::Output){
+                let cell_index = QCACellIndex::new(i, j);
+                simulation_data.cells_data.push(
+                    QCACellData::new(cell_index.clone(), model_settings.get_num_samples())
+                );
+                simulation_data.metadata.stored_cells.push(cell_index.clone());
+            }
+        }
     }
+
+    sim_model.initiate( Box::new(layers.clone()), architectures.clone());
 
     for i in 0..model_settings.get_num_samples() {
         if check_cancelled(cancel_rx){
@@ -107,49 +119,38 @@ fn run_simulation_internal(
             j += 1;
         }
 
-        if let Some(s) = &mut stream {
-            for f in clock_states.iter(){
-                let _ = s.write(&f.to_le_bytes());
+        simulation_data.cells_data.iter_mut().for_each(|cell_data| {
+            let distribution = sim_model.get_states(&cell_data.index);
+            let polarization = dot_probability_distribution_to_polarization(&distribution);
+            for p in polarization{
+                cell_data.data.push(p);
             }
-
-            for t in [CellType::Input, CellType::Output]{
-                for l in 0..layers.len() { 
-                    for c in 0..layers[l].cells.len() {
-                        let cell_index = QCACellIndex::new(l, c);
-                        if layers[l].cells[c].typ == t {
-                            let distribution = sim_model.get_states(cell_index);
-                            let polarization = dot_probability_distribution_to_polarization(&distribution);
-                            for p in 0..polarization.len() {
-                                let _ = s.write(&polarization[p].to_le_bytes());
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        });
     };
     send_progress(SimulationProgress::Deinitializng, &progress_tx);
+    simulation_data.metadata.duration = Local::now() - simulation_data.metadata.start_time;
+
+    return simulation_data;
 }
 
 pub fn run_simulation(
     sim_model: Box<dyn SimulationModelTrait>,
     layers: Vec<QCALayer>,
-    architectures: HashMap<String, QCACellArchitecture>,
-    stream: Option<Box<dyn Write + Send>>){
-    run_simulation_internal(sim_model, layers, architectures, stream, None, &mut None);
+    architectures: HashMap<String, QCACellArchitecture>
+) -> QCASimulationData {
+    return run_simulation_internal(sim_model, layers, architectures, None, &mut None);
 }
 
 pub fn run_simulation_async(
     sim_model: Box<dyn SimulationModelTrait>,
     layers: Vec<QCALayer>,
-    architectures: HashMap<String, QCACellArchitecture>,
-    stream: Option<Box<dyn Write + Send>>
-) -> (JoinHandle<()>, Receiver<SimulationProgress>, oneshot::Sender<SimulationCancelRequest>) {
+    architectures: HashMap<String, QCACellArchitecture>
+) -> (JoinHandle<QCASimulationData>, Receiver<SimulationProgress>, oneshot::Sender<SimulationCancelRequest>) {
 
     let (progress_tx, progress_rx) = mpsc::channel::<SimulationProgress>();
     let (cancel_tx, mut cancel_rx) = oneshot::channel::<SimulationCancelRequest>();
     let thread_handler = std::thread::spawn(move || {
-        run_simulation_internal(sim_model, layers, architectures, stream, Some(progress_tx), &mut Some(cancel_rx));
+        return run_simulation_internal(sim_model, layers, architectures, Some(progress_tx), &mut Some(cancel_rx));
     });
 
     (thread_handler, progress_rx, cancel_tx)
