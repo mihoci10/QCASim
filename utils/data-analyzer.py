@@ -1,60 +1,43 @@
-import os
+import tarfile
 import sys
-import numpy as np
-import struct
-import matplotlib.pyplot as plt
+import json
 
-# filename = "D:\\MY PROJECTS\\QCASim\\qca-core\\full_basis_line.bin" #sys.argv[1]
-# filename = 'majority.bin'
-if len(sys.argv) < 2:
-    print('Error, missing argument')
-    exit(-1)
-filename = sys.argv[1]
+DESIGN_MEMBER = 'DESIGN.json'
+METADATA_MEMBER = 'METADATA.json'
+DATA_MEMBER = 'DATA.bin'
 
-output_count = 0
-polarity_count = 0
-clocks = [[], [], [], []]
-outputs = []
-with open(filename, 'rb') as file:
-    output_count = int.from_bytes(file.read(8),'little')
-    polarity_count = int.from_bytes(file.read(8),'little')
-    print(f'output cells: {output_count}')
-    print(f'polarity count: {polarity_count}')
-    outputs = [[[] for p in range(polarity_count)] for i in range(output_count)]
 
-    b = file.read(8)
-    while b:
-        clocks[0].append(struct.unpack('<d', b))
-        clocks[1].append(struct.unpack('<d', file.read(8)))
-        clocks[2].append(struct.unpack('<d', file.read(8)))
-        clocks[3].append(struct.unpack('<d', file.read(8)))
+if len(sys.argv) != 2:
+    print("First argument needs to be a *.qcs file!")
+    sys.exit(1)
 
-        for i in range(output_count):
-            for p in range(polarity_count):
-                outputs[i][p].append(struct.unpack('<d', file.read(8)))
-        b = file.read(8)
+file_arg = sys.argv[1]
 
-x = np.linspace(0, 1000, len(clocks[0]))
+with tarfile.open(file_arg, 'r') as archive:
+    design = None
+    metadata = None
+    data = None
+    try:
+        design = archive.getmember(DESIGN_MEMBER)
+        metadata = archive.getmember(METADATA_MEMBER)
+        data = archive.getmember(DATA_MEMBER)
+    except KeyError as e:
+        print(f"QCS file is missing an entry: {e}")
+        sys.exit(1)
 
-for i in range(len(clocks)):
-    clocks[i] = np.array(clocks[i])
-for i in range(len(outputs)):
-    for p in range(polarity_count):
-        outputs[i][p] = np.array(outputs[i][p])
+    design_content = archive.extractfile(design).read()
+    metadata_content = archive.extractfile(metadata).read()
+    data_content = archive.extractfile(data).read()
 
-fig, axs = plt.subplots(len(clocks) + len(outputs))
+    design_json = json.loads(design_content)
+    metadata_json = json.loads(metadata_content)
+    data = data_content
 
-for i in range(len(clocks)):
-    axs[i].plot(x, clocks[i])
-    axs[i].set_title(f'Clock {i+1}')
+    qca_core_design_ver = design_json['qca_core_version']
+    qca_core_sim_ver = metadata_json['qca_core_version']
+    sim_model = design_json['simulation_model_settings'][design_json['selected_simulation_model_id']]
+    num_samples = sim_model['num_samples']
 
-for i in range(len(outputs)):
-    for p in range(polarity_count):
-        axs[len(clocks) + i].plot(x, outputs[i][p], label='{p}')
-    axs[len(clocks) + i].set_title(f'Cell {i+1}')
-
-out_name = os.path.splitext(os.path.basename(filename))[0]
-
-fig.set_size_inches(10,15)
-fig.tight_layout()
-fig.savefig(f'Report_{out_name}.pdf')
+    print(f'QCA Core design version: {qca_core_design_ver}')
+    print(f'QCA Core simulation version: {qca_core_sim_ver}')
+    print(f'Num samples: {num_samples}')
