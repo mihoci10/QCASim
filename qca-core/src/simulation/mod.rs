@@ -57,7 +57,6 @@ fn run_simulation_internal(
     //TODO: ugly workaround
     let n: usize = cell_architecture.dot_count as usize;
     let num_inputs: usize = layers.iter().map(|layer| layer.cells.iter().filter(|c| c.typ == CellType::Input).count()).sum();
-    let num_outputs: usize = layers.iter().map(|layer| layer.cells.iter().filter(|c| c.typ == CellType::Output).count()).sum();
     let model_settings = sim_model.get_settings();
 
     for i in 0..layers.len()
@@ -118,6 +117,10 @@ fn run_simulation_internal(
 
             j += 1;
         }
+
+        simulation_data.clock_data.iter_mut().enumerate().for_each(|(i, clock_data)| {
+            clock_data.push(clock_states[i]);
+        });
 
         simulation_data.cells_data.iter_mut().for_each(|cell_data| {
             let distribution = sim_model.get_states(&cell_data.index);

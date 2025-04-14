@@ -37,6 +37,7 @@ pub struct QCACellData{
 
 pub struct QCASimulationData {
     pub metadata: QCASimulationMetadata,
+    pub clock_data: [Vec<f64>; 4],
     pub cells_data: Vec<QCACellData>
 }
 
@@ -64,17 +65,29 @@ impl QCASimulationMetadata{
 impl QCASimulationData{
     pub fn new() -> QCASimulationData{
         QCASimulationData{
-            cells_data: vec![],
+            clock_data: [Vec::new(), Vec::new(), Vec::new(), Vec::new()],
+            cells_data: Vec::new(),
             metadata: QCASimulationMetadata::new()
         }
     }
 }
 
 fn get_sim_data_raw(sim_data: &QCASimulationData) -> Vec<u8>{
-    let capacity = sim_data.cells_data.iter().map(|cell_data| {
-        cell_data.data.len() * size_of::<f64>()
-    }).sum();
+    let capacity = sim_data.clock_data.iter().map(|clock| {
+            clock.len() * size_of::<f64>()
+        }).sum::<usize>() +
+        sim_data.cells_data.iter().map(|cell_data| {
+            cell_data.data.len() * size_of::<f64>()
+    }).sum::<usize>();
+
     let mut output = Vec::with_capacity(capacity);
+
+    for clock_data in &sim_data.clock_data {
+        for value in clock_data {
+            let byte_repr = value.to_ne_bytes();
+            output.extend_from_slice(&byte_repr);
+        }
+    }
 
     for cell_data in &sim_data.cells_data{
         for value in &cell_data.data{
