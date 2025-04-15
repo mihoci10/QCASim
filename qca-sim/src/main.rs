@@ -1,5 +1,6 @@
 use std::env;
 use std::fs;
+use std::fs::File;
 use qca_core::design::file::QCADesign;
 use qca_core::simulation::full_basis::FullBasisModel;
 use qca_core::simulation::model::SimulationModelTrait;
@@ -35,5 +36,6 @@ fn main() {
 
     let simulation_data = handle.join().unwrap();
 
-    write_to_file(format!("output.{}", SIMULATION_FILE_EXTENSION).as_str(), &serde_json::from_str(&contents).unwrap(), &simulation_data).unwrap();
+    let file = File::create(format!("output.{}", SIMULATION_FILE_EXTENSION).as_str()).unwrap();
+    write_to_file(file, &serde_json::from_str(&contents).unwrap(), &simulation_data).unwrap();
 }

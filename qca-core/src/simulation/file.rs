@@ -140,10 +140,7 @@ fn read_sim_stream(simulation_data: &mut QCASimulationData, design: &QCADesign, 
     Ok(())
 }
 
-pub fn write_to_file(filename: &str, design: &QCADesign, simulation_data: &QCASimulationData) -> Result<(), String> {
-    let file = File::create(filename)
-        .map_err(|error| error.to_string())?;
-
+pub fn write_to_file(file: File, design: &QCADesign, simulation_data: &QCASimulationData) -> Result<(), String> {
     let mut builder = Builder::new(file);
     builder.mode(HeaderMode::Deterministic);
 
@@ -164,10 +161,7 @@ pub fn write_to_file(filename: &str, design: &QCADesign, simulation_data: &QCASi
     Ok(())
 }
 
-pub fn read_from_file(filename: &str) -> Result<(QCADesign, QCASimulationData), String>{
-    let file = File::open(filename)
-        .map_err(|error| error.to_string())?;
-
+pub fn read_from_file(file: File) -> Result<(QCADesign, QCASimulationData), String>{
     let mut archive = Archive::new(file);
     let entries = archive.entries()
         .map_err(|error| error.to_string())?;
