@@ -1,8 +1,8 @@
 use semver::{BuildMetadata, Prerelease, Version};
 
+pub mod objects;
 pub mod simulation;
 pub mod design;
-mod objects;
 
 pub const QCA_CORE_VERSION: Version =
     Version{major: 1, minor: 0, patch: 0, pre: Prerelease::EMPTY, build: BuildMetadata::EMPTY};
