@@ -11,6 +11,7 @@
       <sourceFolder url="file://$MODULE_DIR$/qca-sim/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/qca-core/target" />
       <excludeFolder url="file://$MODULE_DIR$/qca-sim/target" />
+      <excludeFolder url="file://$MODULE_DIR$/target" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
