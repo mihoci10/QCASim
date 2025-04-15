@@ -1,15 +1,11 @@
-use std::collections::HashMap;
 use std::fs::File;
 use std::io::Read;
-use chrono::{DateTime, Duration, Local, TimeDelta, Utc};
+use chrono::{DateTime, Local, TimeDelta, Utc};
 use serde::{Deserialize, Serialize};
 use serde_inline_default::serde_inline_default;
-use serde_json::Value;
 use tar::{Archive, Builder, Header, HeaderMode};
 use crate::design::file::QCADesign;
-use crate::objects::layer::QCALayer;
-use crate::objects::architecture::QCACellArchitecture;
-use crate::{get_qca_core_version, QCA_CORE_VERSION};
+use crate::get_qca_core_version;
 use crate::objects::cell::QCACellIndex;
 
 pub const SIMULATION_FILE_EXTENSION: &str = "qcs";
@@ -120,7 +116,7 @@ fn read_sim_stream(simulation_data: &mut QCASimulationData, design: &QCADesign, 
 
     for i in 0..simulation_data.clock_data.len(){
         simulation_data.clock_data[i] = Vec::with_capacity(num_samples);
-        for _ in (0..num_samples){
+        for _ in 0..num_samples{
             let value = f64::from_ne_bytes(<[u8; 8]>::try_from(&data[data_off..data_off + size_of::<f64>()]).unwrap());
             data_off += size_of::<f64>();
             simulation_data.clock_data[i].push(value);
@@ -173,7 +169,7 @@ pub fn read_from_file(filename: &str) -> Result<(QCADesign, QCASimulationData), 
         .map_err(|error| error.to_string())?;
 
     let mut archive = Archive::new(file);
-    let mut entries = archive.entries()
+    let entries = archive.entries()
         .map_err(|error| error.to_string())?;
 
     let mut design: Option<QCADesign> = None;
@@ -215,7 +211,8 @@ pub fn read_from_file(filename: &str) -> Result<(QCADesign, QCASimulationData), 
             if let Some(sim_data) = sim_data{
                 let mut simulation = QCASimulationData::new();
                 simulation.metadata = metadata;
-                read_sim_stream(&mut simulation, &design, sim_data);
+                read_sim_stream(&mut simulation, &design, sim_data)
+                    .map_err(|error| error.to_string())?;
                 Ok((design, simulation))
             }
             else{ Err(format!("Missing {} entry in file!", SIM_DATA_ENTRY_NAME)) }

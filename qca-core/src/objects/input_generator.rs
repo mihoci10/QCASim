@@ -4,22 +4,6 @@ fn square_signal_function(x: f64, frequency: f64) -> f64{
     (x * frequency * 2.0 * consts::PI).sin().signum()
 }
 
-pub fn generate_cell_input(num_states: usize, num_samples: usize, frequency: f64) -> Vec<f64> {
-    (0..num_samples).map(|i| {
-        let segment_size = num_samples / num_states;
-        let segment_i = i / segment_size;
-        let x = i as f64 / segment_size as f64;
-        (0..num_states).map(|j| {
-            if j == segment_i {
-                square_signal_function(x, frequency)
-            }
-            else {
-                0.0
-            }
-        }).collect::<Vec<f64>>()
-    }).flatten().collect()
-}
-
 pub fn generate_cell_input_sample(num_states: usize, sample: usize, num_samples: usize, frequency: f64) -> Vec<f64> {
     let segment_size = num_samples / num_states;
     let segment_i = sample / segment_size;

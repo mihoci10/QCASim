@@ -23,7 +23,7 @@ fn main() {
     sim_model.set_serialized_settings(&qca_design.simulation_model_settings.get("full_basis_model").unwrap().to_string())
         .expect("Deserialization failed!");
 
-    let (handle, progress_rx, cancel_tx) = run_simulation_async(sim_model, qca_design.layers, qca_design.cell_architectures);
+    let (handle, progress_rx, _cancel_tx) = run_simulation_async(sim_model, qca_design.layers, qca_design.cell_architectures);
 
     for progress in progress_rx{
         match progress{

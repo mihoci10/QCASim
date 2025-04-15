@@ -1,4 +1,4 @@
-use std::{cell, collections::HashMap};
+use std::collections::HashMap;
 
 use nalgebra::{distance, DMatrix, DMatrixView, DVector, DVectorView, Point3, Schur};
 use serde::{Deserialize, Serialize};
@@ -9,9 +9,9 @@ use crate::simulation::settings::{InputDescriptor, OptionsEntry};
 
 use super::{CellType, QCACellArchitecture, QCACellIndex, QCALayer, SimulationModelTrait};
 
-fn calculate_vq(relative_permittivity: f64) -> f64 {
-    const CHARGE: f64 = 1.6021e-19;
-    const VACUUM_PERMITTIVITY: f64 = 8.8542e-12;
+fn calculate_vq(_relative_permittivity: f64) -> f64 {
+    const _CHARGE: f64 = 1.6021e-19;
+    const _VACUUM_PERMITTIVITY: f64 = 8.8542e-12;
 
     // CHARGE.powf(2.0) / (4.0 * PI * VACUUM_PERMITTIVITY * relative_permittivity)
     120.9
@@ -20,7 +20,7 @@ fn calculate_vq(relative_permittivity: f64) -> f64 {
 #[derive(Debug, Clone)]
 pub struct QCACellInternal{
     cell: Box<QCACell>,
-    z_position: f64,
+    _z_position: f64,
 
     //The full hamilton matrix
     hamilton_matrix: DMatrix<f64>,
@@ -65,7 +65,7 @@ impl QCACellInternal{
 
         QCACellInternal{
             cell: cell,
-            z_position: layer.z_position,
+            _z_position: layer.z_position,
             hamilton_matrix: &static_hamilton_matrix + &dynamic_hamilton_matrix,
             static_hamilton_matrix: static_hamilton_matrix,
             dynamic_hamilton_matrix: dynamic_hamilton_matrix,

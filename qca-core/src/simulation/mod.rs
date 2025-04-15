@@ -1,17 +1,15 @@
-use std::{io::Write, ops::Rem};
 use std::collections::HashMap;
 use std::sync::mpsc;
 use std::sync::mpsc::{Receiver, Sender};
 use std::thread::JoinHandle;
 use chrono::Local;
-use serde::{Deserialize, Serialize};
 use tokio::sync::oneshot;
 use crate::objects::architecture::QCACellArchitecture;
 use crate::objects::cell::{dot_probability_distribution_to_polarization, CellType, QCACellIndex};
 use crate::objects::clock::get_clock_values;
 use crate::objects::input_generator::generate_cell_input_sample;
 use crate::objects::layer::QCALayer;
-use crate::simulation::file::{QCACellData, QCASimulationData, QCASimulationMetadata};
+use crate::simulation::file::{QCACellData, QCASimulationData};
 use crate::simulation::model::SimulationModelTrait;
 
 pub mod settings;
@@ -154,7 +152,7 @@ pub fn run_simulation_async(
 ) -> (JoinHandle<QCASimulationData>, Receiver<SimulationProgress>, oneshot::Sender<SimulationCancelRequest>) {
 
     let (progress_tx, progress_rx) = mpsc::channel::<SimulationProgress>();
-    let (cancel_tx, mut cancel_rx) = oneshot::channel::<SimulationCancelRequest>();
+    let (cancel_tx, cancel_rx) = oneshot::channel::<SimulationCancelRequest>();
     let thread_handler = std::thread::spawn(move || {
         return run_simulation_internal(sim_model, layers, architectures, Some(progress_tx), &mut Some(cancel_rx));
     });
