@@ -1,12 +1,9 @@
 use std::env;
 use std::fs;
-use std::fs::File;
-use std::io::Write;
-use qca_core::design::*;
 use qca_core::design::file::QCADesign;
 use qca_core::simulation::full_basis::FullBasisModel;
 use qca_core::simulation::model::SimulationModelTrait;
-use qca_core::simulation::{run_simulation, run_simulation_async, SimulationCancelRequest, SimulationProgress};
+use qca_core::simulation::{run_simulation_async, SimulationProgress};
 use qca_core::simulation::file::{SIMULATION_FILE_EXTENSION, write_to_file};
 
 fn main() {
@@ -26,8 +23,6 @@ fn main() {
     sim_model.set_serialized_settings(&qca_design.simulation_model_settings.get("full_basis_model").unwrap().to_string())
         .expect("Deserialization failed!");
 
-    let file = Box::new(File::create(format!("{}.qcs", "output")).unwrap()) as Box<dyn Write + Send>;
-
     let (handle, progress_rx, cancel_tx) = run_simulation_async(sim_model, qca_design.layers, qca_design.cell_architectures);
 
     for progress in progress_rx{
@@ -40,5 +35,5 @@ fn main() {
 
     let simulation_data = handle.join().unwrap();
 
-    write_to_file(format!("output.{}", "tar").as_str(), &serde_json::from_str(&contents).unwrap(), &simulation_data).unwrap();
+    write_to_file(format!("output.{}", SIMULATION_FILE_EXTENSION).as_str(), &serde_json::from_str(&contents).unwrap(), &simulation_data).unwrap();
 }

@@ -26,6 +26,7 @@ pub struct QCASimulationMetadata{
 
     pub start_time: DateTime<Local>,
     pub duration: TimeDelta,
+    pub num_samples: usize,
 
     #[serde_inline_default(Vec::new())]
     pub stored_cells: Vec<QCACellIndex>
@@ -58,6 +59,7 @@ impl QCASimulationMetadata{
             qca_core_version: get_qca_core_version(),
             start_time: Local::now(),
             duration: TimeDelta::zero(),
+            num_samples: 0,
             stored_cells: Vec::new()
         }
     }
@@ -108,6 +110,36 @@ fn write_slice(builder: &mut Builder<File>, entry_name: &str, data: Vec<u8>) -> 
 
     builder.append_data(&mut header, entry_name, data.as_slice())
         .map_err(|error| error.to_string())?;
+
+    Ok(())
+}
+
+fn read_sim_stream(simulation_data: &mut QCASimulationData, design: &QCADesign, data: Vec<u8>) -> Result<(), String>{
+    let num_samples = simulation_data.metadata.num_samples;
+    let mut data_off: usize = 0;
+
+    for i in 0..simulation_data.clock_data.len(){
+        simulation_data.clock_data[i] = Vec::with_capacity(num_samples);
+        for _ in (0..num_samples){
+            let value = f64::from_ne_bytes(<[u8; 8]>::try_from(&data[data_off..data_off + size_of::<f64>()]).unwrap());
+            data_off += size_of::<f64>();
+            simulation_data.clock_data[i].push(value);
+        }
+    }
+
+    simulation_data.cells_data = simulation_data.metadata.stored_cells.iter().map(|cell_index| {
+        let mut cell_data = QCACellData::new(cell_index.clone(), num_samples);
+        let arch_id = &design.layers[cell_index.layer].cell_architecture_id;
+        let polarization_n = &design.cell_architectures[arch_id].dot_count / 4;
+        for _ in 0..num_samples {
+            for _ in 0..polarization_n{
+                let value = f64::from_ne_bytes(<[u8; 8]>::try_from(&data[data_off..data_off + size_of::<f64>()]).unwrap());
+                data_off += size_of::<f64>();
+                cell_data.data.push(value);
+            }
+        }
+        cell_data
+    }).collect();
 
     Ok(())
 }
@@ -183,12 +215,12 @@ pub fn read_from_file(filename: &str) -> Result<(QCADesign, QCASimulationData), 
             if let Some(sim_data) = sim_data{
                 let mut simulation = QCASimulationData::new();
                 simulation.metadata = metadata;
-
-                return Ok((design, simulation));
+                read_sim_stream(&mut simulation, &design, sim_data);
+                Ok((design, simulation))
             }
-            else{ return Err(format!("Missing {} entry in file!", SIM_DATA_ENTRY_NAME)) }
+            else{ Err(format!("Missing {} entry in file!", SIM_DATA_ENTRY_NAME)) }
         }
-        else{ return Err(format!("Missing {} entry in file!", SIM_METADATA_ENTRY_NAME)) }
+        else{ Err(format!("Missing {} entry in file!", SIM_METADATA_ENTRY_NAME)) }
     }
-    else{ return Err(format!("Missing {} entry in file!", DESIGN_ENTRY_NAME)) }
+    else{ Err(format!("Missing {} entry in file!", DESIGN_ENTRY_NAME)) }
 }

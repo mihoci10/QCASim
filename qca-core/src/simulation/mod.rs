@@ -76,6 +76,7 @@ fn run_simulation_internal(
 
     sim_model.initiate( Box::new(layers.clone()), architectures.clone());
 
+    let mut simulated_samples: usize = 0;
     for i in 0..model_settings.get_num_samples() {
         if check_cancelled(cancel_rx){
             break;
@@ -129,9 +130,11 @@ fn run_simulation_internal(
                 cell_data.data.push(p);
             }
         });
+        simulated_samples += 1;
     };
     send_progress(SimulationProgress::Deinitializng, &progress_tx);
     simulation_data.metadata.duration = Local::now() - simulation_data.metadata.start_time;
+    simulation_data.metadata.num_samples = simulated_samples;
 
     return simulation_data;
 }
