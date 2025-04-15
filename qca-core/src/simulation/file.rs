@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::fs::File;
+use std::io::Read;
 use chrono::{DateTime, Duration, Local, TimeDelta, Utc};
 use serde::{Deserialize, Serialize};
 use serde_inline_default::serde_inline_default;
@@ -133,4 +134,61 @@ pub fn write_to_file(filename: &str, design: &QCADesign, simulation_data: &QCASi
         .map_err(|error| error.to_string())?;
 
     Ok(())
+}
+
+pub fn read_from_file(filename: &str) -> Result<(QCADesign, QCASimulationData), String>{
+    let file = File::open(filename)
+        .map_err(|error| error.to_string())?;
+
+    let mut archive = Archive::new(file);
+    let mut entries = archive.entries()
+        .map_err(|error| error.to_string())?;
+
+    let mut design: Option<QCADesign> = None;
+    let mut metadata: Option<QCASimulationMetadata> = None;
+    let mut sim_data: Option<Vec<u8>> = None;
+
+    for entry in entries{
+        let mut entry = entry
+            .map_err(|error| error.to_string())?;
+
+        match entry.path().unwrap().to_string_lossy().as_ref() {
+            DESIGN_ENTRY_NAME => {
+                let mut contents = String::new();
+                let _ = entry.read_to_string(&mut contents)
+                    .map_err(|error| error.to_string())?;
+                design = Some(serde_json::from_str::<QCADesign>(contents.as_str())
+                        .map_err(|error| error.to_string())?
+                );
+            },
+            SIM_METADATA_ENTRY_NAME => {
+                let mut contents = String::new();
+                let _ = entry.read_to_string(&mut contents)
+                    .map_err(|error| error.to_string())?;
+                metadata = Some(serde_json::from_str::<QCASimulationMetadata>(contents.as_str())
+                    .map_err(|error| error.to_string())?
+                );},
+            SIM_DATA_ENTRY_NAME => {
+                let mut contents: Vec<u8> = Vec::new();
+                let _ = entry.read_to_end(&mut contents)
+                    .map_err(|error| error.to_string())?;
+                sim_data = Some(contents);
+            },
+            _ => {}
+        }
+    }
+
+    if let Some(design) = design{
+        if let Some(metadata) = metadata{
+            if let Some(sim_data) = sim_data{
+                let mut simulation = QCASimulationData::new();
+                simulation.metadata = metadata;
+
+                return Ok((design, simulation));
+            }
+            else{ return Err(format!("Missing {} entry in file!", SIM_DATA_ENTRY_NAME)) }
+        }
+        else{ return Err(format!("Missing {} entry in file!", SIM_METADATA_ENTRY_NAME)) }
+    }
+    else{ return Err(format!("Missing {} entry in file!", DESIGN_ENTRY_NAME)) }
 }
