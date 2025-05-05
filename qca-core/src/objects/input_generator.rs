@@ -1,7 +1,12 @@
 use std::f64::consts;
 
 fn square_signal_function(x: f64, frequency: f64) -> f64{
-    (x * frequency * 2.0 * consts::PI).sin().signum()
+    let angle = (x * frequency) % 1.0;
+    if angle < 0.25 || angle >= 0.75 {
+        1.0
+    } else {
+        -1.0
+    }
 }
 
 pub fn generate_cell_input_sample(num_states: usize, sample: usize, num_samples: usize, frequency: f64) -> Vec<f64> {
