@@ -14,7 +14,7 @@ fn calculate_vq(_relative_permittivity: f64) -> f64 {
     const _VACUUM_PERMITTIVITY: f64 = 8.8542e-12;
 
     // CHARGE.powf(2.0) / (4.0 * PI * VACUUM_PERMITTIVITY * relative_permittivity)
-    120.9
+    143.8
 }
 
 #[derive(Debug, Clone)]
