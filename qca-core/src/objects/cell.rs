@@ -20,6 +20,7 @@ pub struct QCACell{
     pub typ: CellType,
     pub clock_phase_shift: f64,
     pub dot_probability_distribution: Vec<f64>,
+    pub label: Option<String>,
 }
 
 impl QCACellIndex{

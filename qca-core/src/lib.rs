@@ -29,7 +29,8 @@ mod tests {
             dot_probability_distribution: vec![0.0; 8], 
             position: [0.0; 2], 
             rotation: 0.0, 
-            typ: CellType::Normal
+            typ: CellType::Normal,
+            label: None
         };
         let cell_architecture = QCACellArchitecture::new(60.0, 10.0, 8, 20.0);
         let cell_architecture_id: String = "cell_arch_1".to_string();
@@ -54,7 +55,8 @@ mod tests {
                 dot_probability_distribution: vec![0.25; 8],
                 position: [60.0 * i as f64, 0.0], 
                 rotation: 0.0, 
-                typ: ( if i == 0 { CellType::Fixed } else { CellType::Normal })
+                typ: ( if i == 0 { CellType::Fixed } else { CellType::Normal }),
+                label: None
             }
         }).collect::<Vec<QCACell>>();
         
@@ -83,7 +85,8 @@ mod tests {
                 dot_probability_distribution: vec![0.0; 8], 
                 position: [60.0 * i as f64, 60.0 * i as f64], 
                 rotation: 0.0, 
-                typ: ( if i == 0 { CellType::Fixed } else { CellType::Normal })
+                typ: ( if i == 0 { CellType::Fixed } else { CellType::Normal }),
+                label: None
             }
         }).collect::<Vec<QCACell>>();
         let architecture = QCACellArchitecture::new(60.0, 10.0, 8, 20.0);
@@ -113,7 +116,8 @@ mod tests {
                 dot_probability_distribution: vec![0.0; 8], 
                 position: [60.0 * i as f64, 0.0], 
                 rotation: 0.0, 
-                typ: ( if i == 0 { CellType::Fixed } else { CellType::Output })
+                typ: ( if i == 0 { CellType::Fixed } else { CellType::Output }),
+                label: None
             }
         }).collect::<Vec<QCACell>>();
 
