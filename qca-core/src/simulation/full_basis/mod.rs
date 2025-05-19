@@ -14,7 +14,7 @@ fn calculate_vq(_relative_permittivity: f64) -> f64 {
     const _VACUUM_PERMITTIVITY: f64 = 8.8542e-12;
 
     // CHARGE.powf(2.0) / (4.0 * PI * VACUUM_PERMITTIVITY * relative_permittivity)
-    143.8
+    120.9
 }
 
 #[derive(Debug, Clone)]
@@ -272,7 +272,7 @@ pub struct FullBasisModelSettings{
     #[serde_inline_default(1e-3)]
     convergence_tolerance: f64,
 
-    #[serde_inline_default(10.0)]
+    #[serde_inline_default(13.1)]
     relative_permitivity: f64,
 }
 
