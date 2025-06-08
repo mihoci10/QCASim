@@ -26,3 +26,8 @@ pub struct QCADesign {
     #[serde_inline_default(HashMap::<String, QCACellArchitecture>::new())]
     pub cell_architectures: HashMap<String, QCACellArchitecture>,
 }
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct QCADesignFile{
+    pub design: QCADesign,
+}
