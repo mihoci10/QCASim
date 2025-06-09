@@ -1,42 +1,27 @@
-use std::env;
-use std::fs;
-use std::fs::File;
-use qca_core::design::file::QCADesignFile;
-use qca_core::simulation::full_basis::FullBasisModel;
-use qca_core::simulation::model::SimulationModelTrait;
-use qca_core::simulation::{run_simulation_async, SimulationProgress};
-use qca_core::simulation::file::{SIMULATION_FILE_EXTENSION, write_to_file};
+use std::error::Error;
+use clap::Command;
+use qca_core::get_qca_core_version;
+use crate::sim::{get_sim_subcommand, run_sim};
 
-fn main() {
-    let args: Vec<_> = env::args().collect();
-    if args.len() != 2 {
-        println!("Please pass a .qcd file path as a parameter!");
-        return;
-    }
+mod sim;
 
-    let filename = &args[1]; 
-    println!("Selected file: {}", filename);
-    let contents = fs::read_to_string(filename).unwrap();
+fn main() -> Result<(), Box<dyn Error>> {
+    let version = Box::leak(Box::new(get_qca_core_version())).as_str();
+    let command = Command::new("qca-sim")
+        .version(version)
+        .subcommand_required(true)
+        .subcommand(get_sim_subcommand());
+    let matches = command.get_matches();
 
-    let qca_design_file: QCADesignFile = serde_json::from_str(&contents).unwrap();
-    let qca_design = qca_design_file.design;
-
-    let mut sim_model: Box<dyn SimulationModelTrait> = Box::new(FullBasisModel::new());
-    sim_model.set_serialized_settings(&qca_design.simulation_model_settings.get("full_basis_model").unwrap().to_string())
-        .expect("Deserialization failed!");
-
-    let (handle, progress_rx, _cancel_tx) = run_simulation_async(sim_model, qca_design.layers.clone(), qca_design.cell_architectures.clone());
-
-    for progress in progress_rx{
-        match progress{
-            SimulationProgress::Initializing => println!("Initializing"),
-            SimulationProgress::Running { current_sample, total_samples } => {println!("\rSample {} of {}", current_sample, total_samples)}
-            SimulationProgress::Deinitializng => {println!("Finishing")}
+    match matches.subcommand() {
+        Some(("sim", matches)) => {
+            return run_sim(matches);
         }
-    }
+        Some(("analyze", matches)) => {
 
-    let simulation_data = handle.join().unwrap();
-
-    let file = File::create(format!("output.{}", SIMULATION_FILE_EXTENSION).as_str()).unwrap();
-    write_to_file(file, &qca_design, &simulation_data).unwrap();
+        }
+        _ => panic!("Invalid command"),
+    }   
+    
+    Ok(())
 }
