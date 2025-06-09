@@ -14,19 +14,32 @@ pub fn get_sim_subcommand() -> Command {
     Command::new("sim")
         .about("Run the QCA simulation")
         .arg(Arg::new("filename")
-            .help(format!("A .{DESIGN_FILE_EXTENSION} file path"))
+            .help(format!("Input .{DESIGN_FILE_EXTENSION} filename for simulating"))
             .value_parser(PathBufValueParser::default())
             .required(true)
         )
+        .arg(Arg::new("output")
+            .short('o')
+            .long("output")
+            .help(format!("Output .{SIMULATION_FILE_EXTENSION} filename for simulation results"))
+            .value_parser(PathBufValueParser::default())
+            .required(false)
+        )
 }
 pub fn run_sim(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
-    let filename = matches.get_one::<std::path::PathBuf>("filename").unwrap();
+    let input = matches.get_one::<std::path::PathBuf>("filename").unwrap();
+    let output =
+        if let Some(output) = matches.get_one::<std::path::PathBuf>("output") {
+            output
+        } else{
+            &input.with_extension(SIMULATION_FILE_EXTENSION)
+        };
 
-    if !filename.exists() {
-        return Err(format!("File does not exist: {}", filename.display()).into());
+    if !input.exists() {
+        return Err(format!("File does not exist: {}", input.display()).into());
     }
 
-    let contents = fs::read_to_string(filename).unwrap();
+    let contents = fs::read_to_string(input).unwrap();
 
     let qca_design_file: QCADesignFile = serde_json::from_str(&contents).unwrap();
     let qca_design = qca_design_file.design;
@@ -56,10 +69,11 @@ pub fn run_sim(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
 
     progress_bar.set_message("Writing to file");
 
-    let file = File::create(format!("output.{}", SIMULATION_FILE_EXTENSION).as_str()).unwrap();
-    write_to_file(file, &qca_design, &simulation_data).unwrap();
+    let file = File::create(output).unwrap();
+    write_to_file(file, &qca_design, &simulation_data)?;
 
     progress_bar.finish_with_message("Simulation finished");
+    println!("Simulation written to: {}", output.to_str().unwrap());
 
     Ok(())
 }
