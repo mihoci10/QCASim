@@ -121,19 +121,23 @@ pub fn generate_truth_table(design: &QCADesign, simulation: &QCASimulationData, 
     let mut clock_regions = generate_clock_regions(&simulation.clock_data, clock_threshold);
     clean_clock_regions(&mut clock_regions);
 
-    let cells_logic_data = cells.iter().map(|cell| {
+    let entries = cells.iter().map(|cell| {
         let cell_data = simulation.cells_data.iter().find(|cell_data| cell_data.index.eq(cell)).unwrap();
         let clock_index = (design.layers[cell.layer].cells[cell.cell].clock_phase_shift % 90f64).round() as usize;
         let polarization_count = &design.cell_architectures[&design.layers[cell.layer].cell_architecture_id].dot_count / 4;
         let logical_data = clock_regions[clock_index].iter().map(|clock_region| {
             generate_logical_value(cell_data.data.as_slice(), clock_region, polarization_count, logical_threshold)
         }).collect::<Vec<_>>();
-        logical_data
+        
+        let cell_label = 
+            if let Some(label) = &design.layers[cell.layer].cells[cell.cell].label {
+                label.clone()
+            } else {
+                cell.to_string()
+            };
+
+        (cell_label, logical_data)
     }).collect::<Vec<_>>();
 
-    TruthTable{
-        entries: (0..cells.len()).map(|i| {
-            (cells[i].to_string(), cells_logic_data[i].clone())
-        }).collect()
-    }
+    TruthTable{ entries }
 }
