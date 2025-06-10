@@ -1,27 +1,24 @@
 use std::error::Error;
 use clap::Command;
 use qca_core::get_qca_core_version;
+use crate::analyze_logic::{get_analyze_logic_subcommand, run_analyze_logic};
 use crate::sim::{get_sim_subcommand, run_sim};
 
 mod sim;
+mod analyze_logic;
 
 fn main() -> Result<(), Box<dyn Error>> {
     let version = Box::leak(Box::new(get_qca_core_version())).as_str();
     let command = Command::new("qca-sim")
         .version(version)
         .subcommand_required(true)
-        .subcommand(get_sim_subcommand());
+        .subcommand(get_sim_subcommand())
+        .subcommand(get_analyze_logic_subcommand());
     let matches = command.get_matches();
 
     match matches.subcommand() {
-        Some(("sim", matches)) => {
-            return run_sim(matches);
-        }
-        Some(("analyze", matches)) => {
-
-        }
-        _ => panic!("Invalid command"),
-    }   
-    
-    Ok(())
+        Some(("sim", matches)) => run_sim(matches),
+        Some(("truth", matches)) => run_analyze_logic(matches),
+        _ => Err("Invalid command".into()),
+    }
 }

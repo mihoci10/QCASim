@@ -72,7 +72,7 @@ pub fn run_sim(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
     let file = File::create(output).unwrap();
     write_to_file(file, &qca_design, &simulation_data)?;
 
-    progress_bar.finish_with_message("Simulation finished");
+    progress_bar.finish_and_clear();
     println!("Simulation written to: {}", output.to_str().unwrap());
 
     Ok(())
