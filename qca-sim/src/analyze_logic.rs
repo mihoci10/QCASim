@@ -2,6 +2,7 @@ use std::error::Error;
 use std::fs::File;
 use clap::{Arg, ArgMatches, Command};
 use clap::builder::PathBufValueParser;
+use qca_core::analysis::truth_table::generate_truth_table;
 use qca_core::simulation::file::{read_from_file, SIMULATION_FILE_EXTENSION};
 
 pub fn get_analyze_logic_subcommand() -> Command {
@@ -19,9 +20,16 @@ pub fn run_analyze_logic(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
     if !input.exists() {
         return Err(format!("File does not exist: {}", input.display()).into());
     }
-    
+
     let input_file = File::open(input).unwrap();
     let (design, simulation) = read_from_file(input_file)?;
-    
+
+    let cells = &simulation.metadata.stored_cells;
+    let clock_threshold = 0.05;
+    let cell_threshold = 0.05;
+
+    let truth_table = generate_truth_table(&design, &simulation, &cells, clock_threshold, cell_threshold);
+    println!("{}", truth_table);
+
     Ok(())
 }

@@ -1,3 +1,4 @@
+use std::fmt::{Display, Formatter};
 use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
 
@@ -29,6 +30,12 @@ impl QCACellIndex{
             layer: layer,
             cell: cell
         }
+    }
+}
+
+impl Display for QCACellIndex{
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.write_str(format!("{}-{}", self.layer, self.cell).as_str())
     }
 }
 
