@@ -1,4 +1,5 @@
 use std::fmt::{Display, Formatter};
+use std::str::FromStr;
 use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
 
@@ -36,6 +37,26 @@ impl QCACellIndex{
 impl Display for QCACellIndex{
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.write_str(format!("{}-{}", self.layer, self.cell).as_str())
+    }
+}
+
+impl FromStr for QCACellIndex {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let parts: Vec<&str> = s.split('-').collect();
+
+        if parts.len() != 2 {
+            return Err(format!("Invalid format '{}'. Expected 'layer-cell'", s));
+        }
+
+        let layer = parts[0].parse::<usize>()
+            .map_err(|_| format!("Invalid layer '{}'. Must be a positive integer", parts[0]))?;
+
+        let cell = parts[1].parse::<usize>()
+            .map_err(|_| format!("Invalid cell '{}'. Must be a positive integer", parts[1]))?;
+
+        Ok(QCACellIndex { layer, cell })
     }
 }
 
