@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::fmt;
+use std::io::Read;
 use crate::design::file::QCADesign;
 use crate::objects::cell::{QCACell, QCACellIndex};
 use crate::simulation::file::QCASimulationData;
@@ -117,19 +118,33 @@ fn generate_logical_value(cell_data: &[f64], clock_region: &ClockRegion, polariz
         .map(|(val, _)| val).unwrap()
 }
 
-pub fn generate_truth_table(design: &QCADesign, simulation: &QCASimulationData, cells: &Vec<QCACellIndex>, clock_threshold: f64, logical_threshold: f64) -> TruthTable{
+pub fn generate_truth_table(
+    design: &QCADesign,
+    simulation: &QCASimulationData,
+    cells: &Vec<QCACellIndex>,
+    cell_clock_delay: HashMap<QCACellIndex, usize>,
+    clock_threshold: f64, logical_threshold: f64) -> TruthTable
+{
     let mut clock_regions = generate_clock_regions(&simulation.clock_data, clock_threshold);
     clean_clock_regions(&mut clock_regions);
 
     let entries = cells.iter().map(|cell| {
         let cell_data = simulation.cells_data.iter().find(|cell_data| cell_data.index.eq(cell)).unwrap();
-        let clock_index = (design.layers[cell.layer].cells[cell.cell].clock_phase_shift % 90f64).round() as usize;
+
+        let clock_phase_shift = design.layers[cell.layer].cells[cell.cell].clock_phase_shift;
+        let clock_index = (clock_phase_shift / 90f64).round() as usize % 4;
+
+        let clock_skip_cycles = *cell_clock_delay.get(&cell).or(Some(&0)).unwrap();
+
         let polarization_count = &design.cell_architectures[&design.layers[cell.layer].cell_architecture_id].dot_count / 4;
-        let logical_data = clock_regions[clock_index].iter().map(|clock_region| {
-            generate_logical_value(cell_data.data.as_slice(), clock_region, polarization_count, logical_threshold)
-        }).collect::<Vec<_>>();
-        
-        let cell_label = 
+        let logical_data =
+            clock_regions[clock_index].iter().skip(clock_skip_cycles).map(|clock_region| {
+                generate_logical_value(cell_data.data.as_slice(), clock_region, polarization_count, logical_threshold)
+            }).chain(
+                (0..clock_skip_cycles).map(|_| None)
+            ).collect::<Vec<_>>();
+
+        let cell_label =
             if let Some(label) = &design.layers[cell.layer].cells[cell.cell].label {
                 label.clone()
             } else {
