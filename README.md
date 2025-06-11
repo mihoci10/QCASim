@@ -33,7 +33,7 @@ cargo run --bin qca-simulation -- path/to/design.json
 To analyze the simulation output use the following command:
 
 ```bash
-python utils/data-analyzer.py path/to/output.bin
+python scripts/data-analyzer.py path/to/output.bin
 ```
 
 ## License
