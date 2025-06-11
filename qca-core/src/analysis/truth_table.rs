@@ -1,10 +1,12 @@
 use std::collections::HashMap;
 use std::fmt;
 use std::io::Read;
+use serde::{Deserialize, Serialize};
 use crate::design::file::QCADesign;
 use crate::objects::cell::{QCACell, QCACellIndex};
 use crate::simulation::file::QCASimulationData;
 
+#[derive(Serialize, Deserialize)]
 pub struct TruthTable{
     pub entries: Vec<(String, Vec<Option<u8>>)>
 }
