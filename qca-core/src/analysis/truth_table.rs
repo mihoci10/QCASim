@@ -77,7 +77,6 @@ fn generate_clock_regions(
         }
         if let Some(region) = current_clock_region {
             clock_regions.push(region);
-            current_clock_region = None;
         }
 
         clock_regions
