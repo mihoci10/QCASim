@@ -1,22 +1,25 @@
-use std::fmt::{Display, Formatter};
-use std::str::FromStr;
 use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
+use std::fmt::{Display, Formatter};
+use std::str::FromStr;
 
 #[derive(Clone, Copy, Serialize_repr, Deserialize_repr, PartialEq, Debug)]
 #[repr(u8)]
-pub enum CellType{
-    Normal, Input, Output, Fixed
+pub enum CellType {
+    Normal,
+    Input,
+    Output,
+    Fixed,
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug, Hash, PartialEq, Eq)]
-pub struct QCACellIndex{
+pub struct QCACellIndex {
     pub layer: usize,
     pub cell: usize,
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
-pub struct QCACell{
+pub struct QCACell {
     pub position: [f64; 2],
     pub rotation: f64,
     pub typ: CellType,
@@ -25,16 +28,16 @@ pub struct QCACell{
     pub label: Option<String>,
 }
 
-impl QCACellIndex{
-    pub fn new(layer: usize, cell: usize) -> Self{
-        QCACellIndex{
+impl QCACellIndex {
+    pub fn new(layer: usize, cell: usize) -> Self {
+        QCACellIndex {
             layer: layer,
-            cell: cell
+            cell: cell,
         }
     }
 }
 
-impl Display for QCACellIndex{
+impl Display for QCACellIndex {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.write_str(format!("{}-{}", self.layer, self.cell).as_str())
     }
@@ -50,37 +53,51 @@ impl FromStr for QCACellIndex {
             return Err(format!("Invalid format '{}'. Expected 'layer-cell'", s));
         }
 
-        let layer = parts[0].parse::<usize>()
+        let layer = parts[0]
+            .parse::<usize>()
             .map_err(|_| format!("Invalid layer '{}'. Must be a positive integer", parts[0]))?;
 
-        let cell = parts[1].parse::<usize>()
+        let cell = parts[1]
+            .parse::<usize>()
             .map_err(|_| format!("Invalid cell '{}'. Must be a positive integer", parts[1]))?;
 
         Ok(QCACellIndex { layer, cell })
     }
 }
 
-pub fn dot_probability_distribution_to_polarization(dot_probability_distribution: &[f64]) -> Vec<f64> {
+pub fn dot_probability_distribution_to_polarization(
+    dot_probability_distribution: &[f64],
+) -> Vec<f64> {
     let arr = dot_probability_distribution;
     let sum = arr.iter().sum::<f64>();
 
-    if (sum - 2.0).abs() > 1e-6  {
-        panic!("Dot probability distribution sum should always be 2.0 and not: {:?}", sum);}
+    if (sum - 2.0).abs() > 1e-6 {
+        panic!(
+            "Dot probability distribution sum should always be 2.0 and not: {:?}",
+            sum
+        );
+    }
 
-    match arr.len(){
+    match arr.len() {
         4 => vec![((arr[0] + arr[2]) - (arr[1] + arr[3])) / sum],
         8 => vec![
             ((arr[0] + arr[4]) - (arr[2] + arr[6])) / sum,
-            ((arr[1] + arr[5]) - (arr[3] + arr[7])) / sum
+            ((arr[1] + arr[5]) - (arr[3] + arr[7])) / sum,
         ],
-        _ => panic!("Unsupported dot probability distribution length: {}", arr.len())
+        _ => panic!(
+            "Unsupported dot probability distribution length: {}",
+            arr.len()
+        ),
     }
 }
 
 pub fn polarization_to_dot_probability_distribution(polarization: &[f64]) -> Vec<f64> {
     let sum = polarization.iter().map(|x| x.abs()).sum::<f64>();
     if sum > 1.0 {
-        panic!("Polarization sum abs value cannot be larger than 1.0: {:?}", polarization);
+        panic!(
+            "Polarization sum abs value cannot be larger than 1.0: {:?}",
+            polarization
+        );
     }
 
     match polarization.len() {
@@ -90,7 +107,7 @@ pub fn polarization_to_dot_probability_distribution(polarization: &[f64]) -> Vec
             let p_neg1 = 0.0f64.max(-polarization[0]) + offset;
 
             vec![p1, p_neg1, p1, p_neg1]
-        },
+        }
         2 => {
             let offset = (1.0 - sum) / 4.0;
             let p1 = 0.0f64.max(polarization[0]) + offset;
@@ -99,8 +116,8 @@ pub fn polarization_to_dot_probability_distribution(polarization: &[f64]) -> Vec
             let p_neg2 = 0.0f64.max(-polarization[1]) + offset;
 
             vec![p1, p2, p_neg1, p_neg2, p1, p2, p_neg1, p_neg2]
-        },
-        _ => panic!("Unsupported polarization length: {}", polarization.len())
+        }
+        _ => panic!("Unsupported polarization length: {}", polarization.len()),
     }
 }
 

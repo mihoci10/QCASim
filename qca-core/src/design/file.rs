@@ -1,10 +1,10 @@
 use std::collections::HashMap;
 
+use crate::objects::architecture::QCACellArchitecture;
+use crate::objects::layer::QCALayer;
 use serde::{Deserialize, Serialize};
 use serde_inline_default::serde_inline_default;
 use serde_json::Value;
-use crate::objects::layer::QCALayer;
-use crate::objects::architecture::QCACellArchitecture;
 
 pub const DESIGN_FILE_EXTENSION: &str = "qcd";
 
@@ -28,6 +28,6 @@ pub struct QCADesign {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct QCADesignFile{
+pub struct QCADesignFile {
     pub design: QCADesign,
 }
