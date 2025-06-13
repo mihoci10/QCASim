@@ -31,4 +31,5 @@ for file in os.scandir(INPUT_DIR):
         continue
     base_name = os.path.splitext(os.path.basename(file.path))[0]
     print(f'Found file: {base_name}')
-    run_analysis(file.path, sys.argv[2:])
+    table = run_analysis(file.path, sys.argv[2:])
+    print(table)
