@@ -105,9 +105,11 @@ fn generate_logical_value(
     clock_region: &ClockRegion,
     polarization_count: u8,
     logical_threshold: f64,
+    value_threshold: f64,
 ) -> Option<u8> {
     let polarization_high = 1f64 - (2f64 * logical_threshold);
     let polarization_low = -1f64 + (2f64 * logical_threshold);
+    let clock_region_len = clock_region.end - clock_region.start;
 
     let data_slice = &cell_data[clock_region.start * polarization_count as usize
         ..clock_region.end * polarization_count as usize];
@@ -147,8 +149,14 @@ fn generate_logical_value(
         })
         .into_iter()
         .max_by_key(|(_, count)| *count)
-        .map(|(val, _)| val)
-        .unwrap()
+        .map(|(val, count)| {
+            let partial = count as f64 / clock_region_len as f64;
+            if partial >= value_threshold {
+                val
+            } else {
+                None
+            }
+        })?
 }
 
 pub fn generate_truth_table(
@@ -158,6 +166,7 @@ pub fn generate_truth_table(
     cell_clock_delay: HashMap<QCACellIndex, usize>,
     clock_threshold: f64,
     logical_threshold: f64,
+    value_threshold: f64,
 ) -> TruthTable {
     let mut clock_regions = generate_clock_regions(&simulation.clock_data, clock_threshold);
     clean_clock_regions(&mut clock_regions);
@@ -189,6 +198,7 @@ pub fn generate_truth_table(
                         clock_region,
                         polarization_count,
                         logical_threshold,
+                        value_threshold,
                     )
                 })
                 .chain((0..clock_skip_cycles).map(|_| None))

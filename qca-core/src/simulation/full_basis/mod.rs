@@ -609,7 +609,9 @@ impl SimulationModelTrait for FullBasisModel {
             }
             CellType::Normal | CellType::Output => {
                 internal_cell.dot_potential = DVector::zeros(n);
-                for (ind, c) in self.index_cells_map.iter() {
+                let mut sorted_cells: Vec<_> = self.index_cells_map.iter().collect();
+                sorted_cells.sort_by_key(|(ind, _)| *ind);
+                for (ind, c) in sorted_cells {
                     if *ind != cell_ind {
                         for i in 0..n {
                             for j in 0..n {

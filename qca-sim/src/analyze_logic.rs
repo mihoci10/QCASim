@@ -11,6 +11,7 @@ use std::str::FromStr;
 const THRESHOLD_MIN: f64 = 0.0;
 const THRESHOLD_MAX: f64 = 1.0;
 const DEFAULT_THRESHOLD: &str = "0.05";
+const DEFAULT_VALUE_THRESHOLD: &str = "0.8";
 
 fn validate_threshold(s: &str) -> Result<f64, String> {
     let value = s
@@ -80,6 +81,15 @@ pub fn get_analyze_logic_subcommand() -> Command {
                 .value_name("THRESHOLD"),
         )
         .arg(
+            Arg::new("value-threshold")
+                .help("Value threshold for analyzing cell value")
+                .long("value-threshold")
+                .short('v')
+                .default_value(DEFAULT_VALUE_THRESHOLD)
+                .value_parser(validate_threshold)
+                .value_name("THRESHOLD"),
+        )
+        .arg(
             Arg::new("clock-delay")
                 .help("Clock delay for cell outputs (format: <CellIndex|CellLabel>:<ClockDelay>)")
                 .long("clock-delay")
@@ -94,6 +104,7 @@ pub fn run_analyze_logic(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
     let input = matches.get_one::<std::path::PathBuf>("filename").unwrap();
     let clock_threshold = *matches.get_one::<f64>("clock-threshold").unwrap();
     let cell_threshold = *matches.get_one::<f64>("cell-threshold").unwrap();
+    let value_threshold = *matches.get_one::<f64>("value-threshold").unwrap();
 
     if !input.exists() {
         return Err(format!("File does not exist: {}", input.display()).into());
@@ -143,6 +154,7 @@ pub fn run_analyze_logic(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
         cell_clock_delay,
         clock_threshold,
         cell_threshold,
+        value_threshold,
     );
     println!("{}", truth_table);
 

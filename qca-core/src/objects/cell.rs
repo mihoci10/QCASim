@@ -12,7 +12,7 @@ pub enum CellType {
     Fixed,
 }
 
-#[derive(Clone, Serialize, Deserialize, Debug, Hash, PartialEq, Eq)]
+#[derive(Clone, Serialize, Deserialize, Debug, Hash)]
 pub struct QCACellIndex {
     pub layer: usize,
     pub cell: usize,
@@ -40,6 +40,29 @@ impl QCACellIndex {
 impl Display for QCACellIndex {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.write_str(format!("{}-{}", self.layer, self.cell).as_str())
+    }
+}
+
+impl PartialEq<Self> for QCACellIndex {
+    fn eq(&self, other: &Self) -> bool {
+        self.layer == other.layer && self.cell == other.cell
+    }
+}
+
+impl PartialOrd<Self> for QCACellIndex {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Eq for QCACellIndex {}
+
+impl Ord for QCACellIndex {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        match self.layer.cmp(&other.layer) {
+            std::cmp::Ordering::Equal => self.cell.cmp(&other.cell),
+            other_ordering => other_ordering,
+        }
     }
 }
 
