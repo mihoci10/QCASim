@@ -19,12 +19,16 @@ def set_intercell_distance(orig_design: any, side_length: float, spacing: float)
     return result
 
 
-if len(sys.argv) != 2:
+if len(sys.argv) != 3:
     print("First argument needs to be a *.qcd file!")
+    print("Second argument needs to range <start:stop:step>")
     sys.exit(1)
 
-with open(sys.argv[1], 'r') as design_file:
-    base_name = os.path.splitext(os.path.basename(sys.argv[1]))[0]
+filename = sys.argv[1]
+range_arg = list(map(int, sys.argv[2].split(':')))
+
+with open(filename, 'r') as design_file:
+    base_name = os.path.splitext(os.path.basename(filename))[0]
     design = json.loads(design_file.read())['design']
 
     arch_id = design['layers'][0]['cell_architecture_id']
@@ -39,7 +43,7 @@ with open(sys.argv[1], 'r') as design_file:
     print(f'  Dot diameter: {arch['dot_diameter']}nm')
     print(f'  Dot pos radius: {dot_radius}nm')
 
-    spacings = [0, 5, 10]
+    spacings = range(range_arg[0], range_arg[1] + range_arg[2], range_arg[2])
     print(f'Generating spacing {min(spacings)}..{max(spacings)}')
     for spacing in spacings:
         new_design = set_intercell_distance(design, side_length, spacing)
