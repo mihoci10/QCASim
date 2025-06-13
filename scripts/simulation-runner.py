@@ -15,4 +15,4 @@ for file in os.scandir(INPUT_DIR):
         continue
     base_name = os.path.splitext(os.path.basename(file.path))[0]
     print(f'Found file: {base_name}')
-    run_simulation(file.path, )
+    run_simulation(file.path, f'{INPUT_DIR}/{base_name}.qcs')

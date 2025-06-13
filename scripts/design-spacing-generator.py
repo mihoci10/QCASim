@@ -43,6 +43,6 @@ with open(sys.argv[1], 'r') as design_file:
     print(f'Generating spacing {min(spacings)}..{max(spacings)}')
     for spacing in spacings:
         new_design = set_intercell_distance(design, side_length, spacing)
-        with open(f'{OUT_DIR}/base_name_{side_length}_{spacing}.qcd', 'w') as new_design_file:
+        with open(f'{OUT_DIR}/{base_name}_{side_length}_{spacing}.qcd', 'w') as new_design_file:
             new_design_file.write(json.dumps({"design": new_design}))
     print(f'Generated designs saved to: {os.path.abspath(OUT_DIR)}')
