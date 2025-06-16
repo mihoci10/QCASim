@@ -655,7 +655,7 @@ impl SimulationModelTrait for FullBasisModel {
 
             if (clock_value - self.settings.ampl_max).abs() >= 1e-3 {
                 if let Some(decomposition) =
-                    Schur::try_new(internal_cell.hamilton_matrix.clone(), 1e-3, 100)
+                    Schur::try_new(internal_cell.hamilton_matrix.clone(), 1e-6, 1000)
                 {
                     if let Some(eigenvalues) = decomposition.eigenvalues() {
                         let sorted_eigenvalue = eigenvalues

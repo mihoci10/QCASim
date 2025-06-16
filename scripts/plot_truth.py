@@ -1,7 +1,7 @@
-import sys
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import sys
 from scipy.interpolate import griddata
 
 if len(sys.argv) != 2:
@@ -24,14 +24,14 @@ y_min, y_max = y_coords.min(), y_coords.max()
 
 # Create a finer grid for smooth contours
 grid_x, grid_y = np.meshgrid(
-    np.linspace(x_min, x_max, 100),
-    np.linspace(y_min, y_max, 100)
+    np.linspace(x_min, x_max, min(100, len(x_coords))),
+    np.linspace(y_min, y_max, min(100, len(y_coords)))
 )
 
 # Interpolate the accuracy values onto the grid
 grid_accuracy = griddata(
     (x_coords, y_coords), accuracies, (grid_x, grid_y),
-    method='linear', fill_value=np.nan
+    method='cubic', fill_value=np.nan
 )
 
 # Clamp interpolated values to valid accuracy range [0, 1]

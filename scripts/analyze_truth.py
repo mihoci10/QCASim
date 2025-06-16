@@ -1,8 +1,7 @@
 import os
+import pandas as pd
 import subprocess
 import sys
-
-import pandas as pd
 
 QCA_SIM = '../target/release/qca-sim'
 
@@ -82,7 +81,7 @@ for file in os.scandir(input_dir):
     print(f'Found file: {base_name}')
 
     table = run_analysis(file.path, sys.argv[2:])
-    accuracy = calculate_table_accuracy(table, cmp_var_inverter)
+    accuracy = calculate_table_accuracy(table, cmp_var_line)
 
     x_coords.append(x)
     y_coords.append(y)
