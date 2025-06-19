@@ -1,7 +1,8 @@
+import sys
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import sys
 from scipy.interpolate import griddata
 
 if len(sys.argv) != 2:
@@ -31,7 +32,7 @@ grid_x, grid_y = np.meshgrid(
 # Interpolate the accuracy values onto the grid
 grid_accuracy = griddata(
     (x_coords, y_coords), accuracies, (grid_x, grid_y),
-    method='cubic', fill_value=np.nan
+    method='nearest', fill_value=np.nan
 )
 
 # Clamp interpolated values to valid accuracy range [0, 1]

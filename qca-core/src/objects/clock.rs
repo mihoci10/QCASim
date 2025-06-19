@@ -1,6 +1,66 @@
 use std::convert::TryInto;
 use std::f64::consts::PI;
 
+use super::generator::{Generator, GeneratorConfig};
+
+/// Configuration for clock generator
+#[derive(Clone)]
+pub struct ClockConfig {
+    /// Minimum amplitude value
+    pub ampl_min: f64,
+    /// Maximum amplitude value
+    pub ampl_max: f64,
+}
+
+impl GeneratorConfig for ClockConfig {}
+
+/// Generator for clock values that produces arrays of 4 clock values
+pub struct ClockGenerator {
+    config: ClockConfig,
+    num_samples: usize,
+}
+
+impl Generator for ClockGenerator {
+    type Config = ClockConfig;
+    type Output = [f64; 4];
+
+    fn new(config: Self::Config, num_samples: usize) -> Self {
+        Self {
+            config,
+            num_samples,
+        }
+    }
+
+    fn generate(&self, sample: usize) -> Self::Output {
+        let ampl_min = self.config.ampl_min;
+        let ampl_max = self.config.ampl_max;
+
+        (0..4)
+            .map(|i| {
+                let mut clock = (sample as f64 / self.num_samples as f64) - (i as f64 * 0.25);
+                clock = clock.rem_euclid(1.0);
+                if clock < 0.25 {
+                    (1.0 + ((1.0 - clock / 0.25) * PI).cos()) / 2.0
+                } else if clock < 0.5 {
+                    1.0
+                } else if clock < 0.75 {
+                    (1.0 + (PI * (clock - 0.5) / 0.25).cos()) / 2.0
+                } else {
+                    0.0
+                }
+            })
+            .map(|v| -((ampl_max - ampl_min) * (1.0 - v) + ampl_min))
+            .collect::<Vec<f64>>()
+            .try_into()
+            .unwrap()
+    }
+
+    fn num_samples(&self) -> usize {
+        self.num_samples
+    }
+}
+
+/// Legacy function for backward compatibility
 pub fn get_clock_values(
     num_samples: usize,
     cur_sample: usize,
@@ -9,31 +69,7 @@ pub fn get_clock_values(
     ampl_max: f64,
     _ampl_fac: f64,
 ) -> [f64; 4] {
-    // let prefactor = (ampl_max - ampl_min) * ampl_fac;
-    // let repetitions = f64::powi(2.0, num_inputs as i32);
-    // let clock_shift = ampl_max - ampl_min;
-
-    // (0..4).map(|i| {
-    //     (prefactor * (repetitions * (cur_sample as f64) * ((2.0 * consts::PI) / num_samples as f64) - (consts::PI * (i as f64) / 2.0) - consts::PI).cos() + clock_shift)
-    //     .clamp(ampl_min, ampl_max)
-    // }).collect::<Vec<f64>>().try_into().unwrap()
-
-    (0..4)
-        .map(|i| {
-            let mut clock = (cur_sample as f64 / num_samples as f64) - (i as f64 * 0.25);
-            clock = clock.rem_euclid(1.0);
-            if clock < 0.25 {
-                (1.0 + ((1.0 - clock / 0.25) * PI).cos()) / 2.0
-            } else if clock < 0.5 {
-                1.0
-            } else if clock < 0.75 {
-                (1.0 + (PI * (clock - 0.5) / 0.25).cos()) / 2.0
-            } else {
-                0.0
-            }
-        })
-        .map(|v| -((ampl_max - ampl_min) * (1.0 - v) + ampl_min))
-        .collect::<Vec<f64>>()
-        .try_into()
-        .unwrap()
+    let config = ClockConfig { ampl_min, ampl_max };
+    let generator = ClockGenerator::new(config, num_samples);
+    generator.generate(cur_sample)
 }

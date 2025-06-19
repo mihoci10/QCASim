@@ -2,7 +2,7 @@
 <module type="EMPTY_MODULE" version="4">
   <component name="FacetManager">
     <facet type="Python" name="Python facet">
-      <configuration sdkName="Python 3.12" />
+      <configuration sdkName="dogma" />
     </facet>
   </component>
   <component name="NewModuleRootManager">
@@ -12,9 +12,13 @@
       <excludeFolder url="file://$MODULE_DIR$/qca-core/target" />
       <excludeFolder url="file://$MODULE_DIR$/qca-sim/target" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
+      <excludeFolder url="file://$MODULE_DIR$/scripts/Inverter_a" />
+      <excludeFolder url="file://$MODULE_DIR$/scripts/Inverter_b" />
+      <excludeFolder url="file://$MODULE_DIR$/scripts/Line" />
+      <excludeFolder url="file://$MODULE_DIR$/scripts/LineClocked" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" name="Python 3.12 interpreter library" level="application" />
+    <orderEntry type="library" name="dogma interpreter library" level="application" />
   </component>
 </module>
