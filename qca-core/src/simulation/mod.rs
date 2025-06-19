@@ -56,6 +56,8 @@ fn run_simulation_internal(
 ) -> QCASimulationData {
     send_progress(SimulationProgress::Initializing, &progress_tx);
     let mut simulation_data = QCASimulationData::new();
+    let architecture = architectures.get(&layers[0].cell_architecture_id).unwrap();
+    let polarization_n = architecture.dot_count / 4;
     //TODO: ugly workaround
     let num_inputs: usize = layers
         .iter()
@@ -98,7 +100,7 @@ fn run_simulation_internal(
     let mut clock_iter = clock_generator.iter();
     let input_generator = CellInputGenerator::new(
         CellInputConfig {
-            num_states: num_inputs,
+            num_states: num_inputs * polarization_n as usize,
             frequency: 2.0,
         },
         model_settings.get_num_samples(),
