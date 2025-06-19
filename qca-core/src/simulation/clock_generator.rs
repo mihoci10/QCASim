@@ -1,15 +1,20 @@
+use crate::objects::generator::{Generator, GeneratorConfig};
+use serde::{Deserialize, Serialize};
+use serde_inline_default::serde_inline_default;
 use std::convert::TryInto;
 use std::f64::consts::PI;
 
-use crate::objects::generator::{Generator, GeneratorConfig};
-
 /// Configuration for clock generator
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize)]
+#[serde_inline_default]
 pub struct ClockConfig {
+    /// Number of clock cycles
+    #[serde_inline_default(1)]
+    pub num_cycles: usize,
     /// Minimum amplitude value
-    pub ampl_min: f64,
+    pub amplitude_min: f64,
     /// Maximum amplitude value
-    pub ampl_max: f64,
+    pub amplitude_max: f64,
 }
 
 impl GeneratorConfig for ClockConfig {}
@@ -32,12 +37,15 @@ impl Generator for ClockGenerator {
     }
 
     fn generate(&self, sample: usize) -> Self::Output {
-        let ampl_min = self.config.ampl_min;
-        let ampl_max = self.config.ampl_max;
+        let clock_cycles = self.config.num_cycles;
+        let ampl_min = self.config.amplitude_min;
+        let ampl_max = self.config.amplitude_max;
 
+        let sample_fac =
+            (sample as f64 / self.num_samples as f64) * (1.0 + clock_cycles as f64 / 4.0);
         (0..4)
             .map(|i| {
-                let mut clock = (sample as f64 / self.num_samples as f64) - (i as f64 * 0.25);
+                let mut clock = sample_fac - (i as f64 * 0.25);
                 clock = clock.rem_euclid(1.0);
                 if clock < 0.25 {
                     (1.0 + ((1.0 - clock / 0.25) * PI).cos()) / 2.0

@@ -1,7 +1,10 @@
 use crate::objects::generator::{Generator, GeneratorConfig};
+use serde::{Deserialize, Serialize};
+use serde_inline_default::serde_inline_default;
 
 /// Configuration for cell input generator
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize)]
+#[serde_inline_default]
 pub struct CellInputConfig {
     /// Number of cell states (dimensions of the output vector)
     pub num_states: usize,
