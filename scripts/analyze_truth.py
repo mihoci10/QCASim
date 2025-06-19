@@ -59,6 +59,49 @@ def cmp_var_inverter(row: list[int]) -> float:
 
     return accuracy_main
 
+def cmp_majority(row: list[int]) -> float:
+    truth_table = {
+        (2, 2, 2): 2,  # A A A -> A
+        (2, 2, 0): 2,  # A A B -> A
+        (2, 2, 1): 2,  # A A C -> A
+        (2, 0, 2): 2,  # A B A -> A
+        (2, 0, 0): 0,  # A B B -> B
+        (2, 0, 1): 1,  # A B C -> C
+        (2, 1, 2): 2,  # A C A -> A
+        (2, 1, 0): 1,  # A C B -> C
+        (2, 1, 1): 1,  # A C C -> C
+        (0, 2, 2): 2,  # B A A -> A
+        (0, 2, 0): 0,  # B A B -> B
+        (0, 2, 1): 1,  # B A C -> C
+        (0, 0, 2): 0,  # B B A -> B
+        (0, 0, 0): 0,  # B B B -> B
+        (0, 0, 1): 0,  # B B C -> B
+        (0, 1, 2): 1,  # B C A -> C
+        (0, 1, 0): 0,  # B C B -> B
+        (0, 1, 1): 1,  # B C C -> C
+        (1, 2, 2): 2,  # C A A -> A
+        (1, 2, 0): 1,  # C A B -> C
+        (1, 2, 1): 1,  # C A C -> C
+        (1, 0, 2): 1,  # C B A -> C
+        (1, 0, 0): 0,  # C B B -> B
+        (1, 0, 1): 1,  # C B C -> C
+        (1, 1, 2): 1,  # C C A -> C
+        (1, 1, 0): 1,  # C C B -> C
+        (1, 1, 1): 1,  # C C C -> C
+    }
+
+    if len(row) != 4:
+        raise RuntimeError
+    if -1.0 in row:
+        return 0.0
+
+    [x, y, z, r] = row
+
+    if (x, y, z) in truth_table:
+        return 1.0 if truth_table[(x, y, z)] == r else 0.0
+    else:
+        raise RuntimeError
+
 
 x_coords = []
 y_coords = []

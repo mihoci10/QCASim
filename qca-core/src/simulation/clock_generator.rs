@@ -1,7 +1,7 @@
 use std::convert::TryInto;
 use std::f64::consts::PI;
 
-use super::generator::{Generator, GeneratorConfig};
+use crate::objects::generator::{Generator, GeneratorConfig};
 
 /// Configuration for clock generator
 #[derive(Clone)]
@@ -58,18 +58,4 @@ impl Generator for ClockGenerator {
     fn num_samples(&self) -> usize {
         self.num_samples
     }
-}
-
-/// Legacy function for backward compatibility
-pub fn get_clock_values(
-    num_samples: usize,
-    cur_sample: usize,
-    _num_inputs: usize,
-    ampl_min: f64,
-    ampl_max: f64,
-    _ampl_fac: f64,
-) -> [f64; 4] {
-    let config = ClockConfig { ampl_min, ampl_max };
-    let generator = ClockGenerator::new(config, num_samples);
-    generator.generate(cur_sample)
 }

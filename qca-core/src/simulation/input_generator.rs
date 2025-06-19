@@ -1,4 +1,4 @@
-use super::generator::{Generator, GeneratorConfig};
+use crate::objects::generator::{Generator, GeneratorConfig};
 
 /// Configuration for cell input generator
 #[derive(Clone)]
@@ -47,21 +47,6 @@ impl Generator for CellInputGenerator {
     fn num_samples(&self) -> usize {
         self.num_samples
     }
-}
-
-/// Legacy function for backward compatibility
-pub fn generate_cell_input_sample(
-    num_states: usize,
-    sample: usize,
-    num_samples: usize,
-    frequency: f64,
-) -> Vec<f64> {
-    let config = CellInputConfig {
-        num_states,
-        frequency,
-    };
-    let generator = CellInputGenerator::new(config, num_samples);
-    generator.generate(sample)
 }
 
 fn square_signal_function(x: f64, frequency: f64) -> f64 {

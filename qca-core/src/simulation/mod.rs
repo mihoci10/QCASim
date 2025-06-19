@@ -1,9 +1,10 @@
 use crate::objects::architecture::QCACellArchitecture;
 use crate::objects::cell::{dot_probability_distribution_to_polarization, CellType, QCACellIndex};
-use crate::objects::clock::get_clock_values;
-use crate::objects::input_generator::generate_cell_input_sample;
+use crate::objects::generator::Generator;
 use crate::objects::layer::QCALayer;
+use crate::simulation::clock_generator::{ClockConfig, ClockGenerator};
 use crate::simulation::file::{QCACellData, QCASimulationData};
+use crate::simulation::input_generator::{CellInputConfig, CellInputGenerator};
 use crate::simulation::model::SimulationModelTrait;
 use chrono::Local;
 use std::collections::HashMap;
@@ -16,8 +17,10 @@ pub mod model;
 pub mod settings;
 
 //pub mod bistable;
+pub mod clock_generator;
 pub mod file;
 pub mod full_basis;
+pub mod input_generator;
 
 #[derive(Debug)]
 pub enum SimulationProgress {
@@ -53,12 +56,7 @@ fn run_simulation_internal(
 ) -> QCASimulationData {
     send_progress(SimulationProgress::Initializing, &progress_tx);
     let mut simulation_data = QCASimulationData::new();
-    let cell_architecture: QCACellArchitecture = architectures
-        .get(&layers[0].cell_architecture_id)
-        .unwrap()
-        .clone();
     //TODO: ugly workaround
-    let n: usize = cell_architecture.dot_count as usize;
     let num_inputs: usize = layers
         .iter()
         .map(|layer| {
@@ -90,6 +88,23 @@ fn run_simulation_internal(
 
     sim_model.initiate(Box::new(layers.clone()), architectures.clone());
 
+    let clock_generator = ClockGenerator::new(
+        ClockConfig {
+            ampl_max: model_settings.get_clock_ampl_max(),
+            ampl_min: model_settings.get_clock_ampl_min(),
+        },
+        model_settings.get_num_samples(),
+    );
+    let mut clock_iter = clock_generator.iter();
+    let input_generator = CellInputGenerator::new(
+        CellInputConfig {
+            num_states: num_inputs,
+            frequency: 2.0,
+        },
+        model_settings.get_num_samples(),
+    );
+    let mut input_iter = input_generator.iter();
+
     let mut simulated_samples: usize = 0;
     for i in 0..model_settings.get_num_samples() {
         if check_cancelled(cancel_rx) {
@@ -103,26 +118,8 @@ fn run_simulation_internal(
             &progress_tx,
         );
 
-        let clock_states = get_clock_values(
-            model_settings.get_num_samples(),
-            i * 4 * 2,
-            num_inputs,
-            model_settings.get_clock_ampl_min(),
-            model_settings.get_clock_ampl_max(),
-            model_settings.get_clock_ampl_fac(),
-        );
-
-        let input_states = (0..num_inputs)
-            .map(|j| {
-                generate_cell_input_sample(
-                    n / 4,
-                    i,
-                    model_settings.get_num_samples(),
-                    f64::powi(2.0, j as i32),
-                )
-            })
-            .flatten()
-            .collect::<Vec<f64>>();
+        let clock_states = clock_iter.next().unwrap();
+        let input_states = input_iter.next().unwrap();
 
         let mut stable = false;
         let mut j = 0;

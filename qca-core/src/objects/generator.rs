@@ -59,5 +59,3 @@ impl<'a, G: Generator> Iterator for GeneratorIterator<'a, G> {
         (remaining, Some(remaining))
     }
 }
-
-impl<'a, G: Generator> ExactSizeIterator for GeneratorIterator<'a, G> {}
