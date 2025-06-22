@@ -92,17 +92,19 @@ fn run_simulation_internal(
 
     let clock_generator = ClockGenerator::new(
         ClockConfig {
-            num_cycles: 1,
+            num_cycles: 4usize.pow(num_inputs as u32),
             amplitude_max: model_settings.get_clock_ampl_max(),
             amplitude_min: model_settings.get_clock_ampl_min(),
+            extend_last_cycle: true,
         },
         model_settings.get_num_samples(),
     );
     let mut clock_iter = clock_generator.iter();
     let input_generator = CellInputGenerator::new(
         CellInputConfig {
-            num_states: num_inputs * polarization_n as usize,
-            frequency: 1.0,
+            num_inputs,
+            num_polarization: polarization_n as usize,
+            extend_last_cycle: true,
         },
         model_settings.get_num_samples(),
     );
