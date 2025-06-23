@@ -124,7 +124,7 @@ for file in os.scandir(input_dir):
     print(f'Found file: {base_name}')
 
     table = run_analysis(file.path, sys.argv[2:])
-    accuracy = calculate_table_accuracy(table, cmp_var_line)
+    accuracy = calculate_table_accuracy(table, cmp_majority)
 
     x_coords.append(x)
     y_coords.append(y)

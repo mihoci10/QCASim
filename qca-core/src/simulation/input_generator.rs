@@ -4,6 +4,8 @@ use serde::{Deserialize, Serialize};
 /// Configuration for cell input generator
 #[derive(Clone, Serialize, Deserialize)]
 pub struct CellInputConfig {
+    /// Number of samples per combination
+    pub num_samples_per_combination: usize,
     /// Number of cell inputs
     pub num_inputs: usize,
     /// Number of polarization states
@@ -27,8 +29,9 @@ impl Generator for CellInputGenerator {
     type Config = CellInputConfig;
     type Output = Vec<f64>;
 
-    fn new(config: Self::Config, num_samples: usize) -> Self {
+    fn new(config: Self::Config) -> Self {
         let total_combinations = (config.num_polarization * 2).pow(config.num_inputs as u32);
+        let num_samples = &config.num_samples_per_combination * total_combinations;
         Self {
             config,
             num_samples,
@@ -36,7 +39,12 @@ impl Generator for CellInputGenerator {
         }
     }
 
-    fn generate(&self, sample: usize) -> Self::Output {
+    fn generate(&self, sample: usize) -> Option<Self::Output> {
+        assert_eq!(self.num_samples % self.total_combinations, 0);
+        if sample >= self.num_samples {
+            return None;
+        }
+
         // Calculate which combination we're in
         let samples_per_combination = self.num_samples / self.total_combinations;
         let combination_index = sample / samples_per_combination;
@@ -57,7 +65,7 @@ impl Generator for CellInputGenerator {
             }
         }
 
-        output
+        Some(output)
     }
 
     fn num_samples(&self) -> usize {

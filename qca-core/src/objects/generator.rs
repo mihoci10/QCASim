@@ -10,11 +10,11 @@ pub trait Generator {
     /// The output type produced by this generator
     type Output;
 
-    /// Create a new generator with the given configuration and sample count
-    fn new(config: Self::Config, num_samples: usize) -> Self;
+    /// Create a new generator with the given configuration
+    fn new(config: Self::Config) -> Self;
 
     /// Generate a single value at the given sample index
-    fn generate(&self, sample: usize) -> Self::Output;
+    fn generate(&self, sample: usize) -> Option<Self::Output>;
 
     /// Create an iterator that produces all values from 0 to num_samples
     fn iter(&self) -> GeneratorIterator<Self>
@@ -24,7 +24,6 @@ pub trait Generator {
         GeneratorIterator {
             generator: self,
             current: 0,
-            num_samples: self.num_samples(),
             _marker: PhantomData,
         }
     }
@@ -37,7 +36,6 @@ pub trait Generator {
 pub struct GeneratorIterator<'a, G: Generator> {
     generator: &'a G,
     current: usize,
-    num_samples: usize,
     _marker: PhantomData<G::Output>,
 }
 
@@ -45,17 +43,15 @@ impl<'a, G: Generator> Iterator for GeneratorIterator<'a, G> {
     type Item = G::Output;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.current < self.num_samples {
-            let sample = self.current;
-            self.current += 1;
-            Some(self.generator.generate(sample))
-        } else {
-            None
-        }
+        let sample = self.current;
+        self.current += 1;
+        self.generator.generate(sample)
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
-        let remaining = self.num_samples - self.current;
-        (remaining, Some(remaining))
+        (
+            self.generator.num_samples(),
+            Some(self.generator.num_samples()),
+        )
     }
 }

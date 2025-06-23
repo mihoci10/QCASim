@@ -1,8 +1,7 @@
-import os
-import sys
-
 import matplotlib.pyplot as plt
 import numpy as np
+import os
+import sys
 
 from load_sim import load_sim_file
 
@@ -21,7 +20,7 @@ file_arg = sys.argv[1]
 qca_core_design_ver = design['qca_core_version']
 qca_core_sim_ver = metadata['qca_core_version']
 sim_model = design['simulation_model_settings'][design['selected_simulation_model_id']]
-num_samples = sim_model['num_samples']
+num_samples = metadata['num_samples']
 sim_cells = metadata['stored_cells']
 
 print(f'QCA Core design version: {qca_core_design_ver}')

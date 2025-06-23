@@ -30,7 +30,7 @@ def load_sim_file(filename: str) -> (object, object, list[list[float]], list[lis
         sim_data = data_content
 
         sim_model = design_json['simulation_model_settings'][design_json['selected_simulation_model_id']]
-        num_samples = sim_model['num_samples']
+        num_samples = metadata_json['num_samples']
         sim_cells = metadata_json['stored_cells']
 
         sim_data_off = 0

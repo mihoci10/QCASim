@@ -71,15 +71,31 @@ fn run_simulation_internal(
         .sum();
     let model_settings = sim_model.get_settings();
 
+    let input_generator = CellInputGenerator::new(CellInputConfig {
+        num_inputs,
+        num_samples_per_combination: 20,
+        num_polarization: polarization_n as usize,
+        extend_last_cycle: true,
+    });
+    let mut input_iter = input_generator.iter();
+    let num_samples = input_generator.num_samples();
+    let clock_generator = ClockGenerator::new(ClockConfig {
+        num_samples,
+        num_cycles: 4usize.pow(num_inputs as u32),
+        amplitude_max: model_settings.get_clock_ampl_max(),
+        amplitude_min: model_settings.get_clock_ampl_min(),
+        extend_last_cycle: true,
+    });
+    let mut clock_iter = clock_generator.iter();
+
     for i in 0..layers.len() {
         for j in 0..layers[i].cells.len() {
             let cell = &layers[i].cells[j];
             if matches!(cell.typ, CellType::Input | CellType::Output) {
                 let cell_index = QCACellIndex::new(i, j);
-                simulation_data.cells_data.push(QCACellData::new(
-                    cell_index.clone(),
-                    model_settings.get_num_samples(),
-                ));
+                simulation_data
+                    .cells_data
+                    .push(QCACellData::new(cell_index.clone(), num_samples));
                 simulation_data
                     .metadata
                     .stored_cells
@@ -90,35 +106,15 @@ fn run_simulation_internal(
 
     sim_model.initiate(Box::new(layers.clone()), architectures.clone());
 
-    let clock_generator = ClockGenerator::new(
-        ClockConfig {
-            num_cycles: 4usize.pow(num_inputs as u32),
-            amplitude_max: model_settings.get_clock_ampl_max(),
-            amplitude_min: model_settings.get_clock_ampl_min(),
-            extend_last_cycle: true,
-        },
-        model_settings.get_num_samples(),
-    );
-    let mut clock_iter = clock_generator.iter();
-    let input_generator = CellInputGenerator::new(
-        CellInputConfig {
-            num_inputs,
-            num_polarization: polarization_n as usize,
-            extend_last_cycle: true,
-        },
-        model_settings.get_num_samples(),
-    );
-    let mut input_iter = input_generator.iter();
-
     let mut simulated_samples: usize = 0;
-    for i in 0..model_settings.get_num_samples() {
+    for i in 0..num_samples {
         if check_cancelled(cancel_rx) {
             break;
         }
         send_progress(
             SimulationProgress::Running {
                 current_sample: i,
-                total_samples: model_settings.get_num_samples(),
+                total_samples: num_samples,
             },
             &progress_tx,
         );
@@ -163,7 +159,7 @@ fn run_simulation_internal(
     simulation_data.metadata.duration = Local::now() - simulation_data.metadata.start_time;
     simulation_data.metadata.num_samples = simulated_samples;
 
-    return simulation_data;
+    simulation_data
 }
 
 pub fn run_simulation(
@@ -171,7 +167,7 @@ pub fn run_simulation(
     layers: Vec<QCALayer>,
     architectures: HashMap<String, QCACellArchitecture>,
 ) -> QCASimulationData {
-    return run_simulation_internal(sim_model, layers, architectures, None, &mut None);
+    run_simulation_internal(sim_model, layers, architectures, None, &mut None)
 }
 
 pub fn run_simulation_async(
