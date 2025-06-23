@@ -7,7 +7,7 @@ use std::fmt;
 
 #[derive(Serialize, Deserialize)]
 pub struct TruthTable {
-    pub entries: Vec<(String, Vec<Option<u8>>)>,
+    pub entries: Vec<(String, Vec<Option<char>>)>,
 }
 
 impl fmt::Display for TruthTable {
@@ -106,7 +106,7 @@ fn generate_logical_value(
     polarization_count: u8,
     logical_threshold: f64,
     value_threshold: f64,
-) -> Option<u8> {
+) -> Option<char> {
     let polarization_high = 1f64 - (2f64 * logical_threshold);
     let polarization_low = -1f64 + (2f64 * logical_threshold);
     let clock_region_len = clock_region.end - clock_region.start;
@@ -121,9 +121,9 @@ fn generate_logical_value(
             1 => {
                 let value = data_slice[i];
                 if value > polarization_high {
-                    Some(1)
+                    Some('A')
                 } else if value < polarization_low {
-                    Some(0)
+                    Some('B')
                 } else {
                     None
                 }
@@ -131,12 +131,14 @@ fn generate_logical_value(
             2 => {
                 let value_a = data_slice[i];
                 let value_b = data_slice[i + 1];
-                if value_a > polarization_high || value_a < polarization_low {
-                    Some(1)
+                if value_a > polarization_high {
+                    Some('A')
+                } else if value_a < polarization_low {
+                    Some('B')
                 } else if value_b > polarization_high {
-                    Some(2)
+                    Some('C')
                 } else if value_b < polarization_low {
-                    Some(0)
+                    Some('D')
                 } else {
                     None
                 }

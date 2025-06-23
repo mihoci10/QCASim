@@ -30,10 +30,7 @@ pub struct QCACell {
 
 impl QCACellIndex {
     pub fn new(layer: usize, cell: usize) -> Self {
-        QCACellIndex {
-            layer: layer,
-            cell: cell,
-        }
+        QCACellIndex { layer, cell }
     }
 }
 
@@ -104,8 +101,8 @@ pub fn dot_probability_distribution_to_polarization(
     match arr.len() {
         4 => vec![((arr[0] + arr[2]) - (arr[1] + arr[3])) / sum],
         8 => vec![
-            ((arr[0] + arr[4]) - (arr[2] + arr[6])) / sum,
             ((arr[1] + arr[5]) - (arr[3] + arr[7])) / sum,
+            ((arr[0] + arr[4]) - (arr[2] + arr[6])) / sum,
         ],
         _ => panic!(
             "Unsupported dot probability distribution length: {}",
@@ -138,7 +135,7 @@ pub fn polarization_to_dot_probability_distribution(polarization: &[f64]) -> Vec
             let p2 = 0.0f64.max(polarization[1]) + offset;
             let p_neg2 = 0.0f64.max(-polarization[1]) + offset;
 
-            vec![p1, p2, p_neg1, p_neg2, p1, p2, p_neg1, p_neg2]
+            vec![p2, p1, p_neg2, p_neg1, p2, p1, p_neg2, p_neg1]
         }
         _ => panic!("Unsupported polarization length: {}", polarization.len()),
     }
@@ -170,19 +167,19 @@ mod tests {
 
         let distribution = vec![1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0];
         let polarization = dot_probability_distribution_to_polarization(&distribution);
-        assert_eq!(polarization, vec![1.0, 0.0]);
+        assert_eq!(polarization, vec![0.0, 1.0]);
 
         let distribution = vec![0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0];
         let polarization = dot_probability_distribution_to_polarization(&distribution);
-        assert_eq!(polarization, vec![0.0, 1.0]);
+        assert_eq!(polarization, vec![1.0, 0.0]);
 
         let distribution = vec![0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0];
         let polarization = dot_probability_distribution_to_polarization(&distribution);
-        assert_eq!(polarization, vec![-1.0, 0.0]);
+        assert_eq!(polarization, vec![0.0, -1.0]);
 
         let distribution = vec![0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0];
         let polarization = dot_probability_distribution_to_polarization(&distribution);
-        assert_eq!(polarization, vec![0.0, -1.0]);
+        assert_eq!(polarization, vec![-1.0, 0.0]);
     }
 
     #[test]

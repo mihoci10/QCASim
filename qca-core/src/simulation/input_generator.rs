@@ -18,7 +18,7 @@ impl GeneratorConfig for CellInputConfig {}
 
 /// Generator for cell input values that produces vectors of values
 /// Output dimension: num_inputs * num_polarization
-/// Total combinations: (num_polarization * 2)^num_inputs
+/// Total combinations: (num_polarization + 1)^num_inputs
 pub struct CellInputGenerator {
     config: CellInputConfig,
     num_samples: usize,
@@ -30,7 +30,7 @@ impl Generator for CellInputGenerator {
     type Output = Vec<f64>;
 
     fn new(config: Self::Config) -> Self {
-        let total_combinations = (config.num_polarization * 2).pow(config.num_inputs as u32);
+        let total_combinations = (config.num_polarization + 1).pow(config.num_inputs as u32);
         let num_samples = &config.num_samples_per_combination * total_combinations;
         Self {
             config,
@@ -75,9 +75,9 @@ impl Generator for CellInputGenerator {
 
 impl CellInputGenerator {
     /// Get the combination pattern for a given combination index
-    /// Each input can have values from 0 to (num_polarization * 2 - 1)
+    /// Each input can have values from 0 to (num_polarization)
     fn get_combination(&self, combination_index: usize) -> Vec<usize> {
-        let base = self.config.num_polarization * 2;
+        let base = self.config.num_polarization + 1;
         let mut combination = Vec::with_capacity(self.config.num_inputs);
         let mut index = combination_index;
 
@@ -107,7 +107,6 @@ impl CellInputGenerator {
         // Only generate signal for the corresponding polarization
         if polarization_value == pol_idx {
             // Generate a square wave signal that varies with progress
-            let frequency = 1.0 + input_idx as f64; // Different frequency per input
             signal_polarity
         } else {
             0.0

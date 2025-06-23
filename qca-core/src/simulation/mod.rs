@@ -73,7 +73,7 @@ fn run_simulation_internal(
 
     let input_generator = CellInputGenerator::new(CellInputConfig {
         num_inputs,
-        num_samples_per_combination: 20,
+        num_samples_per_combination: 50,
         num_polarization: polarization_n as usize,
         extend_last_cycle: true,
     });
@@ -81,7 +81,7 @@ fn run_simulation_internal(
     let num_samples = input_generator.num_samples();
     let clock_generator = ClockGenerator::new(ClockConfig {
         num_samples,
-        num_cycles: 4usize.pow(num_inputs as u32),
+        num_cycles: (polarization_n as usize + 1).pow(num_inputs as u32),
         amplitude_max: model_settings.get_clock_ampl_max(),
         amplitude_min: model_settings.get_clock_ampl_min(),
         extend_last_cycle: true,
