@@ -371,11 +371,8 @@ impl QCACellInternal {
 #[serde_inline_default]
 #[derive(Serialize, Deserialize, Clone)]
 pub struct FullBasisModelSettings {
-    #[serde_inline_default(100)]
-    num_samples: usize,
-
-    #[serde_inline_default(100)]
-    max_iter: usize,
+    #[serde_inline_default(1_000_000)]
+    max_iterations: usize,
 
     #[serde_inline_default(0.0000237177)]
     ampl_min: f64,
@@ -383,10 +380,7 @@ pub struct FullBasisModelSettings {
     #[serde_inline_default(2.0)]
     ampl_max: f64,
 
-    #[serde_inline_default(2.0)]
-    ampl_fac: f64,
-
-    #[serde_inline_default(1e-3)]
+    #[serde_inline_default(1e-9)]
     convergence_tolerance: f64,
 
     #[serde_inline_default(13.1)]
@@ -420,10 +414,6 @@ impl SimulationModelSettingsTrait for FullBasisModelSettings {
 
     fn get_clock_ampl_max(&self) -> f64 {
         self.ampl_max
-    }
-
-    fn get_clock_ampl_fac(&self) -> f64 {
-        self.ampl_fac
     }
 
     fn get_max_iter(&self) -> usize {
@@ -502,17 +492,6 @@ impl SimulationModelTrait for FullBasisModel {
                     max: None,
                     unit: None,
                     whole_num: true,
-                },
-            },
-            OptionsEntry::Input {
-                unique_id: "layer_separation".to_string(),
-                name: "Layer separation".to_string(),
-                description: "Separation between layers in nm".to_string(),
-                descriptor: InputDescriptor::NumberInput {
-                    min: Some(0.0),
-                    max: None,
-                    unit: Some("nm".into()),
-                    whole_num: false,
                 },
             },
         ]

@@ -1,10 +1,24 @@
 use crate::objects::generator::{Generator, GeneratorConfig};
 use serde::{Deserialize, Serialize};
+use serde_inline_default::serde_inline_default;
 use std::convert::TryInto;
 use std::f64::consts::PI;
 
-/// Configuration for clock generator
 #[derive(Clone, Serialize, Deserialize)]
+#[serde_inline_default]
+pub struct ClockGeneratorProps {
+    #[serde_inline_default(1)]
+    pub num_cycles: usize,
+    #[serde_inline_default(0.0000237177)]
+    pub amplitude_min: f64,
+    #[serde_inline_default(2.0)]
+    pub amplitude_max: f64,
+    #[serde_inline_default(false)]
+    pub extend_last_cycle: bool,
+}
+
+/// Configuration for clock generator
+#[derive(Clone)]
 pub struct ClockConfig {
     /// Number of samples
     pub num_samples: usize,

@@ -5,11 +5,7 @@ use crate::simulation::settings::OptionsList;
 use std::collections::HashMap;
 
 pub trait SimulationModelSettingsTrait {
-    fn get_num_samples(&self) -> usize;
-    fn get_clock_ampl_min(&self) -> f64;
-    fn get_clock_ampl_max(&self) -> f64;
-    fn get_clock_ampl_fac(&self) -> f64;
-    fn get_max_iter(&self) -> usize;
+    fn get_max_iterations(&self) -> usize;
 }
 
 pub trait SimulationModelTrait: Sync + Send {
