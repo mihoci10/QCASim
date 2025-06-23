@@ -73,7 +73,7 @@ fn run_simulation_internal(
 
     let input_generator = CellInputGenerator::new(CellInputConfig {
         num_inputs,
-        num_samples_per_combination: 50,
+        num_samples_per_combination: 20,
         num_polarization: polarization_n as usize,
         extend_last_cycle: true,
     });

@@ -6,11 +6,11 @@ import sys
 QCA_SIM = '../target/release/qca-sim'
 
 
-def parse_truth_table(table_raw: str) -> list[list[int]]:
+def parse_truth_table(table_raw: str) -> list[list[str]]:
     result = []
     for table_row in table_raw.splitlines()[1:]:
         result.append(list(map(
-            lambda v: -1 if v == "NaN" else int(v),
+            lambda v: 'NaN' if v == "NaN" else str(v),
             table_row.split('\t')[:-1]
         )))
     return result
@@ -25,7 +25,7 @@ def run_analysis(filename: str, delays: list[str]):
     return parsed_result
 
 
-def calculate_table_accuracy(table: list[list[int]], cmp_func):
+def calculate_table_accuracy(table: list[list[str]], cmp_func):
     if len(table) == 0:
         return 1.0
 
@@ -36,13 +36,13 @@ def calculate_table_accuracy(table: list[list[int]], cmp_func):
     return accuracy / len(table)
 
 
-def cmp_var_line(row: list[int]) -> float:
+def cmp_var_line(row: list[str]) -> float:
     in_val = row[0]
     accuracy_arr = [1.0 if in_val == val else 0.0 for val in row[1:]]
     return sum(accuracy_arr) / (len(row) - 1)
 
 
-def cmp_var_inverter(row: list[int]) -> float:
+def cmp_var_inverter(row: list[str]) -> float:
     in_val = row[0]
     out_val = row[-1]
 
@@ -59,43 +59,51 @@ def cmp_var_inverter(row: list[int]) -> float:
 
     return accuracy_main
 
-def cmp_majority(row: list[int]) -> float:
+def cmp_majority(row: list[str]) -> float:
     truth_table = {
-        (2, 2, 2): 2,  # A A A -> A
-        (2, 2, 0): 2,  # A A B -> A
-        (2, 2, 1): 2,  # A A C -> A
-        (2, 0, 2): 2,  # A B A -> A
-        (2, 0, 0): 0,  # A B B -> B
-        (2, 0, 1): 1,  # A B C -> C
-        (2, 1, 2): 2,  # A C A -> A
-        (2, 1, 0): 1,  # A C B -> C
-        (2, 1, 1): 1,  # A C C -> C
-        (0, 2, 2): 2,  # B A A -> A
-        (0, 2, 0): 0,  # B A B -> B
-        (0, 2, 1): 1,  # B A C -> C
-        (0, 0, 2): 0,  # B B A -> B
-        (0, 0, 0): 0,  # B B B -> B
-        (0, 0, 1): 0,  # B B C -> B
-        (0, 1, 2): 1,  # B C A -> C
-        (0, 1, 0): 0,  # B C B -> B
-        (0, 1, 1): 1,  # B C C -> C
-        (1, 2, 2): 2,  # C A A -> A
-        (1, 2, 0): 1,  # C A B -> C
-        (1, 2, 1): 1,  # C A C -> C
-        (1, 0, 2): 1,  # C B A -> C
-        (1, 0, 0): 0,  # C B B -> B
-        (1, 0, 1): 1,  # C B C -> C
-        (1, 1, 2): 1,  # C C A -> C
-        (1, 1, 0): 1,  # C C B -> C
-        (1, 1, 1): 1,  # C C C -> C
+        ('A', 'A', 'A'): 'A',  # A A A -> A
+        ('A', 'A', 'B'): 'A',  # A A B -> A
+        ('A', 'A', 'C'): 'A',  # A A C -> A
+        ('A', 'B', 'A'): 'A',  # A B A -> A
+        ('A', 'B', 'B'): 'B',  # A B B -> B
+        ('A', 'B', 'C'): 'C',  # A B C -> C
+        ('A', 'C', 'A'): 'A',  # A C A -> A
+        ('A', 'C', 'B'): 'C',  # A C B -> C
+        ('A', 'C', 'C'): 'C',  # A C C -> C
+        ('B', 'A', 'A'): 'A',  # B A A -> A
+        ('B', 'A', 'B'): 'B',  # B A B -> B
+        ('B', 'A', 'C'): 'C',  # B A C -> C
+        ('B', 'B', 'A'): 'B',  # B B A -> B
+        ('B', 'B', 'B'): 'B',  # B B B -> B
+        ('B', 'B', 'C'): 'B',  # B B C -> B
+        ('B', 'C', 'A'): 'C',  # B C A -> C
+        ('B', 'C', 'B'): 'B',  # B C B -> B
+        ('B', 'C', 'C'): 'C',  # B C C -> C
+        ('C', 'A', 'A'): 'A',  # C A A -> A
+        ('C', 'A', 'B'): 'C',  # C A B -> C
+        ('C', 'A', 'C'): 'C',  # C A C -> C
+        ('C', 'B', 'A'): 'C',  # C B A -> C
+        ('C', 'B', 'B'): 'B',  # C B B -> B
+        ('C', 'B', 'C'): 'C',  # C B C -> C
+        ('C', 'C', 'A'): 'C',  # C C A -> C
+        ('C', 'C', 'B'): 'C',  # C C B -> C
+        ('C', 'C', 'C'): 'C',  # C C C -> C
     }
 
     if len(row) != 4:
         raise RuntimeError
-    if -1.0 in row:
+    if 'NaN' in row:
         return 0.0
 
     [x, y, z, r] = row
+    if x == 'D':
+        x = 'C'
+    if y == 'D':
+        y = 'C'
+    if z == 'D':
+        z = 'C'
+    if r == 'D':
+        r = 'C'
 
     if (x, y, z) in truth_table:
         return 1.0 if truth_table[(x, y, z)] == r else 0.0
