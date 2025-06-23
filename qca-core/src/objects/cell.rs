@@ -220,19 +220,19 @@ mod tests {
 
         let polarization = vec![1.0, 0.0];
         let distribution = polarization_to_dot_probability_distribution(&polarization);
-        assert_eq!(distribution, vec![1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0]);
+        assert_eq!(distribution, vec![0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0]);
 
         let polarization = vec![0.0, 1.0];
         let distribution = polarization_to_dot_probability_distribution(&polarization);
-        assert_eq!(distribution, vec![0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0]);
+        assert_eq!(distribution, vec![1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0]);
 
         let polarization = vec![-1.0, 0.0];
         let distribution = polarization_to_dot_probability_distribution(&polarization);
-        assert_eq!(distribution, vec![0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0]);
+        assert_eq!(distribution, vec![0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]);
 
         let polarization = vec![0.0, -1.0];
         let distribution = polarization_to_dot_probability_distribution(&polarization);
-        assert_eq!(distribution, vec![0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]);
+        assert_eq!(distribution, vec![0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0]);
     }
 
     #[test]
