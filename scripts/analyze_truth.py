@@ -106,8 +106,6 @@ def cmp_majority(row: list[str]) -> float:
         r = 'C'
 
     if (x, y, z) in truth_table:
-        if truth_table[(x, y, z)] != r:
-            print(f'({x} {y} {z}) -> {truth_table[(x, y, z)]} != {r}')
         return 1.0 if truth_table[(x, y, z)] == r else 0.0
     else:
         raise RuntimeError

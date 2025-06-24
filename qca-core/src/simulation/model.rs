@@ -20,11 +20,10 @@ pub trait ClockGeneratorSettingsTrait {
 pub trait SimulationModelTrait: Sync + Send {
     fn get_name(&self) -> String;
     fn get_unique_id(&self) -> String;
-
     fn get_model_settings(&self) -> Box<dyn SimulationModelSettingsTrait>;
     fn get_clock_generator_settings(&self) -> Box<dyn ClockGeneratorSettingsTrait>;
-
-    fn get_options_list(&self) -> OptionsList;
+    fn get_model_options_list(&self) -> OptionsList;
+    fn get_clock_generator_options_list(&self) -> OptionsList;
     fn serialize_model_settings(&self) -> Result<String, String>;
     fn deserialize_model_settings(&mut self, settings_str: &String) -> Result<(), String>;
     fn serialize_clock_generator_settings(&self) -> Result<String, String>;

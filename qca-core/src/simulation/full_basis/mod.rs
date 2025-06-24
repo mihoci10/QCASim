@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use super::{CellType, QCACellArchitecture, QCACellIndex, QCALayer, SimulationModelTrait};
 use crate::objects::cell::{polarization_to_dot_probability_distribution, QCACell};
 use crate::simulation::model::{ClockGeneratorSettingsTrait, SimulationModelSettingsTrait};
-use crate::simulation::settings::{InputDescriptor, OptionsEntry};
+use crate::simulation::settings::{InputDescriptor, OptionsEntry, OptionsList};
 use nalgebra::{distance, DMatrix, DMatrixView, DVector, DVectorView, Point3, Schur};
 use serde::{Deserialize, Serialize};
 use serde_inline_default::serde_inline_default;
@@ -370,7 +370,7 @@ impl QCACellInternal {
 #[serde_inline_default]
 #[derive(Serialize, Deserialize, Clone)]
 pub struct FullBasisModelSettings {
-    #[serde_inline_default(1_000_000)]
+    #[serde_inline_default(10_000)]
     max_iterations: usize,
 
     #[serde_inline_default(1e-9)]
@@ -379,7 +379,7 @@ pub struct FullBasisModelSettings {
     #[serde_inline_default(13.1)]
     relative_permitivity: f64,
 
-    #[serde_inline_default(1_000_000)]
+    #[serde_inline_default(10_000)]
     schur_max_iterations: usize,
 
     #[serde_inline_default(1e-9)]
@@ -489,11 +489,8 @@ impl SimulationModelTrait for FullBasisModel {
         Box::new(self.clock_generator_settings.clone()) as Box<dyn ClockGeneratorSettingsTrait>
     }
 
-    fn get_options_list(&self) -> super::settings::OptionsList {
+    fn get_model_options_list(&self) -> super::settings::OptionsList {
         vec![
-            OptionsEntry::Header {
-                label: "Model Settings".into(),
-            },
             OptionsEntry::Input {
                 unique_id: "max_iterations".into(),
                 name: "Max Iterations".into(),
@@ -527,6 +524,10 @@ impl SimulationModelTrait for FullBasisModel {
                     whole_num: false,
                 },
             },
+            OptionsEntry::Break,
+            OptionsEntry::Header {
+                label: "Eigen value solver settings".into(),
+            },
             OptionsEntry::Input {
                 unique_id: "schur_max_iterations".into(),
                 name: "Schur Max Iterations".into(),
@@ -549,10 +550,11 @@ impl SimulationModelTrait for FullBasisModel {
                     whole_num: false,
                 },
             },
-            OptionsEntry::Break,
-            OptionsEntry::Header {
-                label: "Clock Generator Settings".into(),
-            },
+        ]
+    }
+
+    fn get_clock_generator_options_list(&self) -> OptionsList {
+        vec![
             OptionsEntry::Input {
                 unique_id: "num_cycles".into(),
                 name: "Number of Cycles".into(),
