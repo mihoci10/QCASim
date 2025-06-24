@@ -524,13 +524,12 @@ impl SimulationModelTrait for FullBasisModel {
                     whole_num: false,
                 },
             },
-            OptionsEntry::Break,
             OptionsEntry::Header {
-                label: "Eigen value solver settings".into(),
+                label: "Schur decomposition calculation settings".into(),
             },
             OptionsEntry::Input {
                 unique_id: "schur_max_iterations".into(),
-                name: "Schur Max Iterations".into(),
+                name: "Maximum iterations".into(),
                 description: "Maximum iterations for Schur decomposition".into(),
                 descriptor: InputDescriptor::NumberInput {
                     min: Some(1.0),
@@ -541,7 +540,7 @@ impl SimulationModelTrait for FullBasisModel {
             },
             OptionsEntry::Input {
                 unique_id: "schur_convergence_tolerance".into(),
-                name: "Schur Convergence Tolerance".into(),
+                name: "Convergence tolerance".into(),
                 description: "Tolerance value for Schur decomposition convergence".into(),
                 descriptor: InputDescriptor::NumberInput {
                     min: Some(0.0),
@@ -764,9 +763,11 @@ impl SimulationModelTrait for FullBasisModel {
             }
 
             if (clock_value - self.clock_generator_settings.amplitude_max).abs() >= 1e-3 {
-                if let Some(decomposition) =
-                    Schur::try_new(internal_cell.hamilton_matrix.clone(), 1e-6, 1000)
-                {
+                if let Some(decomposition) = Schur::try_new(
+                    internal_cell.hamilton_matrix.clone(),
+                    self.model_settings.schur_convergence_tolerance,
+                    self.model_settings.schur_max_iterations,
+                ) {
                     if let Some(eigenvalues) = decomposition.eigenvalues() {
                         let sorted_eigenvalue = eigenvalues
                             .iter()
