@@ -373,17 +373,17 @@ pub struct FullBasisModelSettings {
     #[serde_inline_default(1_000_000)]
     max_iterations: usize,
 
-    #[serde_inline_default(0.0000237177)]
-    ampl_min: f64,
-
-    #[serde_inline_default(2.0)]
-    ampl_max: f64,
-
     #[serde_inline_default(1e-9)]
     convergence_tolerance: f64,
 
     #[serde_inline_default(13.1)]
     relative_permitivity: f64,
+
+    #[serde_inline_default(1_000_000)]
+    schur_max_iterations: usize,
+
+    #[serde_inline_default(1e-9)]
+    schur_convergence_tolerance: f64,
 }
 
 #[serde_inline_default]
@@ -491,10 +491,13 @@ impl SimulationModelTrait for FullBasisModel {
 
     fn get_options_list(&self) -> super::settings::OptionsList {
         vec![
+            OptionsEntry::Header {
+                label: "Model Settings".into(),
+            },
             OptionsEntry::Input {
-                unique_id: "num_samples".to_string(),
-                name: "Number of samples".to_string(),
-                description: "The number of samples to be used in simulation".to_string(),
+                unique_id: "max_iterations".into(),
+                name: "Max Iterations".into(),
+                description: "Maximum number of iterations for the simulation".into(),
                 descriptor: InputDescriptor::NumberInput {
                     min: Some(1.0),
                     max: None,
@@ -503,20 +506,9 @@ impl SimulationModelTrait for FullBasisModel {
                 },
             },
             OptionsEntry::Input {
-                unique_id: "convergence_tolerance".to_string(),
-                name: "Convergence tolerance".to_string(),
-                description: "Tolerance for simulation convergence check".to_string(),
-                descriptor: InputDescriptor::NumberInput {
-                    min: Some(0.0),
-                    max: Some(1.0),
-                    unit: None,
-                    whole_num: false,
-                },
-            },
-            OptionsEntry::Input {
-                unique_id: "relative_permitivity".to_string(),
-                name: "Relative permitivity".to_string(),
-                description: "Permitivity of the relative medium".to_string(),
+                unique_id: "convergence_tolerance".into(),
+                name: "Convergence Tolerance".into(),
+                description: "Tolerance value for convergence check".into(),
                 descriptor: InputDescriptor::NumberInput {
                     min: Some(0.0),
                     max: None,
@@ -525,11 +517,87 @@ impl SimulationModelTrait for FullBasisModel {
                 },
             },
             OptionsEntry::Input {
-                unique_id: "max_iter".to_string(),
-                name: "Maximum iterations".to_string(),
-                description: "Maximum number of iterations per sample".to_string(),
+                unique_id: "relative_permitivity".into(),
+                name: "Relative Permittivity".into(),
+                description: "Relative permittivity value for electric field calculations".into(),
                 descriptor: InputDescriptor::NumberInput {
                     min: Some(0.0),
+                    max: None,
+                    unit: None,
+                    whole_num: false,
+                },
+            },
+            OptionsEntry::Input {
+                unique_id: "schur_max_iterations".into(),
+                name: "Schur Max Iterations".into(),
+                description: "Maximum iterations for Schur decomposition".into(),
+                descriptor: InputDescriptor::NumberInput {
+                    min: Some(1.0),
+                    max: None,
+                    unit: None,
+                    whole_num: true,
+                },
+            },
+            OptionsEntry::Input {
+                unique_id: "schur_convergence_tolerance".into(),
+                name: "Schur Convergence Tolerance".into(),
+                description: "Tolerance value for Schur decomposition convergence".into(),
+                descriptor: InputDescriptor::NumberInput {
+                    min: Some(0.0),
+                    max: None,
+                    unit: None,
+                    whole_num: false,
+                },
+            },
+            OptionsEntry::Break,
+            OptionsEntry::Header {
+                label: "Clock Generator Settings".into(),
+            },
+            OptionsEntry::Input {
+                unique_id: "num_cycles".into(),
+                name: "Number of Cycles".into(),
+                description: "Number of clock cycles for simulation".into(),
+                descriptor: InputDescriptor::NumberInput {
+                    min: Some(1.0),
+                    max: None,
+                    unit: None,
+                    whole_num: true,
+                },
+            },
+            OptionsEntry::Input {
+                unique_id: "amplitude_min".into(),
+                name: "Amplitude Minimum".into(),
+                description: "Minimum amplitude for clock signals".into(),
+                descriptor: InputDescriptor::NumberInput {
+                    min: None,
+                    max: None,
+                    unit: None,
+                    whole_num: false,
+                },
+            },
+            OptionsEntry::Input {
+                unique_id: "amplitude_max".into(),
+                name: "Amplitude Maximum".into(),
+                description: "Maximum amplitude for clock signals".into(),
+                descriptor: InputDescriptor::NumberInput {
+                    min: None,
+                    max: None,
+                    unit: None,
+                    whole_num: false,
+                },
+            },
+            OptionsEntry::Input {
+                unique_id: "extend_last_cycle".into(),
+                name: "Extend Last Cycle".into(),
+                description: "Whether to extend the last cycle in simulation".into(),
+                descriptor: InputDescriptor::BoolInput {},
+            },
+            OptionsEntry::Input {
+                unique_id: "samples_per_input".into(),
+                name: "Samples Per Input".into(),
+                description: "Number of samples to take per input value".into(),
+                descriptor: InputDescriptor::NumberInput {
+                    min: Some(1.0),
                     max: None,
                     unit: None,
                     whole_num: true,
@@ -693,7 +761,7 @@ impl SimulationModelTrait for FullBasisModel {
                     [(i, i)];
             }
 
-            if (clock_value - self.model_settings.ampl_max).abs() >= 1e-3 {
+            if (clock_value - self.clock_generator_settings.amplitude_max).abs() >= 1e-3 {
                 if let Some(decomposition) =
                     Schur::try_new(internal_cell.hamilton_matrix.clone(), 1e-6, 1000)
                 {
