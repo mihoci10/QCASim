@@ -5,7 +5,7 @@ use qca_core::design::file::{QCADesignFile, DESIGN_FILE_EXTENSION};
 use qca_core::simulation::file::{write_to_file, SIMULATION_FILE_EXTENSION};
 use qca_core::simulation::full_basis::FullBasisModel;
 use qca_core::simulation::model::SimulationModelTrait;
-use qca_core::simulation::{run_simulation_async, SimulationProgress};
+use qca_core::simulation::{get_num_samples, run_simulation_async, SimulationProgress};
 use std::error::Error;
 use std::fs;
 use std::fs::File;
@@ -50,14 +50,19 @@ pub fn run_sim(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
     let qca_design = qca_design_file.design;
 
     let mut sim_model: Box<dyn SimulationModelTrait> = Box::new(FullBasisModel::new());
-    sim_model.set_serialized_settings(
+    sim_model.deserialize_model_settings(
         &qca_design
             .simulation_model_settings
             .get("full_basis_model")
             .unwrap()
             .to_string(),
     )?;
-    let max_samples = sim_model.get_settings().get_num_samples() as u64;
+
+    let max_samples = get_num_samples(
+        &sim_model,
+        &qca_design.layers,
+        &qca_design.cell_architectures,
+    ) as u64;
 
     let (handle, progress_rx, _cancel_tx) = run_simulation_async(
         sim_model,

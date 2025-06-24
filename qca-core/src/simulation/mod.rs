@@ -59,32 +59,26 @@ fn run_simulation_internal(
     let architecture = architectures.get(&layers[0].cell_architecture_id).unwrap();
     let polarization_n = architecture.dot_count / 4;
     //TODO: ugly workaround
-    let num_inputs: usize = layers
-        .iter()
-        .map(|layer| {
-            layer
-                .cells
-                .iter()
-                .filter(|c| c.typ == CellType::Input)
-                .count()
-        })
-        .sum();
-    let model_settings = sim_model.get_settings();
+    let num_inputs = get_num_inputs(&layers);
+
+    let model_settings = sim_model.get_model_settings();
+    let clock_generator_settings = sim_model.get_clock_generator_settings();
 
     let input_generator = CellInputGenerator::new(CellInputConfig {
         num_inputs,
-        num_samples_per_combination: 20,
+        num_samples_per_combination: clock_generator_settings.get_samples_per_input(),
         num_polarization: polarization_n as usize,
-        extend_last_cycle: true,
+        extend_last_cycle: clock_generator_settings.get_extend_last_cycle(),
     });
     let mut input_iter = input_generator.iter();
     let num_samples = input_generator.num_samples();
     let clock_generator = ClockGenerator::new(ClockConfig {
         num_samples,
-        num_cycles: (polarization_n as usize + 1).pow(num_inputs as u32),
-        amplitude_max: model_settings.get_clock_ampl_max(),
-        amplitude_min: model_settings.get_clock_ampl_min(),
-        extend_last_cycle: true,
+        num_cycles: (polarization_n as usize + 1).pow(num_inputs as u32)
+            * clock_generator_settings.get_num_cycles(),
+        amplitude_max: clock_generator_settings.get_amplitude_max(),
+        amplitude_min: clock_generator_settings.get_amplitude_min(),
+        extend_last_cycle: clock_generator_settings.get_extend_last_cycle(),
     });
     let mut clock_iter = clock_generator.iter();
 
@@ -124,7 +118,7 @@ fn run_simulation_internal(
 
         let mut stable = false;
         let mut j = 0;
-        while !stable && j < model_settings.get_max_iter() {
+        while !stable && j < model_settings.get_max_iterations() {
             stable = true;
 
             sim_model.pre_calculate(&clock_states, &input_states);
@@ -192,4 +186,38 @@ pub fn run_simulation_async(
     });
 
     (thread_handler, progress_rx, cancel_tx)
+}
+
+pub fn get_num_inputs(layers: &Vec<QCALayer>) -> usize {
+    layers
+        .iter()
+        .map(|layer| {
+            layer
+                .cells
+                .iter()
+                .filter(|c| c.typ == CellType::Input)
+                .count()
+        })
+        .sum()
+}
+
+pub fn get_num_samples(
+    sim_model: &Box<dyn SimulationModelTrait>,
+    layers: &Vec<QCALayer>,
+    architectures: &HashMap<String, QCACellArchitecture>,
+) -> usize {
+    let architecture = architectures.get(&layers[0].cell_architecture_id).unwrap();
+    let polarization_n = architecture.dot_count / 4;
+    let clock_generator_settings = sim_model.get_clock_generator_settings();
+
+    let num_inputs = get_num_inputs(layers);
+
+    let input_generator = CellInputGenerator::new(CellInputConfig {
+        num_inputs,
+        num_samples_per_combination: clock_generator_settings.get_samples_per_input(),
+        num_polarization: polarization_n as usize,
+        extend_last_cycle: clock_generator_settings.get_extend_last_cycle(),
+    });
+
+    input_generator.num_samples()
 }

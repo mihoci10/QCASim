@@ -1,13 +1,12 @@
 use std::collections::HashMap;
 
+use super::{CellType, QCACellArchitecture, QCACellIndex, QCALayer, SimulationModelTrait};
 use crate::objects::cell::{polarization_to_dot_probability_distribution, QCACell};
-use crate::simulation::model::SimulationModelSettingsTrait;
+use crate::simulation::model::{ClockGeneratorSettingsTrait, SimulationModelSettingsTrait};
 use crate::simulation::settings::{InputDescriptor, OptionsEntry};
 use nalgebra::{distance, DMatrix, DMatrixView, DVector, DVectorView, Point3, Schur};
 use serde::{Deserialize, Serialize};
 use serde_inline_default::serde_inline_default;
-
-use super::{CellType, QCACellArchitecture, QCACellIndex, QCALayer, SimulationModelTrait};
 
 fn calculate_vq(_relative_permittivity: f64) -> f64 {
     const _CHARGE: f64 = 1.6021e-19;
@@ -387,10 +386,30 @@ pub struct FullBasisModelSettings {
     relative_permitivity: f64,
 }
 
+#[serde_inline_default]
+#[derive(Serialize, Deserialize, Clone)]
+pub struct FullBasisClockGeneratorSettings {
+    #[serde_inline_default(1)]
+    num_cycles: usize,
+
+    #[serde_inline_default(0.0000237177)]
+    amplitude_min: f64,
+
+    #[serde_inline_default(2.0)]
+    amplitude_max: f64,
+
+    #[serde_inline_default(true)]
+    extend_last_cycle: bool,
+
+    #[serde_inline_default(50)]
+    samples_per_input: usize,
+}
+
 pub struct FullBasisModel {
     clock_states: [f64; 4],
     input_states: Vec<f64>,
-    settings: FullBasisModelSettings,
+    model_settings: FullBasisModelSettings,
+    clock_generator_settings: FullBasisClockGeneratorSettings,
     index_cells_map: HashMap<QCACellIndex, QCACellInternal>,
     layer_map: HashMap<usize, QCALayer>,
     cell_architectures_map: HashMap<String, QCACellArchitecture>,
@@ -403,21 +422,38 @@ impl FullBasisModelSettings {
     }
 }
 
+impl FullBasisClockGeneratorSettings {
+    pub fn new() -> Self {
+        serde_json::from_str::<FullBasisClockGeneratorSettings>("{}".into()).unwrap()
+    }
+}
+
 impl SimulationModelSettingsTrait for FullBasisModelSettings {
-    fn get_num_samples(&self) -> usize {
-        self.num_samples
+    fn get_max_iterations(&self) -> usize {
+        self.max_iterations
+    }
+    fn get_convergence_tolerance(&self) -> f64 {
+        self.convergence_tolerance
+    }
+}
+
+impl ClockGeneratorSettingsTrait for FullBasisClockGeneratorSettings {
+    fn get_num_cycles(&self) -> usize {
+        self.num_cycles
+    }
+    fn get_amplitude_min(&self) -> f64 {
+        self.amplitude_min
+    }
+    fn get_amplitude_max(&self) -> f64 {
+        self.amplitude_max
     }
 
-    fn get_clock_ampl_min(&self) -> f64 {
-        self.ampl_min
+    fn get_extend_last_cycle(&self) -> bool {
+        self.extend_last_cycle
     }
 
-    fn get_clock_ampl_max(&self) -> f64 {
-        self.ampl_max
-    }
-
-    fn get_max_iter(&self) -> usize {
-        self.max_iter
+    fn get_samples_per_input(&self) -> usize {
+        self.samples_per_input
     }
 }
 
@@ -426,7 +462,8 @@ impl FullBasisModel {
         FullBasisModel {
             clock_states: [0.0, 0.0, 0.0, 0.0],
             input_states: vec![],
-            settings: FullBasisModelSettings::new(),
+            model_settings: FullBasisModelSettings::new(),
+            clock_generator_settings: FullBasisClockGeneratorSettings::new(),
             index_cells_map: HashMap::new(),
             layer_map: HashMap::new(),
             cell_architectures_map: HashMap::new(),
@@ -444,8 +481,12 @@ impl SimulationModelTrait for FullBasisModel {
         "full_basis_model".into()
     }
 
-    fn get_settings(&self) -> Box<dyn SimulationModelSettingsTrait> {
-        Box::new(self.settings.clone()) as Box<dyn SimulationModelSettingsTrait>
+    fn get_model_settings(&self) -> Box<dyn SimulationModelSettingsTrait> {
+        Box::new(self.model_settings.clone()) as Box<dyn SimulationModelSettingsTrait>
+    }
+
+    fn get_clock_generator_settings(&self) -> Box<dyn ClockGeneratorSettingsTrait> {
+        Box::new(self.clock_generator_settings.clone()) as Box<dyn ClockGeneratorSettingsTrait>
     }
 
     fn get_options_list(&self) -> super::settings::OptionsList {
@@ -497,17 +538,37 @@ impl SimulationModelTrait for FullBasisModel {
         ]
     }
 
-    fn get_deserialized_settings(&self) -> Result<String, String> {
-        match serde_json::to_string(&self.settings) {
+    fn serialize_model_settings(&self) -> Result<String, String> {
+        match serde_json::to_string(&self.model_settings) {
             Ok(res) => Ok(res),
             Err(err) => Err(err.to_string()),
         }
     }
 
-    fn set_serialized_settings(&mut self, settings_str: &String) -> Result<(), String> {
+    fn deserialize_model_settings(&mut self, settings_str: &String) -> Result<(), String> {
         match serde_json::from_str::<FullBasisModelSettings>(settings_str) {
             Ok(res) => {
-                self.settings = res;
+                self.model_settings = res;
+                Ok(())
+            }
+            Err(err) => Err(err.to_string()),
+        }
+    }
+
+    fn serialize_clock_generator_settings(&self) -> Result<String, String> {
+        match serde_json::to_string(&self.clock_generator_settings) {
+            Ok(res) => Ok(res),
+            Err(err) => Err(err.to_string()),
+        }
+    }
+
+    fn deserialize_clock_generator_settings(
+        &mut self,
+        settings_str: &String,
+    ) -> Result<(), String> {
+        match serde_json::from_str::<FullBasisClockGeneratorSettings>(settings_str) {
+            Ok(res) => {
+                self.clock_generator_settings = res;
                 Ok(())
             }
             Err(err) => Err(err.to_string()),
@@ -536,7 +597,7 @@ impl SimulationModelTrait for FullBasisModel {
                         qca_architetures_map
                             .get(&layer.cell_architecture_id)
                             .unwrap(),
-                        self.settings.relative_permitivity,
+                        self.model_settings.relative_permitivity,
                     ),
                 );
                 if c.typ == CellType::Input {
@@ -610,7 +671,7 @@ impl SimulationModelTrait for FullBasisModel {
                                 let distance = distance(&dot_pos_i, &dot_pos_j);
 
                                 internal_cell.dot_potential[i] +=
-                                    (calculate_vq(self.settings.relative_permitivity)
+                                    (calculate_vq(self.model_settings.relative_permitivity)
                                         * (c.dot_charge_probability[j] - ro_plus))
                                         / distance;
                             }
@@ -632,7 +693,7 @@ impl SimulationModelTrait for FullBasisModel {
                     [(i, i)];
             }
 
-            if (clock_value - self.settings.ampl_max).abs() >= 1e-3 {
+            if (clock_value - self.model_settings.ampl_max).abs() >= 1e-3 {
                 if let Some(decomposition) =
                     Schur::try_new(internal_cell.hamilton_matrix.clone(), 1e-6, 1000)
                 {
@@ -679,7 +740,7 @@ impl SimulationModelTrait for FullBasisModel {
         let mut stable: bool = true;
         for i in 0..n as usize {
             if (internal_cell.dot_charge_probability[i] - old_charge_probability[i]).abs()
-                > self.settings.convergence_tolerance
+                > self.model_settings.convergence_tolerance
             {
                 stable = false;
             }

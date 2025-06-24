@@ -49,9 +49,6 @@ impl Generator for CellInputGenerator {
         let samples_per_combination = self.num_samples / self.total_combinations;
         let combination_index = sample / samples_per_combination;
 
-        // Progress within the current combination (0.0 to 1.0)
-        let progress = (sample % samples_per_combination) as f64 / samples_per_combination as f64;
-
         // Generate the combination pattern
         let combination = self.get_combination(combination_index);
 
@@ -60,7 +57,7 @@ impl Generator for CellInputGenerator {
 
         for input_idx in 0..self.config.num_inputs {
             for pol_idx in 0..self.config.num_polarization {
-                let value = self.generate_signal_value(input_idx, pol_idx, &combination, progress);
+                let value = self.generate_signal_value(input_idx, pol_idx, &combination);
                 output.push(value);
             }
         }
@@ -95,7 +92,6 @@ impl CellInputGenerator {
         input_idx: usize,
         pol_idx: usize,
         combination: &[usize],
-        progress: f64,
     ) -> f64 {
         // Get the state for this input from the combination
         let input_state = combination[input_idx];

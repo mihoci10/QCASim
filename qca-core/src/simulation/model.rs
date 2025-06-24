@@ -6,17 +6,30 @@ use std::collections::HashMap;
 
 pub trait SimulationModelSettingsTrait {
     fn get_max_iterations(&self) -> usize;
+    fn get_convergence_tolerance(&self) -> f64;
+}
+
+pub trait ClockGeneratorSettingsTrait {
+    fn get_num_cycles(&self) -> usize;
+    fn get_amplitude_min(&self) -> f64;
+    fn get_amplitude_max(&self) -> f64;
+    fn get_extend_last_cycle(&self) -> bool;
+    fn get_samples_per_input(&self) -> usize;
 }
 
 pub trait SimulationModelTrait: Sync + Send {
     fn get_name(&self) -> String;
     fn get_unique_id(&self) -> String;
 
-    fn get_settings(&self) -> Box<dyn SimulationModelSettingsTrait>;
+    fn get_model_settings(&self) -> Box<dyn SimulationModelSettingsTrait>;
+    fn get_clock_generator_settings(&self) -> Box<dyn ClockGeneratorSettingsTrait>;
 
     fn get_options_list(&self) -> OptionsList;
-    fn get_deserialized_settings(&self) -> Result<String, String>;
-    fn set_serialized_settings(&mut self, settings_str: &String) -> Result<(), String>;
+    fn serialize_model_settings(&self) -> Result<String, String>;
+    fn deserialize_model_settings(&mut self, settings_str: &String) -> Result<(), String>;
+    fn serialize_clock_generator_settings(&self) -> Result<String, String>;
+    fn deserialize_clock_generator_settings(&mut self, settings_str: &String)
+        -> Result<(), String>;
 
     fn initiate(
         &mut self,
