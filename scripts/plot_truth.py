@@ -4,17 +4,56 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from scipy.interpolate import griddata
+from collections import defaultdict
 
-if len(sys.argv) != 2:
-    print("First argument needs to be a *.csv file!")
+if len(sys.argv) < 2:
+    print("Usage: python plot_truth.py <csv_file1> [<csv_file2> ...]")
+    print("At least one CSV file is required.")
     sys.exit(1)
 
-filename = sys.argv[1]
-input_data = pd.read_csv(filename)
+# Dictionary to store coordinates and their accuracies
+coord_accuracies = defaultdict(list)
+all_coords = set()
+file_count = len(sys.argv) - 1
 
-x_coords = np.array(input_data['x_coord'])
-y_coords = np.array(input_data['y_coord'])
-accuracies = np.array(input_data['accuracy'])
+# Process each input file
+for i, filename in enumerate(sys.argv[1:], 1):
+    input_data = pd.read_csv(filename)
+
+    # Extract coordinates and accuracies
+    for _, row in input_data.iterrows():
+        coord = (row['x_coord'], row['y_coord'])
+        accuracy = row['accuracy']
+        coord_accuracies[coord].append(accuracy)
+        all_coords.add(coord)
+
+# Check for missing coordinates and multiply accuracies
+final_x_coords = []
+final_y_coords = []
+final_accuracies = []
+
+for coord in all_coords:
+    x, y = coord
+    accuracies_at_coord = coord_accuracies[coord]
+
+    # Check if this coordinate is missing in any file
+    if len(accuracies_at_coord) < file_count:
+        missing_count = file_count - len(accuracies_at_coord)
+        print(f"Warning: Coordinate ({x}, {y}) is missing in {missing_count} file(s)")
+
+    # Multiply accuracies for this coordinate
+    multiplied_accuracy = 1.0
+    for acc in accuracies_at_coord:
+        multiplied_accuracy *= acc
+
+    final_x_coords.append(x)
+    final_y_coords.append(y)
+    final_accuracies.append(multiplied_accuracy)
+
+# Convert to numpy arrays
+x_coords = np.array(final_x_coords)
+y_coords = np.array(final_y_coords)
+accuracies = np.array(final_accuracies)
 
 fig = plt.figure(figsize=(10, 5))
 
