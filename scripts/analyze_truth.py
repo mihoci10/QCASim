@@ -1,7 +1,8 @@
 import os
-import pandas as pd
 import subprocess
 import sys
+
+import pandas as pd
 
 QCA_SIM = '../target/release/qca-sim'
 
@@ -36,9 +37,14 @@ def calculate_table_accuracy(table: list[list[str]], cmp_func):
     return accuracy / len(table)
 
 
+def equivariance(val: str) -> str:
+    if val == 'D':
+        return 'C'
+    return val
+
 def cmp_var_line(row: list[str]) -> float:
     in_val = row[0]
-    accuracy_arr = [1.0 if in_val == val else 0.0 for val in row[1:]]
+    accuracy_arr = [1.0 if equivariance(in_val) == equivariance(val) else 0.0 for val in row[1:]]
     return sum(accuracy_arr) / (len(row) - 1)
 
 
@@ -46,14 +52,14 @@ def cmp_var_inverter(row: list[str]) -> float:
     in_val = row[0]
     out_val = row[-1]
 
-    accuracy_arr = [1.0 if in_val == val else 0.0 for val in row[1:-1]]
+    accuracy_arr = [1.0 if equivariance(in_val) == equivariance(val) else 0.0 for val in row[1:-1]]
 
-    if in_val == 1.0:
-        accuracy_main = 1.0 if out_val == 1.0 else 0.0
-    elif in_val == 0.0:
-        accuracy_main = 1.0 if out_val == 2.0 else 0.0
-    elif in_val == 2.0:
-        accuracy_main = 1.0 if out_val == 0.0 else 0.0
+    if equivariance(in_val) == 'C':
+        accuracy_main = 1.0 if equivariance(out_val) == 'C' else 0.0
+    elif equivariance(in_val) == 'B':
+        accuracy_main = 1.0 if equivariance(out_val) == 'A' else 0.0
+    elif equivariance(in_val) == 'A':
+        accuracy_main = 1.0 if equivariance(out_val) == 'B' else 0.0
     else:
         raise RuntimeError
 
@@ -95,15 +101,7 @@ def cmp_majority(row: list[str]) -> float:
     if 'NaN' in row:
         return 0.0
 
-    [x, y, z, r] = row
-    if x == 'D':
-        x = 'C'
-    if y == 'D':
-        y = 'C'
-    if z == 'D':
-        z = 'C'
-    if r == 'D':
-        r = 'C'
+    [x, y, z, r] = [equivariance(r) for r in row]
 
     if (x, y, z) in truth_table:
         return 1.0 if truth_table[(x, y, z)] == r else 0.0
