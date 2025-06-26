@@ -401,7 +401,7 @@ pub struct FullBasisClockGeneratorSettings {
     #[serde_inline_default(true)]
     extend_last_cycle: bool,
 
-    #[serde_inline_default(50)]
+    #[serde_inline_default(20)]
     samples_per_input: usize,
 }
 
