@@ -30,7 +30,7 @@ jobs:
       run: cargo test --verbose --${{ matrix.config }}
       
     - name: Upload Build Artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: build-artifacts-${{ matrix.os }}-${{ matrix.config }}
         path: target/release/qca-sim${{ matrix.artifact_suffix }}
