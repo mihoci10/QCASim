@@ -7,8 +7,8 @@ pub mod simulation;
 pub mod analysis;
 
 pub const QCA_CORE_VERSION: Version = Version {
-    major: 1,
-    minor: 0,
+    major: 0,
+    minor: 1,
     patch: 0,
     pre: Prerelease::EMPTY,
     build: BuildMetadata::EMPTY,
