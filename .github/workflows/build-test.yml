@@ -1,4 +1,4 @@
-name: Build&Test
+name: Build and Test
 
 on:
   [push, pull_request]
@@ -8,10 +8,30 @@ env:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        config: [debug, release]
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        include:
+          - os: windows-latest
+            artifact_suffix: .exe
+          - os: ubuntu-latest
+            artifact_suffix: ""
+          - os: macos-latest
+            artifact_suffix: ""
     steps:
     - uses: actions/checkout@v4
+    
     - name: Build
-      run: cargo build --verbose
+      run: cargo build --verbose --${{ matrix.config }}
+    
     - name: Run tests
-      run: cargo test --verbose
+      run: cargo test --verbose --${{ matrix.config }}
+      
+    - name: Upload Build Artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: build-artifacts-${{ matrix.os }}-${{ matrix.config }}
+        path: target/release/qca-sim${{ matrix.artifact_suffix }}
+        retention-days: 1
