@@ -4,6 +4,7 @@ on:
     push:
         tags:
             - 'v*'
+    workflow_dispatch:
 
 env:
   CARGO_TERM_COLOR: always
@@ -44,9 +45,6 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: artifacts
-
-      - name: Display downloaded files
-        run: ls -R artifacts
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
