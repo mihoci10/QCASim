@@ -32,7 +32,7 @@ jobs:
     - name: Upload Build Artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: build-artifacts-${{ matrix.os }}
+        name: qca-sim-${{ github.ref_name }}-${{ matrix.os }}
         path: target/release/qca-sim${{ matrix.artifact_suffix }}
         retention-days: 1
 
@@ -48,13 +48,20 @@ jobs:
         with:
           path: artifacts
 
+      - name: Rename executables with platform info
+        run: |
+          mkdir -p release-files
+          cp artifacts/qca-sim-*-ubuntu-latest/qca-sim release-files/qca-sim-${{ github.ref_name }}-linux
+          cp artifacts/qca-sim-*-windows-latest/qca-sim.exe release-files/qca-sim-${{ github.ref_name }}-windows.exe
+          cp artifacts/qca-sim-*-macos-latest/qca-sim release-files/qca-sim-${{ github.ref_name }}-macos
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          prerelease: true
+          draft: true
           name: QCASim ${{ github.ref_name }}
           files: |
-            artifacts/**/*
+            release-files/*
         
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
