@@ -13,7 +13,7 @@ pub trait ClockGeneratorSettingsTrait {
     fn get_num_cycles(&self) -> usize;
     fn get_amplitude_min(&self) -> f64;
     fn get_amplitude_max(&self) -> f64;
-    fn get_extend_last_cycle(&self) -> bool;
+    fn get_extra_periods(&self) -> usize;
     fn get_samples_per_input(&self) -> usize;
 }
 

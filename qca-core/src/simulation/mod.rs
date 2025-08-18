@@ -68,17 +68,17 @@ fn run_simulation_internal(
         num_inputs,
         num_samples_per_combination: clock_generator_settings.get_samples_per_input(),
         num_polarization: polarization_n as usize,
-        extend_last_cycle: clock_generator_settings.get_extend_last_cycle(),
+        extra_clock_periods: clock_generator_settings.get_extra_periods() * polarization_n as usize,
     });
     let mut input_iter = input_generator.iter();
     let num_samples = input_generator.num_samples();
     let clock_generator = ClockGenerator::new(ClockConfig {
         num_samples,
         num_cycles: (polarization_n as usize + 1).pow(num_inputs as u32)
-            * clock_generator_settings.get_num_cycles(),
+            * clock_generator_settings.get_num_cycles()
+            + (polarization_n as usize * clock_generator_settings.get_extra_periods()),
         amplitude_max: clock_generator_settings.get_amplitude_max(),
         amplitude_min: clock_generator_settings.get_amplitude_min(),
-        extend_last_cycle: clock_generator_settings.get_extend_last_cycle(),
     });
     let mut clock_iter = clock_generator.iter();
 
@@ -216,7 +216,7 @@ pub fn get_num_samples(
         num_inputs,
         num_samples_per_combination: clock_generator_settings.get_samples_per_input(),
         num_polarization: polarization_n as usize,
-        extend_last_cycle: clock_generator_settings.get_extend_last_cycle(),
+        extra_clock_periods: clock_generator_settings.get_extra_periods(),
     });
 
     input_generator.num_samples()

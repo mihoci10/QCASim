@@ -13,8 +13,6 @@ pub struct ClockConfig {
     pub amplitude_min: f64,
     /// Maximum amplitude value
     pub amplitude_max: f64,
-    /// Extend last cycle to the end of the simulation
-    pub extend_last_cycle: bool,
 }
 
 impl GeneratorConfig for ClockConfig {}

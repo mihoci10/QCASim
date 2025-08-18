@@ -10,8 +10,8 @@ pub struct CellInputConfig {
     pub num_inputs: usize,
     /// Number of polarization states
     pub num_polarization: usize,
-    /// Extend last cycle to the end of the simulation
-    pub extend_last_cycle: bool,
+    /// Number of extra clock periods to generate
+    pub extra_clock_periods: usize,
 }
 
 impl GeneratorConfig for CellInputConfig {}
@@ -22,7 +22,8 @@ impl GeneratorConfig for CellInputConfig {}
 pub struct CellInputGenerator {
     config: CellInputConfig,
     num_samples: usize,
-    total_combinations: usize,
+    input_combinations: usize,
+    extra_samples: usize,
 }
 
 impl Generator for CellInputGenerator {
@@ -30,23 +31,31 @@ impl Generator for CellInputGenerator {
     type Output = Vec<f64>;
 
     fn new(config: Self::Config) -> Self {
-        let total_combinations = (config.num_polarization + 1).pow(config.num_inputs as u32);
-        let num_samples = &config.num_samples_per_combination * total_combinations;
+        let input_combinations = (config.num_polarization + 1).pow(config.num_inputs as u32);
+        let extra_samples = config.extra_clock_periods * config.num_samples_per_combination;
+        let num_samples = config.num_samples_per_combination * input_combinations + extra_samples;
         Self {
             config,
             num_samples,
-            total_combinations,
+            input_combinations,
+            extra_samples,
         }
     }
 
     fn generate(&self, sample: usize) -> Option<Self::Output> {
-        assert_eq!(self.num_samples % self.total_combinations, 0);
         if sample >= self.num_samples {
             return None;
         }
 
+        if sample >= self.num_samples - self.extra_samples {
+            return Some(vec![
+                0.0;
+                self.config.num_inputs * self.config.num_polarization
+            ]);
+        }
+
         // Calculate which combination we're in
-        let samples_per_combination = self.num_samples / self.total_combinations;
+        let samples_per_combination = self.config.num_samples_per_combination;
         let combination_index = sample / samples_per_combination;
 
         // Generate the combination pattern

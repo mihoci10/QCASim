@@ -398,8 +398,8 @@ pub struct FullBasisClockGeneratorSettings {
     #[serde_inline_default(2.0)]
     amplitude_max: f64,
 
-    #[serde_inline_default(true)]
-    extend_last_cycle: bool,
+    #[serde_inline_default(0)]
+    extra_periods: usize,
 
     #[serde_inline_default(20)]
     samples_per_input: usize,
@@ -447,11 +447,9 @@ impl ClockGeneratorSettingsTrait for FullBasisClockGeneratorSettings {
     fn get_amplitude_max(&self) -> f64 {
         self.amplitude_max
     }
-
-    fn get_extend_last_cycle(&self) -> bool {
-        self.extend_last_cycle
+    fn get_extra_periods(&self) -> usize {
+        self.extra_periods
     }
-
     fn get_samples_per_input(&self) -> usize {
         self.samples_per_input
     }

@@ -1,10 +1,9 @@
-import sys
-
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from scipy.interpolate import griddata
+import sys
 from collections import defaultdict
+from scipy.interpolate import griddata
 
 if len(sys.argv) < 2:
     print("Usage: python plot_truth.py <csv_file1> [<csv_file2> ...]")
@@ -95,4 +94,5 @@ cbar1 = plt.colorbar(contour_filled, ax=ax1, shrink=0.8)
 cbar1.set_label('Accuracy', fontsize=12)
 
 plt.tight_layout()
+plt.savefig('TruthAnalysis.pdf')
 plt.show()
