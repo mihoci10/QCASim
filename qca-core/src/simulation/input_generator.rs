@@ -22,7 +22,6 @@ impl GeneratorConfig for CellInputConfig {}
 pub struct CellInputGenerator {
     config: CellInputConfig,
     num_samples: usize,
-    input_combinations: usize,
     extra_samples: usize,
 }
 
@@ -37,7 +36,6 @@ impl Generator for CellInputGenerator {
         Self {
             config,
             num_samples,
-            input_combinations,
             extra_samples,
         }
     }

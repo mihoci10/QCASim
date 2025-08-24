@@ -52,9 +52,11 @@ pub fn run_sim(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
     let mut sim_model: Box<dyn SimulationModelTrait> = Box::new(FullBasisModel::new());
     sim_model.deserialize_model_settings(
         &qca_design
+            .simulation_settings
             .simulation_model_settings
             .get("full_basis_model")
             .unwrap()
+            .model_settings
             .to_string(),
     )?;
 

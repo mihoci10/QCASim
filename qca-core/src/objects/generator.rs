@@ -17,7 +17,7 @@ pub trait Generator {
     fn generate(&self, sample: usize) -> Option<Self::Output>;
 
     /// Create an iterator that produces all values from 0 to num_samples
-    fn iter(&self) -> GeneratorIterator<Self>
+    fn iter(&self) -> GeneratorIterator<'_, Self>
     where
         Self: Sized,
     {
