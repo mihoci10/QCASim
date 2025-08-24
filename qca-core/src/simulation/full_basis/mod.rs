@@ -586,10 +586,15 @@ impl SimulationModelTrait for FullBasisModel {
                 },
             },
             OptionsEntry::Input {
-                unique_id: "extend_last_cycle".into(),
-                name: "Extend Last Cycle".into(),
-                description: "Whether to extend the last cycle in simulation".into(),
-                descriptor: InputDescriptor::BoolInput {},
+                unique_id: "extra_periods".into(),
+                name: "Extra clock periods".into(),
+                description: "Number of extra clock periods at the end".into(),
+                descriptor: InputDescriptor::NumberInput {
+                    min: Some(0.0),
+                    max: None,
+                    unit: None,
+                    whole_num: true,
+                },
             },
             OptionsEntry::Input {
                 unique_id: "samples_per_input".into(),
