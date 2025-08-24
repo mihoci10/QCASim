@@ -49,14 +49,23 @@ pub fn run_sim(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
     let qca_design_file: QCADesignFile = serde_json::from_str(&contents).unwrap();
     let qca_design = qca_design_file.design;
 
+    let simulation_model_id = qca_design
+        .simulation_settings
+        .selected_simulation_model_id
+        .clone()
+        .unwrap();
+
+    let simulation_model_settings = &qca_design
+        .simulation_settings
+        .simulation_model_settings
+        .get(&simulation_model_id)
+        .unwrap();
+
     let mut sim_model: Box<dyn SimulationModelTrait> = Box::new(FullBasisModel::new());
-    sim_model.deserialize_model_settings(
-        &qca_design
-            .simulation_settings
-            .simulation_model_settings
-            .get("full_basis_model")
-            .unwrap()
-            .model_settings
+    sim_model.deserialize_model_settings(&simulation_model_settings.model_settings.to_string())?;
+    sim_model.deserialize_clock_generator_settings(
+        &simulation_model_settings
+            .clock_generator_settings
             .to_string(),
     )?;
 
