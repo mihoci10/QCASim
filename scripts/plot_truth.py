@@ -1,8 +1,9 @@
+import sys
+from collections import defaultdict
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import sys
-from collections import defaultdict
 from scipy.interpolate import griddata
 
 if len(sys.argv) < 2:
@@ -77,7 +78,7 @@ grid_accuracy = np.clip(grid_accuracy, 0.0, 1.0)
 
 # Create the contour plot
 ax1 = plt.subplot(1, 1, 1)
-contour_filled = ax1.contourf(grid_x, grid_y, grid_accuracy, levels=20,
+contour_filled = ax1.contourf(grid_x, grid_y, grid_accuracy,
                               cmap='viridis', alpha=0.8)
 # contour_lines = ax1.contour(grid_x, grid_y, grid_accuracy, levels=20,
 #                             colors='black', alpha=0.4, linewidths=0.5)
@@ -85,14 +86,18 @@ contour_filled = ax1.contourf(grid_x, grid_y, grid_accuracy, levels=20,
 # # Add contour labels
 # ax1.clabel(contour_lines, inline=True, fontsize=12, fmt='%.2f')
 
-ax1.set_xlabel('Intercell distance ($nm$)', fontsize=12)
-ax1.set_ylabel('Quantum dot radius ($nm$)', fontsize=12)
+ax1.set_xlabel('Medcelična razdalja ($nm$)', fontsize=12)
+ax1.set_ylabel('Radij razporeditve kvantnih pik ($nm$)', fontsize=12)
 ax1.grid(True, alpha=0.3)
 
 # Add colorbar
 cbar1 = plt.colorbar(contour_filled, ax=ax1, shrink=0.8)
-cbar1.set_label('Accuracy', fontsize=12)
+cbar1.set_label('Pravilnost', fontsize=12)
+
+output_name = 'All'
+if file_count == 1:
+    output_name = sys.argv[1].split('/')[-2]
 
 plt.tight_layout()
-plt.savefig('TruthAnalysis.pdf')
+plt.savefig(f'{output_name}-TruthAnalysis.pdf')
 plt.show()

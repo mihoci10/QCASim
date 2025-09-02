@@ -114,11 +114,24 @@ y_coords = []
 accuracies = []
 
 if len(sys.argv) <= 1:
-    print('Usage: python analyze_truth.py <filename> [<cell_delay>,...]')
+    print('Usage: python analyze_truth.py <filename> <line|not|majority> [<cell_delay>,...]')
     sys.exit(1)
 
 input_dir = sys.argv[1]
+cmp_mode = sys.argv[2]
 
+cmp_func = None
+if cmp_mode == 'line':
+    cmp_func = cmp_var_line
+elif cmp_mode == 'not':
+    cmp_func = cmp_var_inverter
+elif cmp_mode == 'majority':
+    cmp_func = cmp_majority
+else:
+    print(f'Unknown comparison mode: {cmp_mode}')
+    sys.exit(1)
+
+file_count = 0
 print(f'Searching for files in: {input_dir}...')
 for file in os.scandir(input_dir):
     if not file.is_file() or not (os.path.splitext(file.path)[-1] == '.qcs'):
@@ -127,14 +140,20 @@ for file in os.scandir(input_dir):
     parts = base_name.split('_')
     x = float(parts[-2])
     y = float(parts[-1])
-    print(f'Found file: {base_name}')
 
-    table = run_analysis(file.path, sys.argv[2:])
-    accuracy = calculate_table_accuracy(table, cmp_majority)
+    table = run_analysis(file.path, sys.argv[3:])
+
+    if cmp_mode == 'line':
+        table = table[:len(table[0]) - 2]
+
+    accuracy = calculate_table_accuracy(table, cmp_func)
 
     x_coords.append(x)
     y_coords.append(y)
     accuracies.append(accuracy)
+    file_count += 1
+
+print(f'Analyzed {file_count} files.')
 
 output = f'{input_dir}/truth_analysis.csv'
 df = pd.DataFrame({

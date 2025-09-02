@@ -3,6 +3,7 @@ import json
 import math
 import os
 import sys
+
 import numpy as np
 
 
@@ -30,7 +31,7 @@ def set_intercell_distance(orig_design: any, original_side_length: float, side_l
 
 if len(sys.argv) != 5:
     print("First argument needs to be a *.qcd file!")
-    print("Second argument needs to be a *.qcd file!")
+    print("Second argument needs to be a destination folder!")
     print("Third argument needs to be intercell distance range <start:stop:step>")
     print("Fourth argument needs to be quantum dot radius range <start:stop:step>")
     sys.exit(1)
