@@ -8,12 +8,14 @@ use nalgebra::{distance, DMatrix, DMatrixView, DVector, DVectorView, Point3, Sch
 use serde::{Deserialize, Serialize};
 use serde_inline_default::serde_inline_default;
 
-fn calculate_vq(_relative_permittivity: f64) -> f64 {
-    const _CHARGE: f64 = 1.6021e-19;
-    const _VACUUM_PERMITTIVITY: f64 = 8.8542e-12;
+const E_CHARGE: f64 = 1.602_176_634e-19; // Coulombs [C]
+const EPS_0: f64 = 8.854_187_8128e-12; // F/m [C^2 / N·m^2]
+const EV_PER_J: f64 = 1.0 / 1.602_176_634e-19; // eV per Joule
 
-    // CHARGE.powf(2.0) / (4.0 * PI * VACUUM_PERMITTIVITY * relative_permittivity)
-    120.9
+fn calculate_vq(relative_permittivity: f64) -> f64 {
+    let u_joule = E_CHARGE.powi(2) / (4.0 * std::f64::consts::PI * EPS_0 * relative_permittivity);
+    let vq_m = (u_joule * EV_PER_J); // Joule/m -> eV/m
+    (vq_m * 1_000.0) / 1e-9 // eV/m -> meV/nm
 }
 
 #[derive(Debug, Clone)]
@@ -376,7 +378,7 @@ pub struct FullBasisModelSettings {
     #[serde_inline_default(1e-9)]
     convergence_tolerance: f64,
 
-    #[serde_inline_default(13.1)]
+    #[serde_inline_default(12.9)]
     relative_permitivity: f64,
 
     #[serde_inline_default(10_000)]
