@@ -1,12 +1,14 @@
-use std::collections::HashMap;
-
 use super::{CellType, QCACellArchitecture, QCACellIndex, QCALayer, SimulationModelTrait};
 use crate::objects::cell::{polarization_to_dot_probability_distribution, QCACell};
 use crate::simulation::model::{ClockGeneratorSettingsTrait, SimulationModelSettingsTrait};
 use crate::simulation::settings::{InputDescriptor, OptionsEntry, OptionsList};
-use nalgebra::{distance, DMatrix, DMatrixView, DVector, DVectorView, Point3, Schur};
+use nalgebra::{
+    distance, DMatrix, DMatrixView, DVector, DVectorView, Point3, Schur, SymmetricEigen,
+};
 use serde::{Deserialize, Serialize};
 use serde_inline_default::serde_inline_default;
+use std::collections::HashMap;
+use std::mem;
 
 const E_CHARGE: f64 = 1.602_176_634e-19; // Coulombs [C]
 const EPS_0: f64 = 8.854_187_8128e-12; // F/m [C^2 / N·m^2]
@@ -412,10 +414,11 @@ pub struct FullBasisModel {
     input_states: Vec<f64>,
     model_settings: FullBasisModelSettings,
     clock_generator_settings: FullBasisClockGeneratorSettings,
-    index_cells_map: HashMap<QCACellIndex, QCACellInternal>,
     layer_map: HashMap<usize, QCALayer>,
     cell_architectures_map: HashMap<String, QCACellArchitecture>,
     cell_input_map: HashMap<QCACellIndex, usize>,
+    index_cells_read_map: HashMap<QCACellIndex, QCACellInternal>,
+    index_cells_write_map: HashMap<QCACellIndex, QCACellInternal>,
 }
 
 impl FullBasisModelSettings {
@@ -464,10 +467,11 @@ impl FullBasisModel {
             input_states: vec![],
             model_settings: FullBasisModelSettings::new(),
             clock_generator_settings: FullBasisClockGeneratorSettings::new(),
-            index_cells_map: HashMap::new(),
             layer_map: HashMap::new(),
             cell_architectures_map: HashMap::new(),
             cell_input_map: HashMap::new(),
+            index_cells_read_map: HashMap::new(),
+            index_cells_write_map: HashMap::new(),
         }
     }
 }
@@ -489,7 +493,7 @@ impl SimulationModelTrait for FullBasisModel {
         Box::new(self.clock_generator_settings.clone()) as Box<dyn ClockGeneratorSettingsTrait>
     }
 
-    fn get_model_options_list(&self) -> super::settings::OptionsList {
+    fn get_model_options_list(&self) -> OptionsList {
         vec![
             OptionsEntry::Input {
                 unique_id: "max_iterations".into(),
@@ -654,7 +658,8 @@ impl SimulationModelTrait for FullBasisModel {
         layers: Box<Vec<QCALayer>>,
         qca_architetures_map: HashMap<String, QCACellArchitecture>,
     ) {
-        self.index_cells_map.clear();
+        self.index_cells_read_map.clear();
+        self.index_cells_write_map.clear();
         self.layer_map.clear();
         self.cell_architectures_map = qca_architetures_map.clone();
 
@@ -663,17 +668,21 @@ impl SimulationModelTrait for FullBasisModel {
         layers.iter().enumerate().for_each(|(i, layer)| {
             self.layer_map.insert(i, layer.clone());
             layer.cells.iter().enumerate().for_each(|(j, c)| {
-                self.index_cells_map.insert(
-                    QCACellIndex::new(i, j),
-                    QCACellInternal::new(
-                        Box::new(c.clone()),
-                        layer,
-                        qca_architetures_map
-                            .get(&layer.cell_architecture_id)
-                            .unwrap(),
-                        self.model_settings.relative_permitivity,
-                    ),
+                let internal = QCACellInternal::new(
+                    Box::new(c.clone()),
+                    layer,
+                    qca_architetures_map
+                        .get(&layer.cell_architecture_id)
+                        .unwrap(),
+                    self.model_settings.relative_permitivity,
                 );
+
+                // seed both buffers identically
+                self.index_cells_read_map
+                    .insert(QCACellIndex::new(i, j), internal.clone());
+                self.index_cells_write_map
+                    .insert(QCACellIndex::new(i, j), internal);
+
                 if c.typ == CellType::Input {
                     self.cell_input_map
                         .insert(QCACellIndex::new(i, j), cell_input_cnt);
@@ -686,6 +695,11 @@ impl SimulationModelTrait for FullBasisModel {
     fn pre_calculate(&mut self, clock_states: &[f64; 4], input_states: &Vec<f64>) {
         self.clock_states = clock_states.clone();
         self.input_states = input_states.clone();
+        mem::swap(
+            &mut self.index_cells_read_map,
+            &mut self.index_cells_write_map,
+        );
+        self.index_cells_write_map = self.index_cells_read_map.clone();
     }
 
     fn calculate(&mut self, cell_ind: QCACellIndex) -> bool {
@@ -697,7 +711,8 @@ impl SimulationModelTrait for FullBasisModel {
         let n = cell_architecture.dot_count as usize;
         let ro_plus = 2.0 / n as f64;
 
-        let mut internal_cell = self.index_cells_map.get(&cell_ind).unwrap().clone();
+        let mut internal_cell = self.index_cells_read_map.get(&cell_ind).unwrap().clone();
+
         let clock_index = (internal_cell.cell.clock_phase_shift.rem_euclid(360.0) / 90.0) as usize;
         let clock_value = self.clock_states[clock_index];
 
@@ -723,9 +738,8 @@ impl SimulationModelTrait for FullBasisModel {
             }
             CellType::Normal | CellType::Output => {
                 internal_cell.dot_potential = DVector::zeros(n);
-                let mut sorted_cells: Vec<_> = self.index_cells_map.iter().collect();
-                sorted_cells.sort_by_key(|(ind, _)| *ind);
-                for (ind, c) in sorted_cells {
+                let other_cells: Vec<_> = self.index_cells_read_map.iter().collect();
+                for (ind, c) in other_cells {
                     if *ind != cell_ind {
                         for i in 0..n {
                             for j in 0..n {
@@ -768,47 +782,41 @@ impl SimulationModelTrait for FullBasisModel {
             }
 
             if (clock_value - self.clock_generator_settings.amplitude_max).abs() >= 1e-3 {
-                if let Some(decomposition) = Schur::try_new(
+                if let Some(decomposition) = SymmetricEigen::try_new(
                     internal_cell.hamilton_matrix.clone(),
                     self.model_settings.schur_convergence_tolerance,
                     self.model_settings.schur_max_iterations,
                 ) {
-                    if let Some(eigenvalues) = decomposition.eigenvalues() {
-                        let sorted_eigenvalue = eigenvalues
-                            .iter()
-                            .enumerate()
-                            .min_by(|a, b| a.1.partial_cmp(b.1).unwrap())
-                            .unwrap();
+                    let sorted_eigenvalue = decomposition
+                        .eigenvalues
+                        .iter()
+                        .enumerate()
+                        .min_by(|a, b| a.1.partial_cmp(b.1).unwrap())
+                        .unwrap();
 
-                        let psi = decomposition
-                            .unpack()
-                            .0
-                            .column(sorted_eigenvalue.0)
-                            .map(|value| value.powf(2.0));
+                    let psi = decomposition
+                        .eigenvectors
+                        .column(sorted_eigenvalue.0)
+                        .map(|value| value.powf(2.0));
 
-                        internal_cell.dot_charge_probability = DVector::from_vec(
-                            (0..n)
-                                .map(|i| {
-                                    let mut charge_probability = 0.0;
-                                    for j in 0..n * n {
-                                        for spin in 0..=1 {
-                                            charge_probability += QCACellInternal::count_operator(
-                                                n,
-                                                i,
-                                                spin,
-                                                internal_cell
-                                                    .basis_matrix
-                                                    .row(j)
-                                                    .transpose()
-                                                    .as_view(),
-                                            ) * psi[j];
-                                        }
+                    internal_cell.dot_charge_probability = DVector::from_vec(
+                        (0..n)
+                            .map(|i| {
+                                let mut charge_probability = 0.0;
+                                for j in 0..n * n {
+                                    for spin in 0..=1 {
+                                        charge_probability += QCACellInternal::count_operator(
+                                            n,
+                                            i,
+                                            spin,
+                                            internal_cell.basis_matrix.row(j).transpose().as_view(),
+                                        ) * psi[j];
                                     }
-                                    charge_probability
-                                })
-                                .collect(),
-                        );
-                    }
+                                }
+                                charge_probability
+                            })
+                            .collect(),
+                    );
                 }
             }
         }
@@ -822,13 +830,16 @@ impl SimulationModelTrait for FullBasisModel {
             }
         }
 
-        self.index_cells_map.insert(cell_ind, internal_cell);
+        self.index_cells_write_map.insert(cell_ind, internal_cell);
 
-        return stable;
+        stable
     }
 
     fn get_states(&self, cell_ind: &QCACellIndex) -> Vec<f64> {
-        self.index_cells_map
+        if let Some(c) = self.index_cells_write_map.get(cell_ind) {
+            return c.dot_charge_probability.data.as_vec().to_vec();
+        }
+        self.index_cells_read_map
             .get(cell_ind)
             .unwrap()
             .dot_charge_probability
