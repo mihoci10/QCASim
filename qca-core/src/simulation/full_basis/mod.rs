@@ -14,7 +14,7 @@ const EV_PER_J: f64 = 1.0 / 1.602_176_634e-19; // eV per Joule
 
 fn calculate_vq(relative_permittivity: f64) -> f64 {
     let u_joule = E_CHARGE.powi(2) / (4.0 * std::f64::consts::PI * EPS_0 * relative_permittivity);
-    let vq_m = (u_joule * EV_PER_J); // Joule/m -> eV/m
+    let vq_m = u_joule * EV_PER_J; // Joule/m -> eV/m
     (vq_m * 1_000.0) / 1e-9 // eV/m -> meV/nm
 }
 
