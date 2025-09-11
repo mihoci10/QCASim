@@ -19,7 +19,7 @@ pub mod settings;
 //pub mod bistable;
 pub mod clock_generator;
 pub mod file;
-pub mod full_basis;
+pub mod icha;
 pub mod input_generator;
 
 #[derive(Debug)]

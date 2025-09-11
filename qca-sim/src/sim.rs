@@ -3,7 +3,7 @@ use clap::{Arg, ArgMatches, Command};
 use indicatif::{ProgressBar, ProgressStyle};
 use qca_core::design::file::{QCADesignFile, DESIGN_FILE_EXTENSION};
 use qca_core::simulation::file::{write_to_file, SIMULATION_FILE_EXTENSION};
-use qca_core::simulation::full_basis::FullBasisModel;
+use qca_core::simulation::icha::ICHAModel;
 use qca_core::simulation::model::SimulationModelTrait;
 use qca_core::simulation::{get_num_samples, run_simulation_async, SimulationProgress};
 use std::error::Error;
@@ -61,7 +61,7 @@ pub fn run_sim(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
         .get(&simulation_model_id)
         .unwrap();
 
-    let mut sim_model: Box<dyn SimulationModelTrait> = Box::new(FullBasisModel::new());
+    let mut sim_model: Box<dyn SimulationModelTrait> = Box::new(ICHAModel::new());
     sim_model.deserialize_model_settings(&simulation_model_settings.model_settings.to_string())?;
     sim_model.deserialize_clock_generator_settings(
         &simulation_model_settings

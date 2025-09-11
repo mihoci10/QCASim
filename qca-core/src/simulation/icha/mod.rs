@@ -371,7 +371,7 @@ impl QCACellInternal {
 
 #[serde_inline_default]
 #[derive(Serialize, Deserialize, Clone)]
-pub struct FullBasisModelSettings {
+pub struct ICHAModelSettings {
     #[serde_inline_default(10_000)]
     max_iterations: usize,
 
@@ -390,7 +390,7 @@ pub struct FullBasisModelSettings {
 
 #[serde_inline_default]
 #[derive(Serialize, Deserialize, Clone)]
-pub struct FullBasisClockGeneratorSettings {
+pub struct ICHAClockGeneratorSettings {
     #[serde_inline_default(1)]
     num_cycles: usize,
 
@@ -407,11 +407,11 @@ pub struct FullBasisClockGeneratorSettings {
     samples_per_input: usize,
 }
 
-pub struct FullBasisModel {
+pub struct ICHAModel {
     clock_states: [f64; 4],
     input_states: Vec<f64>,
-    model_settings: FullBasisModelSettings,
-    clock_generator_settings: FullBasisClockGeneratorSettings,
+    model_settings: ICHAModelSettings,
+    clock_generator_settings: ICHAClockGeneratorSettings,
     layer_map: HashMap<usize, QCALayer>,
     cell_architectures_map: HashMap<String, QCACellArchitecture>,
     cell_input_map: HashMap<QCACellIndex, usize>,
@@ -420,19 +420,19 @@ pub struct FullBasisModel {
     index_cells_write_map: HashMap<QCACellIndex, QCACellInternal>,
 }
 
-impl FullBasisModelSettings {
+impl ICHAModelSettings {
     pub fn new() -> Self {
-        serde_json::from_str::<FullBasisModelSettings>("{}".into()).unwrap()
+        serde_json::from_str::<ICHAModelSettings>("{}".into()).unwrap()
     }
 }
 
-impl FullBasisClockGeneratorSettings {
+impl ICHAClockGeneratorSettings {
     pub fn new() -> Self {
-        serde_json::from_str::<FullBasisClockGeneratorSettings>("{}".into()).unwrap()
+        serde_json::from_str::<ICHAClockGeneratorSettings>("{}".into()).unwrap()
     }
 }
 
-impl SimulationModelSettingsTrait for FullBasisModelSettings {
+impl SimulationModelSettingsTrait for ICHAModelSettings {
     fn get_max_iterations(&self) -> usize {
         self.max_iterations
     }
@@ -441,7 +441,7 @@ impl SimulationModelSettingsTrait for FullBasisModelSettings {
     }
 }
 
-impl ClockGeneratorSettingsTrait for FullBasisClockGeneratorSettings {
+impl ClockGeneratorSettingsTrait for ICHAClockGeneratorSettings {
     fn get_num_cycles(&self) -> usize {
         self.num_cycles
     }
@@ -459,13 +459,13 @@ impl ClockGeneratorSettingsTrait for FullBasisClockGeneratorSettings {
     }
 }
 
-impl FullBasisModel {
+impl ICHAModel {
     pub fn new() -> Self {
-        FullBasisModel {
+        ICHAModel {
             clock_states: [0.0, 0.0, 0.0, 0.0],
             input_states: vec![],
-            model_settings: FullBasisModelSettings::new(),
-            clock_generator_settings: FullBasisClockGeneratorSettings::new(),
+            model_settings: ICHAModelSettings::new(),
+            clock_generator_settings: ICHAClockGeneratorSettings::new(),
             layer_map: HashMap::new(),
             cell_architectures_map: HashMap::new(),
             cell_input_map: HashMap::new(),
@@ -476,13 +476,13 @@ impl FullBasisModel {
     }
 }
 
-impl SimulationModelTrait for FullBasisModel {
+impl SimulationModelTrait for ICHAModel {
     fn get_name(&self) -> String {
-        "Full basis".into()
+        "Intercellular Hartree Approximation".into()
     }
 
     fn get_unique_id(&self) -> String {
-        "full_basis_model".into()
+        "icha_model".into()
     }
 
     fn get_model_settings(&self) -> Box<dyn SimulationModelSettingsTrait> {
@@ -624,7 +624,7 @@ impl SimulationModelTrait for FullBasisModel {
     }
 
     fn deserialize_model_settings(&mut self, settings_str: &String) -> Result<(), String> {
-        match serde_json::from_str::<FullBasisModelSettings>(settings_str) {
+        match serde_json::from_str::<ICHAModelSettings>(settings_str) {
             Ok(res) => {
                 self.model_settings = res;
                 Ok(())
@@ -644,7 +644,7 @@ impl SimulationModelTrait for FullBasisModel {
         &mut self,
         settings_str: &String,
     ) -> Result<(), String> {
-        match serde_json::from_str::<FullBasisClockGeneratorSettings>(settings_str) {
+        match serde_json::from_str::<ICHAClockGeneratorSettings>(settings_str) {
             Ok(res) => {
                 self.clock_generator_settings = res;
                 Ok(())
