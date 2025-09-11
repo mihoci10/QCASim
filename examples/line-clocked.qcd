@@ -1,0 +1,428 @@
+{
+  "qca_forge_version": "0.2.0",
+  "design": {
+    "qca_core_version": "0.1.0",
+    "layers": [
+      {
+        "name": "Main Layer",
+        "visible": true,
+        "cell_architecture_id": "tri_state_60",
+        "cells": [
+          {
+            "position": [
+              -120,
+              0
+            ],
+            "clock_phase_shift": 0,
+            "typ": 1,
+            "rotation": 0,
+            "dot_probability_distribution": [
+              0.25,
+              0.25,
+              0.25,
+              0.25,
+              0.25,
+              0.25,
+              0.25,
+              0.25
+            ],
+            "label": "In"
+          },
+          {
+            "position": [
+              -60,
+              0
+            ],
+            "clock_phase_shift": 90,
+            "typ": 2,
+            "rotation": 0,
+            "dot_probability_distribution": [
+              0.25,
+              0.25,
+              0.25,
+              0.25,
+              0.25,
+              0.25,
+              0.25,
+              0.25
+            ],
+            "label": "O1"
+          },
+          {
+            "position": [
+              0,
+              0
+            ],
+            "clock_phase_shift": 180,
+            "typ": 2,
+            "rotation": 0,
+            "dot_probability_distribution": [
+              0.25,
+              0.25,
+              0.25,
+              0.25,
+              0.25,
+              0.25,
+              0.25,
+              0.25
+            ],
+            "label": "O2"
+          },
+          {
+            "position": [
+              60,
+              0
+            ],
+            "clock_phase_shift": 270,
+            "typ": 2,
+            "rotation": 0,
+            "dot_probability_distribution": [
+              0.25,
+              0.25,
+              0.25,
+              0.25,
+              0.25,
+              0.25,
+              0.25,
+              0.25
+            ],
+            "label": "O3"
+          },
+          {
+            "position": [
+              120,
+              0
+            ],
+            "clock_phase_shift": 0,
+            "typ": 2,
+            "rotation": 0,
+            "dot_probability_distribution": [
+              0.25,
+              0.25,
+              0.25,
+              0.25,
+              0.25,
+              0.25,
+              0.25,
+              0.25
+            ],
+            "label": "Out"
+          }
+        ],
+        "z_position": 0
+      }
+    ],
+    "cell_architectures": {
+      "two_state": {
+        "id": "two_state",
+        "name": "Two state",
+        "side_length": 20,
+        "dot_diameter": 5,
+        "dot_count": 4,
+        "dot_positions": [
+          [
+            6.36,
+            0
+          ],
+          [
+            3.8943768212885835e-16,
+            6.36
+          ],
+          [
+            -6.36,
+            7.788753642577167e-16
+          ],
+          [
+            -1.168313046386575e-15,
+            -6.36
+          ]
+        ],
+        "dot_tunnels": [
+          [
+            3,
+            1
+          ],
+          [
+            0,
+            2
+          ],
+          [
+            1,
+            3
+          ],
+          [
+            2,
+            0
+          ]
+        ]
+      },
+      "tri_state_60": {
+        "id": "tri_state_60",
+        "name": "Tri state 60",
+        "side_length": 60,
+        "dot_diameter": 10,
+        "dot_count": 8,
+        "dot_positions": [
+          [
+            17.420839531685022,
+            0
+          ],
+          [
+            12.31839376681716,
+            12.318393766817158
+          ],
+          [
+            1.066718768546887e-15,
+            17.420839531685022
+          ],
+          [
+            -12.318393766817158,
+            12.31839376681716
+          ],
+          [
+            -17.420839531685022,
+            2.133437537093774e-15
+          ],
+          [
+            -12.318393766817161,
+            -12.318393766817158
+          ],
+          [
+            -3.2001563056406606e-15,
+            -17.420839531685022
+          ],
+          [
+            12.318393766817154,
+            -12.318393766817161
+          ]
+        ],
+        "dot_tunnels": [
+          [
+            7,
+            1
+          ],
+          [
+            0,
+            2
+          ],
+          [
+            1,
+            3
+          ],
+          [
+            2,
+            4
+          ],
+          [
+            3,
+            5
+          ],
+          [
+            4,
+            6
+          ],
+          [
+            5,
+            7
+          ],
+          [
+            6,
+            0
+          ]
+        ]
+      },
+      "tri_state_72": {
+        "id": "tri_state_72",
+        "name": "Tri state 72",
+        "side_length": 72,
+        "dot_diameter": 10,
+        "dot_count": 8,
+        "dot_positions": [
+          [
+            62.71502231406607,
+            0
+          ],
+          [
+            44.34621756054177,
+            44.34621756054176
+          ],
+          [
+            3.840187566768792e-15,
+            62.71502231406607
+          ],
+          [
+            -44.34621756054176,
+            44.34621756054177
+          ],
+          [
+            -62.71502231406607,
+            7.680375133537584e-15
+          ],
+          [
+            -44.346217560541774,
+            -44.34621756054176
+          ],
+          [
+            -1.1520562700306375e-14,
+            -62.71502231406607
+          ],
+          [
+            44.34621756054175,
+            -44.346217560541774
+          ]
+        ],
+        "dot_tunnels": [
+          [
+            7,
+            1
+          ],
+          [
+            0,
+            2
+          ],
+          [
+            1,
+            3
+          ],
+          [
+            2,
+            4
+          ],
+          [
+            3,
+            5
+          ],
+          [
+            4,
+            6
+          ],
+          [
+            5,
+            7
+          ],
+          [
+            6,
+            0
+          ]
+        ]
+      },
+      "tri_state_110": {
+        "id": "tri_state_110",
+        "name": "Tri state 110",
+        "side_length": 110,
+        "dot_diameter": 10,
+        "dot_count": 8,
+        "dot_positions": [
+          [
+            143.7219261364014,
+            0
+          ],
+          [
+            101.62674857624154,
+            101.62674857624152
+          ],
+          [
+            8.800429840511815e-15,
+            143.7219261364014
+          ],
+          [
+            -101.62674857624152,
+            101.62674857624154
+          ],
+          [
+            -143.7219261364014,
+            1.760085968102363e-14
+          ],
+          [
+            -101.62674857624155,
+            -101.62674857624152
+          ],
+          [
+            -2.6401289521535443e-14,
+            -143.7219261364014
+          ],
+          [
+            101.62674857624151,
+            -101.62674857624155
+          ]
+        ],
+        "dot_tunnels": [
+          [
+            7,
+            1
+          ],
+          [
+            0,
+            2
+          ],
+          [
+            1,
+            3
+          ],
+          [
+            2,
+            4
+          ],
+          [
+            3,
+            5
+          ],
+          [
+            4,
+            6
+          ],
+          [
+            5,
+            7
+          ],
+          [
+            6,
+            0
+          ]
+        ]
+      }
+    },
+    "simulation_settings": {
+      "selected_simulation_model_id": "icha_model",
+      "simulation_model_settings": {
+        "icha_model": {
+          "model_settings": {
+            "max_iterations": 1000,
+            "convergence_tolerance": 0.000001,
+            "relative_permitivity": 12.9,
+            "schur_max_iterations": 1000,
+            "schur_convergence_tolerance": 0.000001
+          },
+          "clock_generator_settings": {
+            "num_cycles": 1,
+            "amplitude_min": 0,
+            "amplitude_max": 2,
+            "extra_periods": 0,
+            "samples_per_input": 20
+          }
+        }
+      }
+    }
+  },
+  "designer_properties": {
+    "camera_position": [
+      0,
+      0,
+      20
+    ],
+    "camera_rotation": [
+      0,
+      0,
+      0
+    ],
+    "camera_rotate_enabled": false,
+    "camera_zoom_enabled": true,
+    "camera_zoom_range": [
+      1,
+      100
+    ],
+    "cell_edit_enabled": true,
+    "cell_snapping_enabled": true,
+    "cell_snapping_divider": 20
+  }
+}
