@@ -372,19 +372,19 @@ impl QCACellInternal {
 #[serde_inline_default]
 #[derive(Serialize, Deserialize, Clone)]
 pub struct ICHAModelSettings {
-    #[serde_inline_default(10_000)]
+    #[serde_inline_default(1_000)]
     max_iterations: usize,
 
-    #[serde_inline_default(1e-9)]
+    #[serde_inline_default(1e-6)]
     convergence_tolerance: f64,
 
     #[serde_inline_default(12.9)]
     relative_permitivity: f64,
 
-    #[serde_inline_default(10_000)]
+    #[serde_inline_default(1_000)]
     schur_max_iterations: usize,
 
-    #[serde_inline_default(1e-9)]
+    #[serde_inline_default(1e-6)]
     schur_convergence_tolerance: f64,
 }
 
