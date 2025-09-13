@@ -734,7 +734,7 @@ impl SimulationModelTrait for ICHAModel {
     }
 
     fn calculate(&mut self, cell_ind: QCACellIndex) -> bool {
-        let cell_option = self.index_cells_read_map.get(&cell_ind);
+        let cell_option = self.index_cells_write_map.get(&cell_ind);
 
         if cell_option.is_none() {
             return true;
@@ -761,7 +761,7 @@ impl SimulationModelTrait for ICHAModel {
         for (ind, c) in self
             .index_cells_static_map
             .iter()
-            .chain(self.index_cells_read_map.iter())
+            .chain(self.index_cells_write_map.iter())
         {
             if *ind != cell_ind {
                 for i in 0..n {
@@ -789,7 +789,7 @@ impl SimulationModelTrait for ICHAModel {
         for i in 0..n * n {
             internal_cell.hamilton_matrix[(i, i)] = QCACellInternal::hamilton_term_1(
                 n,
-                1.0,
+                0.0,
                 internal_cell.dot_potential.as_view(),
                 internal_cell.basis_matrix.row(i).transpose().as_view(),
                 internal_cell.basis_matrix.row(i).transpose().as_view(),
