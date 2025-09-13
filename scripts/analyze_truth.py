@@ -1,3 +1,4 @@
+from enum import Enum
 import os
 import subprocess
 import sys
@@ -7,7 +8,7 @@ import pandas as pd
 QCA_SIM = '../target/release/qca-sim'
 
 
-def parse_truth_table(table_raw: str) -> list[list[str]]:
+def _parse_truth_table(table_raw: str) -> list[list[str]]:
     result = []
     for table_row in table_raw.splitlines()[1:]:
         result.append(list(map(
@@ -17,16 +18,16 @@ def parse_truth_table(table_raw: str) -> list[list[str]]:
     return result
 
 
-def run_analysis(filename: str, delays: list[str]):
+def _run_analysis(filename: str, delays: list[str]):
     delay_args = []
     for delay in delays:
         delay_args += ['-d', delay]
     result = subprocess.run([QCA_SIM, 'truth', filename] + delay_args, capture_output=True, text=True)
-    parsed_result = parse_truth_table(result.stdout)
+    parsed_result = _parse_truth_table(result.stdout)
     return parsed_result
 
 
-def calculate_table_accuracy(table: list[list[str]], cmp_func):
+def _calculate_table_accuracy(table: list[list[str]], cmp_func):
     if len(table) == 0:
         return 1.0
 
@@ -37,35 +38,33 @@ def calculate_table_accuracy(table: list[list[str]], cmp_func):
     return accuracy / len(table)
 
 
-def equivariance(val: str) -> str:
+def _equivariance(val: str) -> str:
     if val == 'D':
         return 'C'
     return val
 
-def cmp_var_line(row: list[str]) -> float:
+def _cmp_var_line(row: list[str]) -> float:
     in_val = row[0]
-    accuracy_arr = [1.0 if equivariance(in_val) == equivariance(val) else 0.0 for val in row[1:]]
+    accuracy_arr = [1.0 if _equivariance(in_val) == _equivariance(val) else 0.0 for val in row[1:]]
     return sum(accuracy_arr) / (len(row) - 1)
 
 
-def cmp_var_inverter(row: list[str]) -> float:
+def _cmp_inverter(row: list[str]) -> float:
     in_val = row[0]
     out_val = row[-1]
 
-    accuracy_arr = [1.0 if equivariance(in_val) == equivariance(val) else 0.0 for val in row[1:-1]]
-
-    if equivariance(in_val) == 'C':
-        accuracy_main = 1.0 if equivariance(out_val) == 'C' else 0.0
-    elif equivariance(in_val) == 'B':
-        accuracy_main = 1.0 if equivariance(out_val) == 'A' else 0.0
-    elif equivariance(in_val) == 'A':
-        accuracy_main = 1.0 if equivariance(out_val) == 'B' else 0.0
+    if _equivariance(in_val) == 'C':
+        accuracy_main = 1.0 if _equivariance(out_val) == 'C' else 0.0
+    elif _equivariance(in_val) == 'B':
+        accuracy_main = 1.0 if _equivariance(out_val) == 'A' else 0.0
+    elif _equivariance(in_val) == 'A':
+        accuracy_main = 1.0 if _equivariance(out_val) == 'B' else 0.0
     else:
         raise RuntimeError
 
     return accuracy_main
 
-def cmp_majority(row: list[str]) -> float:
+def _cmp_majority(row: list[str]) -> float:
     truth_table = {
         ('A', 'A', 'A'): 'A',  # A A A -> A
         ('A', 'A', 'B'): 'A',  # A A B -> A
@@ -101,65 +100,97 @@ def cmp_majority(row: list[str]) -> float:
     if 'NaN' in row:
         return 0.0
 
-    [x, y, z, r] = [equivariance(r) for r in row]
+    [x, y, z, r] = [_equivariance(r) for r in row]
 
     if (x, y, z) in truth_table:
         return 1.0 if truth_table[(x, y, z)] == r else 0.0
     else:
         raise RuntimeError
 
+def _cmp_memory_cell(row: list[str]) -> float:
+    truth_table = {
+        ('A', 'A'): 'A',
+        ('A', 'B'): 'A',
+        ('A', 'C'): 'A',
+        ('B', 'A'): 'B',
+        ('B', 'B'): 'B',
+        ('B', 'C'): 'B',
+        ('C', 'A'): 'C',
+        ('C', 'B'): 'C',
+        ('C', 'C'): 'C',
+    }
 
-x_coords = []
-y_coords = []
-accuracies = []
+    [x, w, q] = [_equivariance(r) for r in row]
+    if (w, x) in truth_table:
+        return 1.0 if truth_table[(w, x)] == q else 0.0
+    else:
+        raise RuntimeError
+    
+class LogicFunction(Enum):
+    WIRE = 'line'
+    INVERTER = 'inverter'
+    MAJORITY = 'majority'
+    MEMORY_CELL = 'memory-cell'
 
-if len(sys.argv) <= 1:
-    print('Usage: python analyze_truth.py <filename> <line|not|majority> [<cell_delay>,...]')
-    sys.exit(1)
+def analyze_simulation_file(file_path: str, comparison_mode: LogicFunction, clock_delays: list[str]) -> float:
+    table = _run_analysis(file_path, clock_delays)
 
-input_dir = sys.argv[1]
-cmp_mode = sys.argv[2]
+    if comparison_mode == LogicFunction.WIRE:
+        cmp_func = _cmp_var_line
+    elif comparison_mode == LogicFunction.INVERTER:
+        cmp_func = _cmp_inverter
+    elif comparison_mode == LogicFunction.MAJORITY:
+        cmp_func = _cmp_majority
+    elif comparison_mode == LogicFunction.MEMORY_CELL:
+        cmp_func = _cmp_memory_cell
+    else:
+        raise RuntimeError(f'Unknown comparison mode: {comparison_mode}')
+    
+    accuracy = _calculate_table_accuracy(table, cmp_func)
 
-cmp_func = None
-if cmp_mode == 'line':
-    cmp_func = cmp_var_line
-elif cmp_mode == 'not':
-    cmp_func = cmp_var_inverter
-elif cmp_mode == 'majority':
-    cmp_func = cmp_majority
-else:
-    print(f'Unknown comparison mode: {cmp_mode}')
-    sys.exit(1)
+    return accuracy
 
-file_count = 0
-print(f'Searching for files in: {input_dir}...')
-for file in os.scandir(input_dir):
-    if not file.is_file() or not (os.path.splitext(file.path)[-1] == '.qcs'):
-        continue
-    base_name = os.path.splitext(os.path.basename(file.path))[0]
+def get_simulation_file_config(file_path: str) -> tuple[float, float]:
+    base_name = os.path.splitext(os.path.basename(file_path))[0]
     parts = base_name.split('_')
     x = float(parts[-2])
     y = float(parts[-1])
+    return (x, y)
 
-    table = run_analysis(file.path, sys.argv[3:])
+def analyze_simulation_files(file_paths: list[str], comparison_mode: LogicFunction, clock_delays: list[str]) -> list[tuple[float, float, float]]:
+    results = []
+    for file_path in file_paths:
+        accuracy = analyze_simulation_file(file_path, comparison_mode, clock_delays)
+        (x, y) = get_simulation_file_config(file_path)
+        results.append((x, y, accuracy))
+    return results
 
-    if cmp_mode == 'line':
-        table = table[:len(table[0]) - 2]
+def write_analysis_to_csv(results: list[tuple[float, float, float]], output_path: str) -> None:
+    df = pd.DataFrame(results, columns=['x_coord', 'y_coord', 'accuracy'])
+    df.to_csv(output_path, index=False)
 
-    accuracy = calculate_table_accuracy(table, cmp_func)
+if __name__ == "__main__":
 
-    x_coords.append(x)
-    y_coords.append(y)
-    accuracies.append(accuracy)
-    file_count += 1
+    if len(sys.argv) < 3:
+        print('Usage: python analyze_truth.py <filename> <line|not|majority> [<cell_delay>,...]')
+        sys.exit(1)
 
-print(f'Analyzed {file_count} files.')
+    input_dir = sys.argv[1]
+    logic_function = LogicFunction(sys.argv[2])
+    delays = sys.argv[3:]
 
-output = f'{input_dir}/truth_analysis.csv'
-df = pd.DataFrame({
-    'x_coord': x_coords,
-    'y_coord': y_coords,
-    'accuracy': accuracies
-})
-df.to_csv(output, index=False)
-print(f'Saved truth analysis to: {output}')
+    simulation_files = []
+    print(f'Searching for files in: {input_dir}...')
+    for file in os.scandir(input_dir):
+        if not file.is_file() or not (os.path.splitext(file.path)[-1] == '.qcs'):
+            continue
+        simulation_files.append(file.path)
+
+    print(f'Analyzing {len(simulation_files)} files.')
+
+    result = analyze_simulation_files(simulation_files, logic_function, delays)
+
+    output = f'{input_dir}/truth_analysis.csv'
+    write_analysis_to_csv(result, output)
+
+    print(f'Saved truth analysis to: {output}')

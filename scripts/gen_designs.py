@@ -3,7 +3,6 @@ import json
 import math
 import os
 import sys
-
 import numpy as np
 
 
@@ -21,18 +20,19 @@ def _set_intercell_distance(orig_design: any, original_side_length: float, side_
     new_pos = []
     for pos in result['cell_architectures'][arch_id]['dot_positions']:
         [x, y] = pos
-        orig_radius =math.sqrt(x**2 + y**2)
+        orig_radius = math.sqrt(x**2 + y**2)
         fac = radius / orig_radius
         new_pos.append([x * fac, y * fac])
 
     result['cell_architectures'][arch_id]['dot_positions'] = new_pos
     return result
 
-def generate_designs(design_file: str, output_dir: str, dist_range: list[float], radius_range: list[float]) -> int:
+def generate_designs(design_filename: str, output_dir: str, spacings: list[float], radiuses: list[float]) -> int:
     count = 0
-    with open(filename, 'r') as design_file:
-        base_name = os.path.splitext(os.path.basename(filename))[0]
-        design = json.loads(design_file.read())['design']
+    with open(design_filename, 'r') as design_file:
+        base_name = os.path.splitext(os.path.basename(design_file.name))[0]
+        content = design_file.read()
+        design = json.loads(content)['design']
 
         architectures = design['cell_architectures']
         arch_id = design['layers'][0]['cell_architecture_id']
@@ -40,8 +40,8 @@ def generate_designs(design_file: str, output_dir: str, dist_range: list[float],
 
         original_side_length = architecture['side_length']
 
-        for side_length in dist_range:
-            for radius in radius_range:
+        for side_length in spacings:
+            for radius in radiuses:
                 new_design = _set_intercell_distance(design, original_side_length, side_length, radius)
                 with open(f'{output_dir}/{base_name}_{side_length}_{round(radius, 2)}.qcd', 'w') as new_design_file:
                     new_design_file.write(json.dumps({"design": new_design}))
@@ -70,5 +70,4 @@ if __name__ == '__main__':
 
     count = generate_designs(filename, output_dir, spacings, radiuses)
 
-    print(f'Generated {count} designs saved to: {os.path.abspath(output_dir)}')
-
+    print(f'Generated/saved {count} designs to: {os.path.abspath(output_dir)}')
