@@ -387,7 +387,7 @@
       "simulation_model_settings": {
         "icha_model": {
           "model_settings": {
-            "max_iterations": 100000,
+            "max_iterations": 10000,
             "convergence_tolerance": 0.000001,
             "relative_permitivity": 12.9,
             "schur_max_iterations": 100000,

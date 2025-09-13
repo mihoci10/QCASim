@@ -10,7 +10,7 @@
         "cells": [
           {
             "position": [
-              -180,
+              -120,
               0
             ],
             "clock_phase_shift": 0,
@@ -26,15 +26,15 @@
               0.25,
               0.25
             ],
-            "label": "In"
+            "label": "W"
           },
           {
             "position": [
               -120,
-              0
+              120
             ],
             "clock_phase_shift": 0,
-            "typ": 0,
+            "typ": 1,
             "rotation": 0,
             "dot_probability_distribution": [
               0.25,
@@ -45,50 +45,32 @@
               0.25,
               0.25,
               0.25
-            ]
+            ],
+            "label": "X"
           },
           {
             "position": [
               -120,
-              60
+              -180
             ],
-            "clock_phase_shift": 90,
-            "typ": 0,
+            "clock_phase_shift": 0,
+            "typ": 3,
             "rotation": 0,
             "dot_probability_distribution": [
-              0.25,
-              0.25,
-              0.25,
-              0.25,
-              0.25,
-              0.25,
-              0.25,
-              0.25
-            ]
-          },
-          {
-            "position": [
-              -120,
-              -60
-            ],
-            "clock_phase_shift": 90,
-            "typ": 0,
-            "rotation": 0,
-            "dot_probability_distribution": [
-              0.25,
-              0.25,
-              0.25,
-              0.25,
-              0.25,
-              0.25,
-              0.25,
-              0.25
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              1
             ]
           },
           {
             "position": [
               -60,
-              -60
+              120
             ],
             "clock_phase_shift": 90,
             "typ": 0,
@@ -107,45 +89,7 @@
           {
             "position": [
               0,
-              -60
-            ],
-            "clock_phase_shift": 90,
-            "typ": 0,
-            "rotation": 0,
-            "dot_probability_distribution": [
-              0.25,
-              0.25,
-              0.25,
-              0.25,
-              0.25,
-              0.25,
-              0.25,
-              0.25
-            ]
-          },
-          {
-            "position": [
-              -60,
-              60
-            ],
-            "clock_phase_shift": 90,
-            "typ": 0,
-            "rotation": 0,
-            "dot_probability_distribution": [
-              0.25,
-              0.25,
-              0.25,
-              0.25,
-              0.25,
-              0.25,
-              0.25,
-              0.25
-            ]
-          },
-          {
-            "position": [
-              0,
-              60
+              120
             ],
             "clock_phase_shift": 90,
             "typ": 0,
@@ -164,9 +108,142 @@
           {
             "position": [
               60,
-              0
+              120
             ],
             "clock_phase_shift": 90,
+            "typ": 0,
+            "rotation": 0,
+            "dot_probability_distribution": [
+              0.25,
+              0.25,
+              0.25,
+              0.25,
+              0.25,
+              0.25,
+              0.25,
+              0.25
+            ]
+          },
+          {
+            "position": [
+              -60,
+              -60
+            ],
+            "clock_phase_shift": 90,
+            "typ": 0,
+            "rotation": 0,
+            "dot_probability_distribution": [
+              0.25,
+              0.25,
+              0.25,
+              0.25,
+              0.25,
+              0.25,
+              0.25,
+              0.25
+            ]
+          },
+          {
+            "position": [
+              -60,
+              -180
+            ],
+            "clock_phase_shift": 90,
+            "typ": 0,
+            "rotation": 0,
+            "dot_probability_distribution": [
+              0.25,
+              0.25,
+              0.25,
+              0.25,
+              0.25,
+              0.25,
+              0.25,
+              0.25
+            ]
+          },
+          {
+            "position": [
+              0,
+              -120
+            ],
+            "clock_phase_shift": 180,
+            "typ": 0,
+            "rotation": 0,
+            "dot_probability_distribution": [
+              0.25,
+              0.25,
+              0.25,
+              0.25,
+              0.25,
+              0.25,
+              0.25,
+              0.25
+            ]
+          },
+          {
+            "position": [
+              60,
+              -60
+            ],
+            "clock_phase_shift": 180,
+            "typ": 0,
+            "rotation": 0,
+            "dot_probability_distribution": [
+              0.25,
+              0.25,
+              0.25,
+              0.25,
+              0.25,
+              0.25,
+              0.25,
+              0.25
+            ]
+          },
+          {
+            "position": [
+              60,
+              60
+            ],
+            "clock_phase_shift": 180,
+            "typ": 0,
+            "rotation": 0,
+            "dot_probability_distribution": [
+              0.25,
+              0.25,
+              0.25,
+              0.25,
+              0.25,
+              0.25,
+              0.25,
+              0.25
+            ]
+          },
+          {
+            "position": [
+              180,
+              120
+            ],
+            "clock_phase_shift": 0,
+            "typ": 3,
+            "rotation": 0,
+            "dot_probability_distribution": [
+              0,
+              1,
+              0,
+              0,
+              0,
+              1,
+              0,
+              0
+            ]
+          },
+          {
+            "position": [
+              180,
+              60
+            ],
+            "clock_phase_shift": 180,
             "typ": 0,
             "rotation": 0,
             "dot_probability_distribution": [
@@ -185,7 +262,26 @@
               120,
               0
             ],
-            "clock_phase_shift": 90,
+            "clock_phase_shift": 270,
+            "typ": 0,
+            "rotation": 0,
+            "dot_probability_distribution": [
+              0.25,
+              0.25,
+              0.25,
+              0.25,
+              0.25,
+              0.25,
+              0.25,
+              0.25
+            ]
+          },
+          {
+            "position": [
+              180,
+              -60
+            ],
+            "clock_phase_shift": 270,
             "typ": 2,
             "rotation": 0,
             "dot_probability_distribution": [
@@ -198,7 +294,45 @@
               0.25,
               0.25
             ],
-            "label": "Out"
+            "label": "Q"
+          },
+          {
+            "position": [
+              120,
+              -120
+            ],
+            "clock_phase_shift": 0,
+            "typ": 0,
+            "rotation": 0,
+            "dot_probability_distribution": [
+              0.25,
+              0.25,
+              0.25,
+              0.25,
+              0.25,
+              0.25,
+              0.25,
+              0.25
+            ]
+          },
+          {
+            "position": [
+              60,
+              -180
+            ],
+            "clock_phase_shift": 90,
+            "typ": 0,
+            "rotation": 0,
+            "dot_probability_distribution": [
+              0.25,
+              0.25,
+              0.25,
+              0.25,
+              0.25,
+              0.25,
+              0.25,
+              0.25
+            ]
           }
         ],
         "z_position": 0
@@ -231,19 +365,19 @@
         ],
         "dot_tunnels": [
           [
-            0,
+            3,
             1
           ],
           [
-            1,
+            0,
             2
           ],
           [
-            2,
+            1,
             3
           ],
           [
-            3,
+            2,
             0
           ]
         ]
@@ -290,35 +424,35 @@
         ],
         "dot_tunnels": [
           [
-            0,
+            7,
             1
           ],
           [
-            1,
+            0,
             2
           ],
           [
-            2,
+            1,
             3
           ],
           [
-            3,
+            2,
             4
           ],
           [
-            4,
+            3,
             5
           ],
           [
-            5,
+            4,
             6
           ],
           [
-            6,
+            5,
             7
           ],
           [
-            7,
+            6,
             0
           ]
         ]
@@ -365,35 +499,35 @@
         ],
         "dot_tunnels": [
           [
-            0,
+            7,
             1
           ],
           [
-            1,
+            0,
             2
           ],
           [
-            2,
+            1,
             3
           ],
           [
-            3,
+            2,
             4
           ],
           [
-            4,
+            3,
             5
           ],
           [
-            5,
+            4,
             6
           ],
           [
-            6,
+            5,
             7
           ],
           [
-            7,
+            6,
             0
           ]
         ]
@@ -440,35 +574,35 @@
         ],
         "dot_tunnels": [
           [
-            0,
+            7,
             1
           ],
           [
-            1,
+            0,
             2
           ],
           [
-            2,
+            1,
             3
           ],
           [
-            3,
+            2,
             4
           ],
           [
-            4,
+            3,
             5
           ],
           [
-            5,
+            4,
             6
           ],
           [
-            6,
+            5,
             7
           ],
           [
-            7,
+            6,
             0
           ]
         ]
@@ -482,7 +616,7 @@
             "max_iterations": 10000,
             "convergence_tolerance": 0.000001,
             "relative_permitivity": 12.9,
-            "schur_max_iterations": 100000,
+            "schur_max_iterations": 10000,
             "schur_convergence_tolerance": 0.000001
           },
           "clock_generator_settings": {
@@ -515,6 +649,6 @@
     ],
     "cell_edit_enabled": true,
     "cell_snapping_enabled": true,
-    "cell_snapping_divider": 20
+    "cell_snapping_divider": 60
   }
 }
