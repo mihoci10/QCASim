@@ -106,7 +106,7 @@
               0.25,
               0.25
             ],
-            "label": "Out"
+            "label": "O4"
           }
         ],
         "z_position": 0
@@ -139,19 +139,19 @@
         ],
         "dot_tunnels": [
           [
-            3,
+            0,
             1
           ],
           [
-            0,
+            1,
             2
           ],
           [
-            1,
+            2,
             3
           ],
           [
-            2,
+            3,
             0
           ]
         ]
@@ -198,35 +198,35 @@
         ],
         "dot_tunnels": [
           [
-            7,
+            0,
             1
           ],
           [
-            0,
+            1,
             2
           ],
           [
-            1,
+            2,
             3
           ],
           [
-            2,
+            3,
             4
           ],
           [
-            3,
+            4,
             5
           ],
           [
-            4,
+            5,
             6
           ],
           [
-            5,
+            6,
             7
           ],
           [
-            6,
+            7,
             0
           ]
         ]
@@ -273,35 +273,35 @@
         ],
         "dot_tunnels": [
           [
-            7,
+            0,
             1
           ],
           [
-            0,
+            1,
             2
           ],
           [
-            1,
+            2,
             3
           ],
           [
-            2,
+            3,
             4
           ],
           [
-            3,
+            4,
             5
           ],
           [
-            4,
+            5,
             6
           ],
           [
-            5,
+            6,
             7
           ],
           [
-            6,
+            7,
             0
           ]
         ]
@@ -348,35 +348,35 @@
         ],
         "dot_tunnels": [
           [
-            7,
+            0,
             1
           ],
           [
-            0,
+            1,
             2
           ],
           [
-            1,
+            2,
             3
           ],
           [
-            2,
+            3,
             4
           ],
           [
-            3,
+            4,
             5
           ],
           [
-            4,
+            5,
             6
           ],
           [
-            5,
+            6,
             7
           ],
           [
-            6,
+            7,
             0
           ]
         ]
@@ -387,10 +387,10 @@
       "simulation_model_settings": {
         "icha_model": {
           "model_settings": {
-            "max_iterations": 1000,
+            "max_iterations": 100000,
             "convergence_tolerance": 0.000001,
             "relative_permitivity": 12.9,
-            "schur_max_iterations": 1000,
+            "schur_max_iterations": 100000,
             "schur_convergence_tolerance": 0.000001
           },
           "clock_generator_settings": {

@@ -10,7 +10,7 @@
         "cells": [
           {
             "position": [
-              -120,
+              -180,
               0
             ],
             "clock_phase_shift": 0,
@@ -30,7 +30,7 @@
           },
           {
             "position": [
-              -60,
+              -120,
               0
             ],
             "clock_phase_shift": 0,
@@ -49,7 +49,7 @@
           },
           {
             "position": [
-              -60,
+              -120,
               60
             ],
             "clock_phase_shift": 90,
@@ -68,27 +68,8 @@
           },
           {
             "position": [
-              0,
-              60
-            ],
-            "clock_phase_shift": 90,
-            "typ": 0,
-            "rotation": 0,
-            "dot_probability_distribution": [
-              0.25,
-              0.25,
-              0.25,
-              0.25,
-              0.25,
-              0.25,
-              0.25,
-              0.25
-            ]
-          },
-          {
-            "position": [
-              60,
-              60
+              -120,
+              -60
             ],
             "clock_phase_shift": 90,
             "typ": 0,
@@ -144,8 +125,8 @@
           },
           {
             "position": [
-              60,
-              -60
+              -60,
+              60
             ],
             "clock_phase_shift": 90,
             "typ": 0,
@@ -163,7 +144,26 @@
           },
           {
             "position": [
-              120,
+              0,
+              60
+            ],
+            "clock_phase_shift": 90,
+            "typ": 0,
+            "rotation": 0,
+            "dot_probability_distribution": [
+              0.25,
+              0.25,
+              0.25,
+              0.25,
+              0.25,
+              0.25,
+              0.25,
+              0.25
+            ]
+          },
+          {
+            "position": [
+              60,
               0
             ],
             "clock_phase_shift": 90,
@@ -182,7 +182,7 @@
           },
           {
             "position": [
-              180,
+              120,
               0
             ],
             "clock_phase_shift": 90,
@@ -231,19 +231,19 @@
         ],
         "dot_tunnels": [
           [
-            3,
+            0,
             1
           ],
           [
-            0,
+            1,
             2
           ],
           [
-            1,
+            2,
             3
           ],
           [
-            2,
+            3,
             0
           ]
         ]
@@ -290,35 +290,35 @@
         ],
         "dot_tunnels": [
           [
-            7,
+            0,
             1
           ],
           [
-            0,
+            1,
             2
           ],
           [
-            1,
+            2,
             3
           ],
           [
-            2,
+            3,
             4
           ],
           [
-            3,
+            4,
             5
           ],
           [
-            4,
+            5,
             6
           ],
           [
-            5,
+            6,
             7
           ],
           [
-            6,
+            7,
             0
           ]
         ]
@@ -365,35 +365,35 @@
         ],
         "dot_tunnels": [
           [
-            7,
+            0,
             1
           ],
           [
-            0,
+            1,
             2
           ],
           [
-            1,
+            2,
             3
           ],
           [
-            2,
+            3,
             4
           ],
           [
-            3,
+            4,
             5
           ],
           [
-            4,
+            5,
             6
           ],
           [
-            5,
+            6,
             7
           ],
           [
-            6,
+            7,
             0
           ]
         ]
@@ -440,35 +440,35 @@
         ],
         "dot_tunnels": [
           [
-            7,
+            0,
             1
           ],
           [
-            0,
+            1,
             2
           ],
           [
-            1,
+            2,
             3
           ],
           [
-            2,
+            3,
             4
           ],
           [
-            3,
+            4,
             5
           ],
           [
-            4,
+            5,
             6
           ],
           [
-            5,
+            6,
             7
           ],
           [
-            6,
+            7,
             0
           ]
         ]
@@ -479,17 +479,17 @@
       "simulation_model_settings": {
         "icha_model": {
           "model_settings": {
-            "max_iterations": 1000,
+            "max_iterations": 100000,
             "convergence_tolerance": 0.000001,
             "relative_permitivity": 12.9,
-            "schur_max_iterations": 1000,
+            "schur_max_iterations": 100000,
             "schur_convergence_tolerance": 0.000001
           },
           "clock_generator_settings": {
             "num_cycles": 1,
             "amplitude_min": 0,
             "amplitude_max": 2,
-            "extra_periods": 0,
+            "extra_periods": 1,
             "samples_per_input": 20
           }
         }
