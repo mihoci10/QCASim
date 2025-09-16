@@ -1,40 +1,51 @@
 # QCASim
 
-QCASim is a Quantum Cellular Dot Automata Simulator designed to model and simulate the behavior of quantum cellular automata structures. This project aims to provide researchers and enthusiasts with a tool to explore and analyze quantum computational models.
+A Quantum Cellular Automata (QCA) simulation framework for academic research, providing tools to model and analyze quantum dot cellular automata circuits.
 
 ## Features
 
-- **Quantum State Simulation**: Simulate the evolution of quantum states in a cellular automata framework.
-- **Custom Simulation Dynamics**: Define, implement and use custom simulation dynamics.
-- **Visualization**: Visualize the state of the quantum cellular automata over time.
+- **Simulation engine**: Supports built-in bistable and ICHA model with option to use custom models as well.
+- **File Formats**: Defines and uses `.qcd` (QCA Design) and `.qcs` (QCA Simulation) file formats
+- **Truth Table Analysis**: Generate and analyze logic truth tables from simulation results
+- **CLI Interface**: Command-line tools for simulation and analysis
+- **Example Designs**: Includes wire, inverter, majority gate, and memory cell designs
+- **Analysis**: Interactive analysis scripts for simulation data
 
 ## Installation
 
-To install QCASim, clone the repository and install the required dependencies:
-
 ```bash
-git clone https://github.com/yourusername/QCASim.git
+git clone https://github.com/mihoci10/QCASim.git
 cd QCASim
-cargo build
+cargo build --release
 ```
 
 ## Usage
 
-### Running simulations
-
-To run a simulation, use the following command:
+### Run Simulation
 
 ```bash
-cargo run --bin qca-simulation -- path/to/design.json
+qca-sim sim examples/line.qcd
 ```
 
-### Analyzing results
+### Analysis
 
-To analyze the simulation output use the following command:
+Use the Jupyter notebook `scripts/analysis.ipynb` for interactive analysis of simulation results and visualization.
 
-```bash
-python scripts/plot_sim.py path/to/output.bin
-```
+## File Formats
+
+- **`.qcd`**: QCA design files containing circuit layout, cell positions, and simulation parameters
+- **`.qcs`**: QCA simulation files containing simulation results and metadata
+
+## Project Structure
+
+- `qca-core/`: Core simulation engine and data structures
+- `qca-sim/`: CLI application for running and analyzing simulations
+- `examples/`: Example QCA designs
+- `scripts/`: Python analysis tools and batch processing utilities
+
+## Status
+
+This project is stable and under active development for academic research applications.
 
 ## License
 
