@@ -84,6 +84,13 @@ def visualize_truth_analysis(truth_analysis_filenames: list[str], output_filenam
     cbar1 = plt.colorbar(contour_filled, ax=ax1, shrink=1.0)
     cbar1.set_label('Pravilnost', fontsize=12)
 
+    # author_x = 110
+    # author_y = 26.13 
+    # ax1.plot(author_x, author_y, marker='.', markersize=10, color='red')
+    # ax1.annotate("Parametri v referenčnem delu", xy=(author_x, author_y), xytext=(author_x-20, author_y+1),
+    #             arrowprops=dict(arrowstyle='->', color='red', lw=1),
+    #             fontsize=10, color='red',)
+
     plt.tight_layout()
     if output_filename is not None:
         plt.savefig(output_filename)

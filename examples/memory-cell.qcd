@@ -623,7 +623,7 @@
             "num_cycles": 1,
             "amplitude_min": 0,
             "amplitude_max": 2,
-            "extra_periods": 0,
+            "extra_periods": 1,
             "samples_per_input": 20
           }
         }

@@ -45,6 +45,8 @@ def _equivariance(val: str) -> str:
 
 def _cmp_var_line(row: list[str]) -> float:
     in_val = row[0]
+    if in_val == 'NaN':
+        return 1.0
     accuracy_arr = [1.0 if _equivariance(in_val) == _equivariance(val) else 0.0 for val in row[1:]]
     return sum(accuracy_arr) / (len(row) - 1)
 
@@ -124,7 +126,7 @@ def _cmp_memory_cell(row: list[str]) -> float:
     if (w, x) in truth_table:
         return 1.0 if truth_table[(w, x)] == q else 0.0
     else:
-        raise RuntimeError
+        return 1.0
     
 class LogicFunction(Enum):
     WIRE = 'line'

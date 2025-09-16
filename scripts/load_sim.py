@@ -28,8 +28,9 @@ def load_sim_file(filename: str) -> (object, object, list[list[float]], list[lis
         design_json = json.loads(design_content)
         metadata_json = json.loads(metadata_content)
         sim_data = data_content
-
-        sim_model = design_json['simulation_model_settings'][design_json['selected_simulation_model_id']]
+        
+        sim_settings = design_json['simulation_settings']
+        sim_model = sim_settings['simulation_model_settings'][sim_settings['selected_simulation_model_id']]
         num_samples = metadata_json['num_samples']
         sim_cells = metadata_json['stored_cells']
 
