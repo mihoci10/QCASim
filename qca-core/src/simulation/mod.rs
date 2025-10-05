@@ -7,6 +7,7 @@ use crate::simulation::file::{QCACellData, QCASimulationData};
 use crate::simulation::input_generator::{CellInputConfig, CellInputGenerator};
 use crate::simulation::model::SimulationModelTrait;
 use chrono::Local;
+use log::{debug, info, trace, warn};
 use std::collections::HashMap;
 use std::sync::mpsc;
 use std::sync::mpsc::{Receiver, Sender};
@@ -54,6 +55,7 @@ fn run_simulation_internal(
     progress_tx: Option<Sender<SimulationProgress>>,
     cancel_rx: &mut Option<oneshot::Receiver<SimulationCancelRequest>>,
 ) -> QCASimulationData {
+    info!("Starting simulation");
     send_progress(SimulationProgress::Initializing, &progress_tx);
     let mut simulation_data = QCASimulationData::new();
     let architecture = architectures.get(&layers[0].cell_architecture_id).unwrap();
@@ -98,13 +100,18 @@ fn run_simulation_internal(
         }
     }
 
+    debug!("Simulation model: {:?}", sim_model.get_name());
+    debug!("Total iterations: {:?}", num_samples);
+
     sim_model.initiate(Box::new(layers.clone()), architectures.clone());
 
     let mut simulated_samples: usize = 0;
     for i in 0..num_samples {
         if check_cancelled(cancel_rx) {
+            debug!("Simulation canceled");
             break;
         }
+        debug!("Simulation iteration {:?}", simulated_samples);
         send_progress(
             SimulationProgress::Running {
                 current_sample: i,
@@ -115,6 +122,9 @@ fn run_simulation_internal(
 
         let clock_states = clock_iter.next().unwrap();
         let input_states = input_iter.next().unwrap();
+
+        trace!("Clock states: {:?}", clock_states);
+        trace!("Input states: {:?}", input_states);
 
         let mut stable = false;
         let mut j = 0;
@@ -130,6 +140,10 @@ fn run_simulation_internal(
             }
 
             j += 1;
+        }
+
+        if !stable {
+            warn!("Unstable simulation loop detected")
         }
 
         simulation_data
@@ -152,6 +166,13 @@ fn run_simulation_internal(
     send_progress(SimulationProgress::Deinitializng, &progress_tx);
     simulation_data.metadata.duration = Local::now() - simulation_data.metadata.start_time;
     simulation_data.metadata.num_samples = simulated_samples;
+
+    info!("Simulation complete");
+    debug!("Duration: {:?}", simulation_data.metadata.duration);
+    debug!(
+        "Number of samples: {}",
+        simulation_data.metadata.num_samples
+    );
 
     simulation_data
 }
