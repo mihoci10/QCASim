@@ -1,4 +1,6 @@
 # QCASim
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
+[![Build and Test](https://github.com/mihoci10/QCASim/actions/workflows/build-test.yml/badge.svg)](https://github.com/mihoci10/QCASim/actions/workflows/build-test.yml)
 
 A Quantum Cellular Automata (QCA) simulation framework for academic research, providing tools to model and analyze quantum dot cellular automata circuits.
 
