@@ -18,6 +18,7 @@ pub mod model;
 pub mod settings;
 
 //pub mod bistable;
+pub mod bistable;
 pub mod clock_generator;
 pub mod file;
 pub mod icha;
