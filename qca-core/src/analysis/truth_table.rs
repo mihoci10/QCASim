@@ -121,9 +121,9 @@ fn generate_logical_value(
             1 => {
                 let value = data_slice[i];
                 if value > polarization_high {
-                    Some('A')
-                } else if value < polarization_low {
                     Some('B')
+                } else if value < polarization_low {
+                    Some('A')
                 } else {
                     None
                 }
@@ -132,9 +132,9 @@ fn generate_logical_value(
                 let value_a = data_slice[i];
                 let value_b = data_slice[i + 1];
                 if value_a > polarization_high {
-                    Some('A')
-                } else if value_a < polarization_low {
                     Some('B')
+                } else if value_a < polarization_low {
+                    Some('A')
                 } else if value_b > polarization_high {
                     Some('C')
                 } else if value_b < polarization_low {
