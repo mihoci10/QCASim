@@ -105,7 +105,18 @@ impl CellInputGenerator {
 
         // Determine the base signal value and polarization
         let polarization_value = input_state / 2; // 0 to num_polarization-1
-        let signal_polarity = if input_state % 2 == 0 { 1.0 } else { -1.0 };
+        let offset = input_state % 2;
+        // Combination indices must enumerate states in literature order
+        // (A, B, C, D, ...): the first polarization's states run
+        // negative-then-positive (A, B), matching the truth table's
+        // A = -1 / B = +1 convention, while every following
+        // polarization's states run positive-then-negative (C, D, ...)
+        // to match its A/B-independent labeling.
+        let signal_polarity = if polarization_value == 0 {
+            if offset == 0 { -1.0 } else { 1.0 }
+        } else {
+            if offset == 0 { 1.0 } else { -1.0 }
+        };
 
         // Only generate signal for the corresponding polarization
         if polarization_value == pol_idx {
