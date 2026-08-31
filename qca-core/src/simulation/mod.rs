@@ -77,7 +77,7 @@ fn run_simulation_internal(
     let num_samples = input_generator.num_samples();
     let clock_generator = ClockGenerator::new(ClockConfig {
         num_samples,
-        num_cycles: (polarization_n as usize + 1).pow(num_inputs as u32)
+        num_cycles: (polarization_n as usize * 2).pow(num_inputs as u32)
             * clock_generator_settings.get_num_cycles()
             + (polarization_n as usize * clock_generator_settings.get_extra_periods()),
         amplitude_max: clock_generator_settings.get_amplitude_max(),

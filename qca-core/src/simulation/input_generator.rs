@@ -18,7 +18,7 @@ impl GeneratorConfig for CellInputConfig {}
 
 /// Generator for cell input values that produces vectors of values
 /// Output dimension: num_inputs * num_polarization
-/// Total combinations: (num_polarization + 1)^num_inputs
+/// Total combinations: (2 * num_polarization)^num_inputs
 pub struct CellInputGenerator {
     config: CellInputConfig,
     num_samples: usize,
@@ -30,7 +30,7 @@ impl Generator for CellInputGenerator {
     type Output = Vec<f64>;
 
     fn new(config: Self::Config) -> Self {
-        let input_combinations = (config.num_polarization + 1).pow(config.num_inputs as u32);
+        let input_combinations = (config.num_polarization * 2).pow(config.num_inputs as u32);
         let extra_samples = config.extra_clock_periods * config.num_samples_per_combination;
         let num_samples = config.num_samples_per_combination * input_combinations + extra_samples;
         Self {
@@ -79,9 +79,9 @@ impl Generator for CellInputGenerator {
 
 impl CellInputGenerator {
     /// Get the combination pattern for a given combination index
-    /// Each input can have values from 0 to (num_polarization)
+    /// Each input can have values from 0 to (2 * num_polarization - 1)
     fn get_combination(&self, combination_index: usize) -> Vec<usize> {
-        let base = self.config.num_polarization + 1;
+        let base = self.config.num_polarization * 2;
         let mut combination = Vec::with_capacity(self.config.num_inputs);
         let mut index = combination_index;
 
