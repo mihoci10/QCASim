@@ -175,20 +175,30 @@ pub fn generate_truth_table(
 
     let entries = cells
         .iter()
-        .map(|cell| {
+        .filter_map(|cell| {
+            // `cells` is supplied by the caller (e.g. a UI selection made
+            // against a possibly different design/simulation than the one
+            // passed in here) and is not guaranteed to reference cells that
+            // actually exist in `design`/`simulation`. Skip anything that
+            // doesn't resolve instead of panicking - across the Tauri IPC
+            // boundary a panic here aborts the whole app rather than just
+            // failing the one request.
             let cell_data = simulation
                 .cells_data
                 .iter()
-                .find(|cell_data| cell_data.index.eq(cell))
-                .unwrap();
+                .find(|cell_data| cell_data.index.eq(cell))?;
 
-            let clock_phase_shift = design.layers[cell.layer].cells[cell.cell].clock_phase_shift;
+            let layer = design.layers.get(cell.layer)?;
+            let design_cell = layer.cells.get(cell.cell)?;
+
+            let clock_phase_shift = design_cell.clock_phase_shift;
             let clock_index = (clock_phase_shift / 90f64).round() as usize % 4;
 
             let clock_skip_cycles = *cell_clock_delay.get(&cell).or(Some(&0)).unwrap();
 
-            let polarization_count = &design.cell_architectures
-                [&design.layers[cell.layer].cell_architecture_id]
+            let polarization_count = design
+                .cell_architectures
+                .get(&layer.cell_architecture_id)?
                 .dot_count
                 / 4;
             let logical_data = clock_regions[clock_index]
@@ -206,14 +216,13 @@ pub fn generate_truth_table(
                 .chain((0..clock_skip_cycles).map(|_| None))
                 .collect::<Vec<_>>();
 
-            let cell_label = if let Some(label) = &design.layers[cell.layer].cells[cell.cell].label
-            {
+            let cell_label = if let Some(label) = &design_cell.label {
                 label.clone()
             } else {
                 cell.to_string()
             };
 
-            (cell_label, logical_data)
+            Some((cell_label, logical_data))
         })
         .collect::<Vec<_>>();
 
