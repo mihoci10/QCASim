@@ -83,6 +83,42 @@ fn generate_clock_regions(
     })
 }
 
+/// Simulations append `extra_periods` trailing clock cycles (per
+/// polarization component) beyond the last real input combination, holding
+/// the input at zero so the circuit can settle after the sweep - see
+/// CellInputGenerator/run_simulation_internal in qca-core::simulation. Those
+/// cycles don't correspond to any real input combination (the held-zero
+/// input has no valid logical value), so the truth table should not include
+/// a row for each one - they'd inevitably just show up as NaN. Returns how
+/// many trailing clock regions to drop from every clock phase to exclude
+/// them, or 0 if that isn't known (e.g. an old file with no recorded model
+/// selection) so nothing is trimmed rather than trimming a guess.
+fn trailing_extra_clock_regions(design: &QCADesign) -> usize {
+    let model_id = match &design.simulation_settings.selected_simulation_model_id {
+        Some(id) => id,
+        None => return 0,
+    };
+    let extra_periods = design
+        .simulation_settings
+        .simulation_model_settings
+        .get(model_id)
+        .and_then(|settings| settings.clock_generator_settings.get("extra_periods"))
+        .and_then(|v| v.as_u64())
+        .unwrap_or(0) as usize;
+    if extra_periods == 0 {
+        return 0;
+    }
+
+    let polarization_n = design
+        .layers
+        .first()
+        .and_then(|layer| design.cell_architectures.get(&layer.cell_architecture_id))
+        .map(|arch| arch.dot_count as usize / 4)
+        .unwrap_or(1);
+
+    extra_periods * polarization_n
+}
+
 fn clean_clock_regions(clock_regions: &mut [Vec<ClockRegion>; 4]) {
     for i in (0..4).rev() {
         for j in (0..i).rev() {
@@ -172,6 +208,14 @@ pub fn generate_truth_table(
 ) -> TruthTable {
     let mut clock_regions = generate_clock_regions(&simulation.clock_data, clock_threshold);
     clean_clock_regions(&mut clock_regions);
+
+    let trailing_extra = trailing_extra_clock_regions(design);
+    if trailing_extra > 0 {
+        for regions in &mut clock_regions {
+            let keep = regions.len().saturating_sub(trailing_extra);
+            regions.truncate(keep);
+        }
+    }
 
     let entries = cells
         .iter()
