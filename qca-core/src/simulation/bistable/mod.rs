@@ -318,8 +318,8 @@ impl SimulationModelTrait for BistableModel {
             },
             OptionsEntry::Input {
                 unique_id: "extra_periods".to_string(),
-                name: "Extra periods".to_string(),
-                description: "Extra clock periods at the end to account for delays".to_string(),
+                name: "Extra clock periods".to_string(),
+                description: "Extra full clock cycles (phases 0/90/180/270) to run after the input sweep, giving cells with a large clock-phase delay - e.g. far down a propagating wire - time to settle before the simulation ends. Actual extra cycles simulated = this value x the cell architecture's polarization count (1 for two-state cells, 2 for tri/quad-state cells).".to_string(),
                 descriptor: InputDescriptor::NumberInput {
                     min: Some(0.0),
                     max: None,

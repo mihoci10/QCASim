@@ -594,7 +594,7 @@ impl SimulationModelTrait for ICHAModel {
             OptionsEntry::Input {
                 unique_id: "extra_periods".into(),
                 name: "Extra clock periods".into(),
-                description: "Number of extra clock periods at the end".into(),
+                description: "Extra full clock cycles (phases 0/90/180/270) to run after the input sweep, giving cells with a large clock-phase delay - e.g. far down a propagating wire - time to settle before the simulation ends. Actual extra cycles simulated = this value x the cell architecture's polarization count (1 for two-state cells, 2 for tri/quad-state cells).".into(),
                 descriptor: InputDescriptor::NumberInput {
                     min: Some(0.0),
                     max: None,
