@@ -83,40 +83,35 @@ fn generate_clock_regions(
     })
 }
 
-/// Simulations append `extra_periods` trailing clock cycles (per
-/// polarization component) beyond the last real input combination, holding
-/// the input at zero so the circuit can settle after the sweep - see
-/// CellInputGenerator/run_simulation_internal in qca-core::simulation. Those
-/// cycles don't correspond to any real input combination (the held-zero
-/// input has no valid logical value), so the truth table should not include
-/// a row for each one - they'd inevitably just show up as NaN. Returns how
-/// many trailing clock regions to drop from every clock phase to exclude
-/// them, or 0 if that isn't known (e.g. an old file with no recorded model
-/// selection) so nothing is trimmed rather than trimming a guess.
-fn trailing_extra_clock_regions(design: &QCADesign) -> usize {
-    let model_id = match &design.simulation_settings.selected_simulation_model_id {
-        Some(id) => id,
-        None => return 0,
-    };
-    let extra_periods = design
+/// The number of *real* input combinations a simulation swept through
+/// (mirrors CellInputGenerator/run_simulation_internal in
+/// qca-core::simulation: `(2 * polarization_n) ^ num_inputs * num_cycles`),
+/// excluding the trailing `extra_periods` settling cycles appended after the
+/// sweep (see `run_simulation_internal`) - those hold every input at zero to
+/// let the circuit settle and don't correspond to a real combination, so a
+/// generated truth table should never grow rows for them. Returns None if
+/// this can't be determined (e.g. an old file with no recorded model
+/// selection), in which case the caller should show every detected cycle
+/// rather than silently guessing a row count.
+fn num_real_input_combinations(design: &QCADesign) -> Option<usize> {
+    let model_id = design.simulation_settings.selected_simulation_model_id.as_ref()?;
+    let clock_generator_settings = &design
         .simulation_settings
         .simulation_model_settings
-        .get(model_id)
-        .and_then(|settings| settings.clock_generator_settings.get("extra_periods"))
-        .and_then(|v| v.as_u64())
-        .unwrap_or(0) as usize;
-    if extra_periods == 0 {
-        return 0;
-    }
+        .get(model_id)?
+        .clock_generator_settings;
+    let num_cycles = clock_generator_settings.get("num_cycles")?.as_u64()? as usize;
 
     let polarization_n = design
         .layers
         .first()
-        .and_then(|layer| design.cell_architectures.get(&layer.cell_architecture_id))
-        .map(|arch| arch.dot_count as usize / 4)
-        .unwrap_or(1);
+        .and_then(|layer| design.cell_architectures.get(&layer.cell_architecture_id))?
+        .dot_count as usize
+        / 4;
 
-    extra_periods * polarization_n
+    let num_inputs = crate::simulation::get_num_inputs(&design.layers);
+
+    Some((polarization_n * 2).pow(num_inputs as u32) * num_cycles)
 }
 
 fn clean_clock_regions(clock_regions: &mut [Vec<ClockRegion>; 4]) {
@@ -209,13 +204,7 @@ pub fn generate_truth_table(
     let mut clock_regions = generate_clock_regions(&simulation.clock_data, clock_threshold);
     clean_clock_regions(&mut clock_regions);
 
-    let trailing_extra = trailing_extra_clock_regions(design);
-    if trailing_extra > 0 {
-        for regions in &mut clock_regions {
-            let keep = regions.len().saturating_sub(trailing_extra);
-            regions.truncate(keep);
-        }
-    }
+    let num_real_combinations = num_real_input_combinations(design);
 
     let entries = cells
         .iter()
@@ -245,7 +234,7 @@ pub fn generate_truth_table(
                 .get(&layer.cell_architecture_id)?
                 .dot_count
                 / 4;
-            let logical_data = clock_regions[clock_index]
+            let mut logical_data = clock_regions[clock_index]
                 .iter()
                 .skip(clock_skip_cycles)
                 .map(|clock_region| {
@@ -259,6 +248,18 @@ pub fn generate_truth_table(
                 })
                 .chain((0..clock_skip_cycles).map(|_| None))
                 .collect::<Vec<_>>();
+
+            // Drop the trailing settling-cycle rows (see
+            // num_real_input_combinations) *after* the skip/pad above, not
+            // before it - a cell with a large clock_skip_cycles delay (e.g. a
+            // downstream cell in a long propagating wire) still needs its
+            // full share of clock_regions to skip through; trimming the
+            // region list itself first would eat into that delay budget and
+            // starve exactly the highly-delayed cells of real data instead
+            // of just excluding the settling tail.
+            if let Some(num_real_combinations) = num_real_combinations {
+                logical_data.truncate(num_real_combinations);
+            }
 
             let cell_label = if let Some(label) = &design_cell.label {
                 label.clone()
