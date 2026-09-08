@@ -83,17 +83,26 @@ fn generate_clock_regions(
     })
 }
 
-/// The number of *real* input combinations a simulation swept through
-/// (mirrors CellInputGenerator/run_simulation_internal in
-/// qca-core::simulation: `(2 * polarization_n) ^ num_inputs * num_cycles`),
-/// excluding the trailing `extra_periods` settling cycles appended after the
-/// sweep (see `run_simulation_internal`) - those hold every input at zero to
-/// let the circuit settle and don't correspond to a real combination, so a
-/// generated truth table should never grow rows for them. Returns None if
-/// this can't be determined (e.g. an old file with no recorded model
-/// selection), in which case the caller should show every detected cycle
-/// rather than silently guessing a row count.
-fn num_real_input_combinations(design: &QCADesign) -> Option<usize> {
+/// `run_simulation_internal` (qca-core::simulation) holds each real input
+/// combination steady for `num_cycles` full clock rotations before advancing
+/// to the next one - giving models with only local/neighborhood cell
+/// interactions (e.g. Bistable) enough clock cycles for a change to
+/// physically ripple down a multi-cell-zone wire before the input moves on.
+/// So `clock_regions[i]` contains `num_combinations * num_cycles` real
+/// regions (`num_combinations` distinct input combinations, `num_cycles`
+/// repeats of each), followed by `polarization_n * extra_periods` trailing
+/// settling regions where the input is held at zero (see
+/// CellInputGenerator) - neither the cycle repeats nor the settling tail
+/// are a distinct input combination, so a generated truth table should
+/// collapse each combination's `num_cycles` repeats into a single row (its
+/// *last*, most-settled repeat) rather than a row apiece, and never grow
+/// rows for the settling tail at all.
+///
+/// Returns `(num_combinations, num_cycles)`, or None if this can't be
+/// determined (e.g. an old file with no recorded model selection), in which
+/// case the caller should show every detected cycle as its own row rather
+/// than silently guessing.
+fn combination_grouping(design: &QCADesign) -> Option<(usize, usize)> {
     let model_id = design.simulation_settings.selected_simulation_model_id.as_ref()?;
     let clock_generator_settings = &design
         .simulation_settings
@@ -110,8 +119,9 @@ fn num_real_input_combinations(design: &QCADesign) -> Option<usize> {
         / 4;
 
     let num_inputs = crate::simulation::get_num_inputs(&design.layers);
+    let num_combinations = (polarization_n * 2).pow(num_inputs as u32);
 
-    Some((polarization_n * 2).pow(num_inputs as u32) * num_cycles)
+    Some((num_combinations, num_cycles.max(1)))
 }
 
 fn clean_clock_regions(clock_regions: &mut [Vec<ClockRegion>; 4]) {
@@ -204,7 +214,7 @@ pub fn generate_truth_table(
     let mut clock_regions = generate_clock_regions(&simulation.clock_data, clock_threshold);
     clean_clock_regions(&mut clock_regions);
 
-    let num_real_combinations = num_real_input_combinations(design);
+    let grouping = combination_grouping(design);
 
     let entries = cells
         .iter()
@@ -234,7 +244,7 @@ pub fn generate_truth_table(
                 .get(&layer.cell_architecture_id)?
                 .dot_count
                 / 4;
-            let mut logical_data = clock_regions[clock_index]
+            let region_values: Vec<Option<char>> = clock_regions[clock_index]
                 .iter()
                 .skip(clock_skip_cycles)
                 .map(|clock_region| {
@@ -246,19 +256,29 @@ pub fn generate_truth_table(
                         value_threshold,
                     )
                 })
-                .chain((0..clock_skip_cycles).map(|_| None))
-                .collect::<Vec<_>>();
+                .collect();
 
-            // Drop the trailing settling-cycle rows (see
-            // num_real_input_combinations) *after* the skip/pad above, not
-            // before it - a cell with a large clock_skip_cycles delay (e.g. a
-            // downstream cell in a long propagating wire) still needs its
-            // full share of clock_regions to skip through; trimming the
-            // region list itself first would eat into that delay budget and
-            // starve exactly the highly-delayed cells of real data instead
-            // of just excluding the settling tail.
-            if let Some(num_real_combinations) = num_real_combinations {
-                logical_data.truncate(num_real_combinations);
+            // Collapse each combination's `num_cycles` repeated clock
+            // regions into a single row - its last (most-settled) repeat -
+            // and drop the trailing settling-cycle regions entirely (see
+            // combination_grouping). Skip first, chunk after: a cell with a
+            // large clock_skip_cycles delay still needs its full share of
+            // clock_regions to skip through before grouping, or it would be
+            // starved of real data instead of just losing the settling tail.
+            let mut logical_data: Vec<Option<char>> = match grouping {
+                Some((num_combinations, num_cycles)) => {
+                    let mut rows: Vec<Option<char>> = region_values
+                        .chunks(num_cycles)
+                        .map(|chunk| chunk.last().copied().flatten())
+                        .collect();
+                    rows.truncate(num_combinations);
+                    rows
+                }
+                None => region_values,
+            };
+            while grouping.is_some_and(|(num_combinations, _)| logical_data.len() < num_combinations)
+            {
+                logical_data.push(None);
             }
 
             let cell_label = if let Some(label) = &design_cell.label {
