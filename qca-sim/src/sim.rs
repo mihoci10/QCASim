@@ -81,16 +81,23 @@ pub fn run_sim(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
             .to_string(),
     )?;
 
+    let custom_input_sequence = qca_design
+        .simulation_settings
+        .use_custom_input_sequence
+        .then(|| qca_design.simulation_settings.custom_input_sequence.clone());
+
     let max_samples = get_num_samples(
         &sim_model,
         &qca_design.layers,
         &qca_design.cell_architectures,
+        custom_input_sequence.clone(),
     ) as u64;
 
     let (handle, progress_rx, _cancel_tx) = run_simulation_async(
         sim_model,
         qca_design.layers.clone(),
         qca_design.cell_architectures.clone(),
+        custom_input_sequence,
     );
 
     let progress_bar = ProgressBar::new(max_samples);

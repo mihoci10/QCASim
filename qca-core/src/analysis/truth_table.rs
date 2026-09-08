@@ -118,8 +118,12 @@ fn combination_grouping(design: &QCADesign) -> Option<(usize, usize)> {
         .dot_count as usize
         / 4;
 
-    let num_inputs = crate::simulation::get_num_inputs(&design.layers);
-    let num_combinations = (polarization_n * 2).pow(num_inputs as u32);
+    let num_combinations = if design.simulation_settings.use_custom_input_sequence {
+        design.simulation_settings.custom_input_sequence.len()
+    } else {
+        let num_inputs = crate::simulation::get_num_inputs(&design.layers);
+        (polarization_n * 2).pow(num_inputs as u32)
+    };
 
     Some((num_combinations, num_cycles.max(1)))
 }

@@ -53,6 +53,7 @@ fn run_simulation_internal(
     mut sim_model: Box<dyn SimulationModelTrait>,
     layers: Vec<QCALayer>,
     architectures: HashMap<String, QCACellArchitecture>,
+    custom_input_sequence: Option<Vec<Vec<usize>>>,
     progress_tx: Option<Sender<SimulationProgress>>,
     cancel_rx: &mut Option<oneshot::Receiver<SimulationCancelRequest>>,
 ) -> QCASimulationData {
@@ -67,18 +68,27 @@ fn run_simulation_internal(
     let model_settings = sim_model.get_model_settings();
     let clock_generator_settings = sim_model.get_clock_generator_settings();
 
+    // The number of *distinct* input combinations being swept - either
+    // every possible combination, or however many vectors are in the
+    // caller's explicit sequence (which may repeat a vector, so this is not
+    // necessarily how many *unique* combinations there are).
+    let num_combinations = match &custom_input_sequence {
+        Some(sequence) => sequence.len(),
+        None => (polarization_n as usize * 2).pow(num_inputs as u32),
+    };
+
     let input_generator = CellInputGenerator::new(CellInputConfig {
         num_inputs,
         num_samples_per_combination: clock_generator_settings.get_samples_per_input(),
         num_polarization: polarization_n as usize,
         extra_clock_periods: clock_generator_settings.get_extra_periods() * polarization_n as usize,
+        custom_sequence: custom_input_sequence,
     });
     let mut input_iter = input_generator.iter();
     let num_samples = input_generator.num_samples();
     let clock_generator = ClockGenerator::new(ClockConfig {
         num_samples,
-        num_cycles: (polarization_n as usize * 2).pow(num_inputs as u32)
-            * clock_generator_settings.get_num_cycles()
+        num_cycles: num_combinations * clock_generator_settings.get_num_cycles()
             + (polarization_n as usize * clock_generator_settings.get_extra_periods()),
         amplitude_max: clock_generator_settings.get_amplitude_max(),
         amplitude_min: clock_generator_settings.get_amplitude_min(),
@@ -182,14 +192,23 @@ pub fn run_simulation(
     sim_model: Box<dyn SimulationModelTrait>,
     layers: Vec<QCALayer>,
     architectures: HashMap<String, QCACellArchitecture>,
+    custom_input_sequence: Option<Vec<Vec<usize>>>,
 ) -> QCASimulationData {
-    run_simulation_internal(sim_model, layers, architectures, None, &mut None)
+    run_simulation_internal(
+        sim_model,
+        layers,
+        architectures,
+        custom_input_sequence,
+        None,
+        &mut None,
+    )
 }
 
 pub fn run_simulation_async(
     sim_model: Box<dyn SimulationModelTrait>,
     layers: Vec<QCALayer>,
     architectures: HashMap<String, QCACellArchitecture>,
+    custom_input_sequence: Option<Vec<Vec<usize>>>,
 ) -> (
     JoinHandle<QCASimulationData>,
     Receiver<SimulationProgress>,
@@ -202,6 +221,7 @@ pub fn run_simulation_async(
             sim_model,
             layers,
             architectures,
+            custom_input_sequence,
             Some(progress_tx),
             &mut Some(cancel_rx),
         );
@@ -227,6 +247,7 @@ pub fn get_num_samples(
     sim_model: &Box<dyn SimulationModelTrait>,
     layers: &Vec<QCALayer>,
     architectures: &HashMap<String, QCACellArchitecture>,
+    custom_input_sequence: Option<Vec<Vec<usize>>>,
 ) -> usize {
     let architecture = architectures.get(&layers[0].cell_architecture_id).unwrap();
     let polarization_n = architecture.dot_count / 4;
@@ -239,6 +260,7 @@ pub fn get_num_samples(
         num_samples_per_combination: clock_generator_settings.get_samples_per_input(),
         num_polarization: polarization_n as usize,
         extra_clock_periods: clock_generator_settings.get_extra_periods(),
+        custom_sequence: custom_input_sequence,
     });
 
     input_generator.num_samples()

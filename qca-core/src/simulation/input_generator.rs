@@ -12,6 +12,11 @@ pub struct CellInputConfig {
     pub num_polarization: usize,
     /// Number of extra clock periods to generate
     pub extra_clock_periods: usize,
+    /// When set, step through this explicit, ordered list of input vectors
+    /// (repeats allowed) instead of exhaustively enumerating every
+    /// combination. Each vector holds one state index per input, in the
+    /// same encoding `get_combination` produces.
+    pub custom_sequence: Option<Vec<Vec<usize>>>,
 }
 
 impl GeneratorConfig for CellInputConfig {}
@@ -30,7 +35,10 @@ impl Generator for CellInputGenerator {
     type Output = Vec<f64>;
 
     fn new(config: Self::Config) -> Self {
-        let input_combinations = (config.num_polarization * 2).pow(config.num_inputs as u32);
+        let input_combinations = match &config.custom_sequence {
+            Some(sequence) => sequence.len(),
+            None => (config.num_polarization * 2).pow(config.num_inputs as u32),
+        };
         let extra_samples = config.extra_clock_periods * config.num_samples_per_combination;
         let num_samples = config.num_samples_per_combination * input_combinations + extra_samples;
         Self {
@@ -57,7 +65,10 @@ impl Generator for CellInputGenerator {
         let combination_index = sample / samples_per_combination;
 
         // Generate the combination pattern
-        let combination = self.get_combination(combination_index);
+        let combination = match &self.config.custom_sequence {
+            Some(sequence) => sequence[combination_index].clone(),
+            None => self.get_combination(combination_index),
+        };
 
         // Generate output vector with dimension num_inputs * num_polarization
         let mut output = Vec::with_capacity(self.config.num_inputs * self.config.num_polarization);

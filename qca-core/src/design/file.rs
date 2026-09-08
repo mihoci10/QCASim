@@ -22,6 +22,24 @@ pub struct SimulationSettings {
 
     #[serde_inline_default(HashMap::new())]
     pub simulation_model_settings: HashMap<String, SimulationModelSettings>,
+
+    /// When true, the simulation steps through `custom_input_sequence` in
+    /// order (repeats allowed) instead of exhaustively enumerating every
+    /// input combination. Kept separate from `custom_input_sequence` itself
+    /// so toggling back to exhaustive doesn't discard a sequence the user
+    /// built.
+    #[serde_inline_default(false)]
+    pub use_custom_input_sequence: bool,
+
+    /// An ordered list of input vectors to simulate when
+    /// `use_custom_input_sequence` is set. Each entry is one vector - a
+    /// per-input state index (0..2*polarization_n, the same encoding
+    /// CellInputGenerator's exhaustive sweep uses) in input order. The same
+    /// vector may appear more than once: since the simulation is inherently
+    /// sequential, a cell holding state between samples (e.g. a flip-flop)
+    /// can still produce a different output the second time.
+    #[serde_inline_default(Vec::new())]
+    pub custom_input_sequence: Vec<Vec<usize>>,
 }
 
 #[serde_inline_default]
@@ -50,6 +68,8 @@ impl SimulationSettings {
         Self {
             selected_simulation_model_id: None,
             simulation_model_settings: HashMap::new(),
+            use_custom_input_sequence: false,
+            custom_input_sequence: Vec::new(),
         }
     }
 }
