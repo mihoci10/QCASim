@@ -56,7 +56,7 @@ pub fn run_sim(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
         &sim_model,
         &qca_design.layers,
         &qca_design.cell_architectures,
-        custom_input_sequence.clone(),
+        custom_input_sequence.as_deref(),
     ) as u64;
 
     let (handle, progress_rx, _cancel_tx) = run_simulation_async(

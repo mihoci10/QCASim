@@ -5,7 +5,7 @@ use crate::objects::layer::QCALayer;
 use crate::simulation::clock_generator::{ClockConfig, ClockGenerator};
 use crate::simulation::file::{QCACellData, QCASimulationData};
 use crate::simulation::input_generator::{CellInputConfig, CellInputGenerator};
-use crate::simulation::model::{SimulationModelTrait, UpdateOrder};
+use crate::simulation::model::{ClockGeneratorSettingsTrait, SimulationModelTrait, UpdateOrder};
 use chrono::Local;
 use log::{debug, info, trace, warn};
 use std::collections::HashMap;
@@ -73,17 +73,19 @@ fn run_simulation_internal(
     // every possible combination, or however many vectors are in the
     // caller's explicit sequence (which may repeat a vector, so this is not
     // necessarily how many *unique* combinations there are).
-    let num_combinations = match &custom_input_sequence {
-        Some(sequence) => sequence.len(),
-        None => (polarization_n as usize * 2).pow(num_inputs as u32),
-    };
+    let num_combinations = input_generator::num_combinations(
+        polarization_n as usize,
+        num_inputs,
+        custom_input_sequence.as_deref(),
+    );
 
     let input_generator = CellInputGenerator::new(CellInputConfig {
-        num_inputs,
-        num_samples_per_combination: clock_generator_settings.get_samples_per_input(),
-        num_polarization: polarization_n as usize,
-        extra_clock_periods: clock_generator_settings.get_extra_periods() * polarization_n as usize,
         custom_sequence: custom_input_sequence,
+        ..input_config(
+            &*clock_generator_settings,
+            num_inputs,
+            polarization_n as usize,
+        )
     });
     let mut input_iter = input_generator.iter();
     let num_samples = input_generator.num_samples();
@@ -261,23 +263,36 @@ pub fn get_num_samples(
     sim_model: &Box<dyn SimulationModelTrait>,
     layers: &Vec<QCALayer>,
     architectures: &HashMap<String, QCACellArchitecture>,
-    custom_input_sequence: Option<Vec<Vec<usize>>>,
+    custom_input_sequence: Option<&[Vec<usize>]>,
 ) -> usize {
     let architecture = architectures.get(&layers[0].cell_architecture_id).unwrap();
-    let polarization_n = architecture.dot_count / 4;
+    let polarization_n = architecture.dot_count as usize / 4;
     let clock_generator_settings = sim_model.get_clock_generator_settings();
 
     let num_inputs = get_num_inputs(layers);
 
-    let input_generator = CellInputGenerator::new(CellInputConfig {
+    let config = input_config(&*clock_generator_settings, num_inputs, polarization_n);
+    config.num_samples(input_generator::num_combinations(
+        polarization_n,
+        num_inputs,
+        custom_input_sequence,
+    ))
+}
+
+/// Input generator configuration shared by the simulation run and
+/// `get_num_samples`, without the custom input sequence.
+fn input_config(
+    clock_generator_settings: &dyn ClockGeneratorSettingsTrait,
+    num_inputs: usize,
+    polarization_n: usize,
+) -> CellInputConfig {
+    CellInputConfig {
         num_inputs,
         num_samples_per_combination: clock_generator_settings.get_samples_per_input(),
-        num_polarization: polarization_n as usize,
-        extra_clock_periods: clock_generator_settings.get_extra_periods(),
-        custom_sequence: custom_input_sequence,
-    });
-
-    input_generator.num_samples()
+        num_polarization: polarization_n,
+        extra_clock_periods: clock_generator_settings.get_extra_periods() * polarization_n,
+        custom_sequence: None,
+    }
 }
 
 /// Reproducible Fisher-Yates shuffle with a xorshift64* generator.

@@ -21,6 +21,32 @@ pub struct CellInputConfig {
 
 impl GeneratorConfig for CellInputConfig {}
 
+impl CellInputConfig {
+    /// Number of samples generated for `num_combinations` input combinations,
+    /// including the trailing extra clock periods.
+    pub fn num_samples(&self, num_combinations: usize) -> usize {
+        self.num_samples_per_combination * num_combinations + self.extra_samples()
+    }
+
+    fn extra_samples(&self) -> usize {
+        self.extra_clock_periods * self.num_samples_per_combination
+    }
+}
+
+/// Number of input combinations a simulation steps through: the length of
+/// the custom sequence when one is given (repeats included), otherwise every
+/// combination, `(2 * num_polarization)^num_inputs`.
+pub fn num_combinations(
+    num_polarization: usize,
+    num_inputs: usize,
+    custom: Option<&[Vec<usize>]>,
+) -> usize {
+    match custom {
+        Some(sequence) => sequence.len(),
+        None => (num_polarization * 2).pow(num_inputs as u32),
+    }
+}
+
 /// Generator for cell input values that produces vectors of values
 /// Output dimension: num_inputs * num_polarization
 /// Total combinations: (2 * num_polarization)^num_inputs
@@ -35,12 +61,13 @@ impl Generator for CellInputGenerator {
     type Output = Vec<f64>;
 
     fn new(config: Self::Config) -> Self {
-        let input_combinations = match &config.custom_sequence {
-            Some(sequence) => sequence.len(),
-            None => (config.num_polarization * 2).pow(config.num_inputs as u32),
-        };
-        let extra_samples = config.extra_clock_periods * config.num_samples_per_combination;
-        let num_samples = config.num_samples_per_combination * input_combinations + extra_samples;
+        let input_combinations = num_combinations(
+            config.num_polarization,
+            config.num_inputs,
+            config.custom_sequence.as_deref(),
+        );
+        let extra_samples = config.extra_samples();
+        let num_samples = config.num_samples(input_combinations);
         Self {
             config,
             num_samples,
