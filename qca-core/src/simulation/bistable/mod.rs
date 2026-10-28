@@ -54,10 +54,11 @@ pub struct BistableClockGeneratorSettings {
     #[serde_inline_default(1)]
     num_cycles: usize,
 
-    #[serde_inline_default(1e-3)]
+    // QCADesigner's bistable clock low/high (3.8e-23 J and 9.8e-22 J) in meV.
+    #[serde_inline_default(0.2372)]
     amplitude_min: f64,
 
-    #[serde_inline_default(65.0)]
+    #[serde_inline_default(6.1167)]
     amplitude_max: f64,
 
     #[serde_inline_default(0)]
@@ -209,7 +210,9 @@ impl BistableModel {
             }
         }
 
-        (1.0 / (FOUR_PI_EPSILON * permitivity)) * (energy_diff - energy_same)
+        const JOULES_PER_MEV: f64 = 1.602176634e-22;
+
+        (1.0 / (FOUR_PI_EPSILON * permitivity)) * (energy_diff - energy_same) / JOULES_PER_MEV
     }
 }
 
@@ -297,22 +300,22 @@ impl SimulationModelTrait for BistableModel {
             OptionsEntry::Input {
                 unique_id: "amplitude_min".to_string(),
                 name: "Minimum amplitude".to_string(),
-                description: "The minimum value of the clock signal".to_string(),
+                description: "Tunneling energy of the clock signal while cells hold their state (clock low)".to_string(),
                 descriptor: InputDescriptor::NumberInput {
-                    min: None,
+                    min: Some(0.0),
                     max: None,
-                    unit: None,
+                    unit: Some("meV".into()),
                     whole_num: false,
                 },
             },
             OptionsEntry::Input {
                 unique_id: "amplitude_max".to_string(),
                 name: "Maximum amplitude".to_string(),
-                description: "The maximum value of the clock signal".to_string(),
+                description: "Tunneling energy of the clock signal while cells are released (clock high)".to_string(),
                 descriptor: InputDescriptor::NumberInput {
-                    min: None,
+                    min: Some(0.0),
                     max: None,
-                    unit: None,
+                    unit: Some("meV".into()),
                     whole_num: false,
                 },
             },
@@ -484,7 +487,8 @@ impl SimulationModelTrait for BistableModel {
         let mut polar_math = self
             .neighborhood_map
             .get(&cell_ind)
-            .unwrap()
+            .map(|neighbours| neighbours.as_slice())
+            .unwrap_or_default()
             .iter()
             .map(|neighbour| {
                 let neighbour_cell = {
@@ -507,9 +511,13 @@ impl SimulationModelTrait for BistableModel {
             })
             .sum::<f64>();
 
-        let clock_index = (cell.clock_phase_shift as i32 % 90) as usize;
+        let clock_index = (cell.clock_phase_shift.rem_euclid(360.0) / 90.0) as usize;
 
-        polar_math /= 2.0 * self.clock_states[clock_index];
+        // The clock generator emits the tunneling energy as a negative value
+        // (ICHA's Hamiltonian convention); the bistable approximation needs its
+        // magnitude. A zero clock fully latches the cell instead of dividing by 0.
+        let tunneling_energy = self.clock_states[clock_index].abs().max(f64::MIN_POSITIVE);
+        polar_math /= 2.0 * tunneling_energy;
 
         let new_polarization = if polar_math > 1000.0 {
             1.0
@@ -531,6 +539,7 @@ impl SimulationModelTrait for BistableModel {
             }
         }
         cell.dot_probability_distribution = new_dot_probability;
+        self.index_cells_write_map.insert(cell_ind, cell);
 
         stable
     }
@@ -546,5 +555,85 @@ impl SimulationModelTrait for BistableModel {
             return c.dot_probability_distribution.clone();
         }
         panic!("Cell not found");
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::simulation::run_simulation;
+
+    const ARCHITECTURE_ID: &str = "qcadesigner";
+
+    fn cell(x: f64, typ: CellType, clock_phase_shift: f64) -> QCACell {
+        QCACell {
+            position: [x, 0.0],
+            rotation: 0.0,
+            typ,
+            clock_phase_shift,
+            dot_probability_distribution: polarization_to_dot_probability_distribution(&[0.0]),
+            label: None,
+        }
+    }
+
+    fn simulate(cells: Vec<QCACell>) -> crate::simulation::file::QCASimulationData {
+        let mut layer = QCALayer::new("Main".into(), ARCHITECTURE_ID.into(), 0.0);
+        layer.cells = cells;
+        let architectures = HashMap::from([(
+            ARCHITECTURE_ID.to_string(),
+            QCACellArchitecture::new(18.0, 5.0, 4, 9.0),
+        )]);
+        run_simulation(
+            Box::new(BistableModel::new()),
+            vec![layer],
+            architectures,
+            None,
+        )
+    }
+
+    /// Polarization of the stored cell `stored` while clock zone 0 holds the
+    /// given input combination (each combination spans 20 samples by default).
+    fn held_polarization(
+        data: &crate::simulation::file::QCASimulationData,
+        stored: usize,
+        combination: usize,
+    ) -> f64 {
+        data.cells_data[stored].data[combination * 20 + 7]
+    }
+
+    #[test]
+    fn wire_follows_its_input() {
+        let mut cells = vec![cell(0.0, CellType::Input, 0.0)];
+        cells.extend((1..4).map(|i| cell(20.0 * i as f64, CellType::Normal, 0.0)));
+        cells.push(cell(80.0, CellType::Output, 0.0));
+
+        let data = simulate(cells);
+
+        // Stored cells are the input (0) and the output (1); combination 0
+        // drives the input to -1 and combination 1 to +1.
+        assert!(held_polarization(&data, 1, 0) < -0.9);
+        assert!(held_polarization(&data, 1, 1) > 0.9);
+    }
+
+    #[test]
+    fn isolated_cell_does_not_panic() {
+        let data = simulate(vec![
+            cell(0.0, CellType::Input, 0.0),
+            cell(1000.0, CellType::Output, 0.0),
+        ]);
+
+        assert_eq!(held_polarization(&data, 1, 0), 0.0);
+    }
+
+    #[test]
+    fn clock_phase_selects_the_clock_zone() {
+        let mut cells = vec![cell(0.0, CellType::Input, 0.0)];
+        cells.extend((1..4).map(|i| cell(20.0 * i as f64, CellType::Normal, 0.0)));
+        // A phase that is not a multiple of 90 used to index past the clock array.
+        cells.push(cell(80.0, CellType::Output, 45.0));
+
+        let data = simulate(cells);
+
+        assert!(held_polarization(&data, 1, 1) > 0.9);
     }
 }
