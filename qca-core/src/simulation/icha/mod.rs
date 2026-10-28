@@ -525,6 +525,7 @@ impl SimulationModelTrait for ICHAModel {
                     max: None,
                     unit: None,
                     whole_num: true,
+                    choices: None,
                 },
             },
             OptionsEntry::Input {
@@ -536,6 +537,7 @@ impl SimulationModelTrait for ICHAModel {
                     max: None,
                     unit: None,
                     whole_num: false,
+                    choices: None,
                 },
             },
             OptionsEntry::Input {
@@ -547,6 +549,7 @@ impl SimulationModelTrait for ICHAModel {
                     max: None,
                     unit: None,
                     whole_num: false,
+                    choices: None,
                 },
             },
             OptionsEntry::Input {
@@ -558,6 +561,12 @@ impl SimulationModelTrait for ICHAModel {
                     max: Some(3.0),
                     unit: None,
                     whole_num: true,
+                    choices: Some(vec![
+                        "Sequential (layout order)".into(),
+                        "Reverse".into(),
+                        "Random (seeded)".into(),
+                        "Simultaneous (with mixing)".into(),
+                    ]),
                 },
             },
             OptionsEntry::Input {
@@ -569,6 +578,7 @@ impl SimulationModelTrait for ICHAModel {
                     max: None,
                     unit: None,
                     whole_num: true,
+                    choices: None,
                 },
             },
             OptionsEntry::Input {
@@ -580,6 +590,7 @@ impl SimulationModelTrait for ICHAModel {
                     max: Some(1.0),
                     unit: None,
                     whole_num: false,
+                    choices: None,
                 },
             },
             OptionsEntry::Header {
@@ -594,6 +605,7 @@ impl SimulationModelTrait for ICHAModel {
                     max: None,
                     unit: None,
                     whole_num: true,
+                    choices: None,
                 },
             },
             OptionsEntry::Input {
@@ -605,6 +617,7 @@ impl SimulationModelTrait for ICHAModel {
                     max: None,
                     unit: None,
                     whole_num: false,
+                    choices: None,
                 },
             },
         ]
@@ -621,6 +634,7 @@ impl SimulationModelTrait for ICHAModel {
                     max: None,
                     unit: None,
                     whole_num: true,
+                    choices: None,
                 },
             },
             OptionsEntry::Input {
@@ -632,6 +646,7 @@ impl SimulationModelTrait for ICHAModel {
                     max: None,
                     unit: None,
                     whole_num: false,
+                    choices: None,
                 },
             },
             OptionsEntry::Input {
@@ -643,6 +658,7 @@ impl SimulationModelTrait for ICHAModel {
                     max: None,
                     unit: None,
                     whole_num: false,
+                    choices: None,
                 },
             },
             OptionsEntry::Input {
@@ -654,6 +670,7 @@ impl SimulationModelTrait for ICHAModel {
                     max: None,
                     unit: None,
                     whole_num: true,
+                    choices: None,
                 },
             },
             OptionsEntry::Input {
@@ -665,6 +682,7 @@ impl SimulationModelTrait for ICHAModel {
                     max: None,
                     unit: None,
                     whole_num: true,
+                    choices: None,
                 },
             },
         ]
