@@ -103,18 +103,8 @@ fn generate_clock_regions(
 /// case the caller should show every detected cycle as its own row rather
 /// than silently guessing.
 fn combination_grouping(design: &QCADesign) -> Option<(usize, usize)> {
-    let model_id = design
-        .simulation_settings
-        .selected_simulation_model_id
-        .as_ref()?;
-    let settings = design
-        .simulation_settings
-        .simulation_model_settings
-        .get(model_id)?;
-    let mut model = crate::simulation::models::create_sim_model(model_id)?;
-    model
-        .deserialize_clock_generator_settings(&settings.clock_generator_settings.to_string())
-        .ok()?;
+    let (model, custom_input_sequence) =
+        crate::simulation::models::prepare_simulation(design).ok()?;
     let num_cycles = model.get_clock_generator_settings().get_num_cycles();
 
     let polarization_n = design
@@ -124,14 +114,10 @@ fn combination_grouping(design: &QCADesign) -> Option<(usize, usize)> {
         .dot_count as usize
         / 4;
 
-    let custom_input_sequence = design
-        .simulation_settings
-        .use_custom_input_sequence
-        .then_some(design.simulation_settings.custom_input_sequence.as_slice());
     let num_combinations = crate::simulation::input_generator::num_combinations(
         polarization_n,
         crate::simulation::get_num_inputs(&design.layers),
-        custom_input_sequence,
+        custom_input_sequence.as_deref(),
     );
 
     Some((num_combinations, num_cycles.max(1)))
@@ -247,8 +233,8 @@ pub fn generate_truth_table(
             let layer = design.layers.get(cell.layer)?;
             let design_cell = layer.cells.get(cell.cell)?;
 
-            let clock_phase_shift = design_cell.clock_phase_shift;
-            let clock_index = (clock_phase_shift / 90f64).round() as usize % 4;
+            // Same clock zone the models drive this cell with.
+            let clock_index = design_cell.clock_zone();
 
             let clock_skip_cycles = *cell_clock_delay.get(&cell).or(Some(&0)).unwrap();
 

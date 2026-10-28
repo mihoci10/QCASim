@@ -3,6 +3,7 @@
 //! application.
 
 use crate::design::file::QCADesign;
+use crate::objects::cell::CellType;
 use crate::simulation::bistable::BistableModel;
 use crate::simulation::get_num_inputs;
 use crate::simulation::icha::ICHAModel;
@@ -56,6 +57,30 @@ pub fn prepare_simulation(
                 "Every vector in the custom input sequence must have exactly {} value(s), one per input",
                 num_inputs
             ));
+        }
+        // Each input takes 2 states per polarization of its layer's architecture.
+        let num_states: Vec<usize> = design
+            .layers
+            .iter()
+            .flat_map(|layer| {
+                let states = design
+                    .cell_architectures
+                    .get(&layer.cell_architecture_id)
+                    .map_or(0, |architecture| architecture.dot_count as usize / 2);
+                layer
+                    .cells
+                    .iter()
+                    .filter(|cell| cell.typ == CellType::Input)
+                    .map(move |_| states)
+            })
+            .collect();
+        if sequence
+            .iter()
+            .any(|vector| vector.iter().zip(&num_states).any(|(state, n)| state >= n))
+        {
+            return Err(
+                "The custom input sequence contains a state its input cell cannot take".into(),
+            );
         }
         Some(sequence)
     } else {

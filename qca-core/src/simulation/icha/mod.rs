@@ -914,12 +914,8 @@ impl SimulationModelTrait for ICHAModel {
             }
         }
 
-        if simultaneous {
-            let w = self.model_settings.update_mixing.clamp(1e-3, 1.0);
-            internal_cell.dot_charge_probability =
-                &internal_cell.dot_charge_probability * w + &old_charge_probability * (1.0 - w);
-        }
-
+        // Judge convergence on the unmixed update: the mixed step is scaled by
+        // the mixing weight and would report convergence too early.
         let mut stable: bool = true;
         for i in 0..n as usize {
             if (internal_cell.dot_charge_probability[i] - old_charge_probability[i]).abs()
@@ -927,6 +923,12 @@ impl SimulationModelTrait for ICHAModel {
             {
                 stable = false;
             }
+        }
+
+        if simultaneous {
+            let w = self.model_settings.update_mixing.clamp(1e-3, 1.0);
+            internal_cell.dot_charge_probability =
+                &internal_cell.dot_charge_probability * w + &old_charge_probability * (1.0 - w);
         }
 
         self.index_cells_write_map.insert(cell_ind, internal_cell);
