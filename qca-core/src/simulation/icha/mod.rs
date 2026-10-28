@@ -5,7 +5,7 @@ use crate::simulation::settings::{InputDescriptor, OptionsEntry, OptionsList};
 use nalgebra::{distance, DMatrix, DMatrixView, DVector, DVectorView, Point3, Schur};
 use serde::{Deserialize, Serialize};
 use serde_inline_default::serde_inline_default;
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::mem;
 
 const E_CHARGE: f64 = 1.602_176_634e-19; // Coulombs [C]
@@ -414,10 +414,10 @@ pub struct ICHAModel {
     clock_generator_settings: ICHAClockGeneratorSettings,
     layer_map: HashMap<usize, QCALayer>,
     cell_architectures_map: HashMap<String, QCACellArchitecture>,
-    cell_input_map: HashMap<QCACellIndex, usize>,
-    index_cells_static_map: HashMap<QCACellIndex, QCACellInternal>,
-    index_cells_read_map: HashMap<QCACellIndex, QCACellInternal>,
-    index_cells_write_map: HashMap<QCACellIndex, QCACellInternal>,
+    cell_input_map: BTreeMap<QCACellIndex, usize>,
+    index_cells_static_map: BTreeMap<QCACellIndex, QCACellInternal>,
+    index_cells_read_map: BTreeMap<QCACellIndex, QCACellInternal>,
+    index_cells_write_map: BTreeMap<QCACellIndex, QCACellInternal>,
 }
 
 impl ICHAModelSettings {
@@ -468,10 +468,10 @@ impl ICHAModel {
             clock_generator_settings: ICHAClockGeneratorSettings::new(),
             layer_map: HashMap::new(),
             cell_architectures_map: HashMap::new(),
-            cell_input_map: HashMap::new(),
-            index_cells_static_map: HashMap::new(),
-            index_cells_read_map: HashMap::new(),
-            index_cells_write_map: HashMap::new(),
+            cell_input_map: BTreeMap::new(),
+            index_cells_static_map: BTreeMap::new(),
+            index_cells_read_map: BTreeMap::new(),
+            index_cells_write_map: BTreeMap::new(),
         }
     }
 }

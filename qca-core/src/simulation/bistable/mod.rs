@@ -8,7 +8,10 @@ use crate::simulation::model::{ClockGeneratorSettingsTrait, SimulationModelSetti
 use crate::simulation::settings::{InputDescriptor, OptionsEntry, OptionsList};
 use serde::{Deserialize, Serialize};
 use serde_inline_default::serde_inline_default;
-use std::{collections::HashMap, mem};
+use std::{
+    collections::{BTreeMap, HashMap},
+    mem,
+};
 
 struct BistableNeighbor {
     cell_index: QCACellIndex,
@@ -18,13 +21,13 @@ struct BistableNeighbor {
 pub struct BistableModel {
     clock_states: [f64; 4],
     input_states: Vec<f64>,
-    index_cells_static_map: HashMap<QCACellIndex, QCACell>,
-    index_cells_read_map: HashMap<QCACellIndex, QCACell>,
-    index_cells_write_map: HashMap<QCACellIndex, QCACell>,
-    cell_input_map: HashMap<QCACellIndex, usize>,
+    index_cells_static_map: BTreeMap<QCACellIndex, QCACell>,
+    index_cells_read_map: BTreeMap<QCACellIndex, QCACell>,
+    index_cells_write_map: BTreeMap<QCACellIndex, QCACell>,
+    cell_input_map: BTreeMap<QCACellIndex, usize>,
     active_layer: i8,
     polarizations: [Vec<f64>; 2],
-    neighborhood_map: HashMap<QCACellIndex, Vec<BistableNeighbor>>,
+    neighborhood_map: BTreeMap<QCACellIndex, Vec<BistableNeighbor>>,
     model_settings: BistableModelSettings,
     clock_settings: BistableClockGeneratorSettings,
 }
@@ -109,12 +112,12 @@ impl BistableModel {
             clock_states: [0.0, 0.0, 0.0, 0.0],
             input_states: vec![],
             active_layer: 0,
-            index_cells_static_map: HashMap::new(),
-            index_cells_read_map: HashMap::new(),
-            index_cells_write_map: HashMap::new(),
-            cell_input_map: HashMap::new(),
+            index_cells_static_map: BTreeMap::new(),
+            index_cells_read_map: BTreeMap::new(),
+            index_cells_write_map: BTreeMap::new(),
+            cell_input_map: BTreeMap::new(),
             polarizations: [vec![], vec![]],
-            neighborhood_map: HashMap::new(),
+            neighborhood_map: BTreeMap::new(),
             model_settings: BistableModelSettings::new(),
             clock_settings: BistableClockGeneratorSettings::new(),
         }
