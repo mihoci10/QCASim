@@ -2,10 +2,8 @@ use clap::builder::PathBufValueParser;
 use clap::{Arg, ArgMatches, Command};
 use indicatif::{ProgressBar, ProgressStyle};
 use qca_core::design::file::{QCADesignFile, DESIGN_FILE_EXTENSION};
-use qca_core::simulation::bistable::BistableModel;
 use qca_core::simulation::file::{write_to_file, SIMULATION_FILE_EXTENSION};
-use qca_core::simulation::icha::ICHAModel;
-use qca_core::simulation::model::SimulationModelTrait;
+use qca_core::simulation::models::prepare_simulation;
 use qca_core::simulation::{get_num_samples, run_simulation_async, SimulationProgress};
 use std::error::Error;
 use std::fs;
@@ -34,16 +32,6 @@ pub fn get_sim_subcommand() -> Command {
         )
 }
 
-fn get_simulation_model(model_id: &str) -> Box<dyn SimulationModelTrait> {
-    if model_id == BistableModel::new().get_unique_id() {
-        Box::new(BistableModel::new()) as Box<dyn SimulationModelTrait>
-    } else if model_id == ICHAModel::new().get_unique_id() {
-        Box::new(ICHAModel::new()) as Box<dyn SimulationModelTrait>
-    } else {
-        panic!("Model {} not found", model_id);
-    }
-}
-
 pub fn run_sim(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
     let input = matches.get_one::<std::path::PathBuf>("filename").unwrap();
     let output = if let Some(output) = matches.get_one::<std::path::PathBuf>("output") {
@@ -56,35 +44,13 @@ pub fn run_sim(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
         return Err(format!("File does not exist: {}", input.display()).into());
     }
 
-    let contents = fs::read_to_string(input).unwrap();
+    let contents = fs::read_to_string(input)?;
 
-    let qca_design_file: QCADesignFile = serde_json::from_str(&contents).unwrap();
+    let qca_design_file: QCADesignFile = serde_json::from_str(&contents)
+        .map_err(|e| format!("Invalid design file {}: {}", input.display(), e))?;
     let qca_design = qca_design_file.design;
 
-    let simulation_model_id = qca_design
-        .simulation_settings
-        .selected_simulation_model_id
-        .clone()
-        .unwrap();
-
-    let simulation_model_settings = &qca_design
-        .simulation_settings
-        .simulation_model_settings
-        .get(&simulation_model_id)
-        .unwrap();
-
-    let mut sim_model = get_simulation_model(simulation_model_id.as_str());
-    sim_model.deserialize_model_settings(&simulation_model_settings.model_settings.to_string())?;
-    sim_model.deserialize_clock_generator_settings(
-        &simulation_model_settings
-            .clock_generator_settings
-            .to_string(),
-    )?;
-
-    let custom_input_sequence = qca_design
-        .simulation_settings
-        .use_custom_input_sequence
-        .then(|| qca_design.simulation_settings.custom_input_sequence.clone());
+    let (sim_model, custom_input_sequence) = prepare_simulation(&qca_design)?;
 
     let max_samples = get_num_samples(
         &sim_model,

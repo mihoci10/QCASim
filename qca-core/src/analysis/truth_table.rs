@@ -103,7 +103,10 @@ fn generate_clock_regions(
 /// case the caller should show every detected cycle as its own row rather
 /// than silently guessing.
 fn combination_grouping(design: &QCADesign) -> Option<(usize, usize)> {
-    let model_id = design.simulation_settings.selected_simulation_model_id.as_ref()?;
+    let model_id = design
+        .simulation_settings
+        .selected_simulation_model_id
+        .as_ref()?;
     let clock_generator_settings = &design
         .simulation_settings
         .simulation_model_settings
@@ -280,7 +283,8 @@ pub fn generate_truth_table(
                 }
                 None => region_values,
             };
-            while grouping.is_some_and(|(num_combinations, _)| logical_data.len() < num_combinations)
+            while grouping
+                .is_some_and(|(num_combinations, _)| logical_data.len() < num_combinations)
             {
                 logical_data.push(None);
             }
