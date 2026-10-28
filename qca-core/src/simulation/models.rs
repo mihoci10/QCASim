@@ -39,6 +39,18 @@ pub fn prepare_simulation(
         .ok_or(format!("Design has no settings for model '{}'", model_id))?;
 
     let mut model = create_sim_model(&model_id).ok_or("No model with such id exists")?;
+    // The bistable approximation describes two-state (4-dot) cells only; on
+    // other cells it would write data the .qcs reader can't parse.
+    if model_id == BistableModel::new().get_unique_id()
+        && design.layers.iter().any(|layer| {
+            design
+                .cell_architectures
+                .get(&layer.cell_architecture_id)
+                .is_some_and(|architecture| architecture.dot_count != 4)
+        })
+    {
+        return Err("The bistable model only supports 4-dot cells".into());
+    }
     model
         .deserialize_model_settings(&settings.model_settings.to_string())
         .map_err(|e| format!("Error parsing model settings: {}", e))?;
