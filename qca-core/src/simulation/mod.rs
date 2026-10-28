@@ -121,9 +121,14 @@ fn run_simulation_internal(
 
     let update_order = model_settings.get_update_order();
     let update_seed = model_settings.get_update_seed();
+    // Base update order, built once: storage order, or its reverse.
     let mut update_indices: Vec<QCACellIndex> = (0..layers.len())
         .flat_map(|l| (0..layers[l].cells.len()).map(move |c| QCACellIndex::new(l, c)))
         .collect();
+    let mut shuffled_indices = Vec::new();
+    if update_order == UpdateOrder::Reverse {
+        update_indices.reverse();
+    }
 
     let mut simulated_samples: usize = 0;
     for i in 0..num_samples {
@@ -153,18 +158,20 @@ fn run_simulation_internal(
 
             sim_model.pre_calculate(&clock_states, &input_states);
 
-            match update_order {
-                UpdateOrder::Reverse => update_indices.reverse(),
-                UpdateOrder::Random => shuffle(
-                    &mut update_indices,
+            let order = if update_order == UpdateOrder::Random {
+                // Shuffle a fresh copy of the storage order every iteration.
+                shuffled_indices.clone_from(&update_indices);
+                shuffle(
+                    &mut shuffled_indices,
                     update_seed ^ ((i as u64) << 24) ^ (j as u64),
-                ),
-                _ => {}
-            }
-            for index in &update_indices {
+                );
+                &shuffled_indices
+            } else {
+                &update_indices
+            };
+            for index in order {
                 stable &= sim_model.calculate(index.clone());
             }
-            update_indices.sort();
 
             j += 1;
         }
