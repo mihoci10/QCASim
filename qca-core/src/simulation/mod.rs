@@ -5,7 +5,7 @@ use crate::objects::layer::QCALayer;
 use crate::simulation::clock_generator::{ClockConfig, ClockGenerator};
 use crate::simulation::file::{QCACellData, QCASimulationData};
 use crate::simulation::input_generator::{CellInputConfig, CellInputGenerator};
-use crate::simulation::model::SimulationModelTrait;
+use crate::simulation::model::{SimulationModelTrait, UpdateOrder};
 use chrono::Local;
 use log::{debug, info, trace, warn};
 use std::collections::HashMap;
@@ -117,6 +117,12 @@ fn run_simulation_internal(
 
     sim_model.initiate(Box::new(layers.clone()), architectures.clone());
 
+    let update_order = model_settings.get_update_order();
+    let update_seed = model_settings.get_update_seed();
+    let mut update_indices: Vec<QCACellIndex> = (0..layers.len())
+        .flat_map(|l| (0..layers[l].cells.len()).map(move |c| QCACellIndex::new(l, c)))
+        .collect();
+
     let mut simulated_samples: usize = 0;
     for i in 0..num_samples {
         if check_cancelled(cancel_rx) {
@@ -145,11 +151,18 @@ fn run_simulation_internal(
 
             sim_model.pre_calculate(&clock_states, &input_states);
 
-            for l in 0..layers.len() {
-                for c in 0..layers[l].cells.len() {
-                    stable &= sim_model.calculate(QCACellIndex::new(l, c));
-                }
+            match update_order {
+                UpdateOrder::Reverse => update_indices.reverse(),
+                UpdateOrder::Random => shuffle(
+                    &mut update_indices,
+                    update_seed ^ ((i as u64) << 24) ^ (j as u64),
+                ),
+                _ => {}
             }
+            for index in &update_indices {
+                stable &= sim_model.calculate(index.clone());
+            }
+            update_indices.sort();
 
             j += 1;
         }
@@ -265,4 +278,19 @@ pub fn get_num_samples(
     });
 
     input_generator.num_samples()
+}
+
+/// Reproducible Fisher-Yates shuffle with a xorshift64* generator.
+fn shuffle<T>(items: &mut [T], seed: u64) {
+    let mut state = seed ^ 0x9E37_79B9_7F4A_7C15;
+    if state == 0 {
+        state = 1;
+    }
+    for k in (1..items.len()).rev() {
+        state ^= state >> 12;
+        state ^= state << 25;
+        state ^= state >> 27;
+        let r = state.wrapping_mul(0x2545_F491_4F6C_DD1D);
+        items.swap(k, (r % (k as u64 + 1)) as usize);
+    }
 }

@@ -1,6 +1,8 @@
 use super::{CellType, QCACellArchitecture, QCACellIndex, QCALayer, SimulationModelTrait};
 use crate::objects::cell::{polarization_to_dot_probability_distribution, QCACell};
-use crate::simulation::model::{ClockGeneratorSettingsTrait, SimulationModelSettingsTrait};
+use crate::simulation::model::{
+    ClockGeneratorSettingsTrait, SimulationModelSettingsTrait, UpdateOrder,
+};
 use crate::simulation::settings::{InputDescriptor, OptionsEntry, OptionsList};
 use nalgebra::{distance, DMatrix, DMatrixView, DVector, DVectorView, Point3, Schur};
 use serde::{Deserialize, Serialize};
@@ -386,6 +388,19 @@ pub struct ICHAModelSettings {
 
     #[serde_inline_default(1e-6)]
     schur_convergence_tolerance: f64,
+
+    /// 0 = sequential (in place, storage order), 1 = reverse, 2 = random,
+    /// 3 = simultaneous (Jacobi with mixing); see `UpdateOrder`.
+    #[serde_inline_default(0)]
+    update_order: usize,
+
+    /// Seed of the random update order.
+    #[serde_inline_default(0)]
+    update_seed: usize,
+
+    /// Weight of the new state in the simultaneous update (0 < w <= 1).
+    #[serde_inline_default(0.5)]
+    update_mixing: f64,
 }
 
 #[serde_inline_default]
@@ -438,6 +453,12 @@ impl SimulationModelSettingsTrait for ICHAModelSettings {
     }
     fn get_convergence_tolerance(&self) -> f64 {
         self.convergence_tolerance
+    }
+    fn get_update_order(&self) -> UpdateOrder {
+        UpdateOrder::from_index(self.update_order)
+    }
+    fn get_update_seed(&self) -> u64 {
+        self.update_seed as u64
     }
 }
 
@@ -524,6 +545,39 @@ impl SimulationModelTrait for ICHAModel {
                 descriptor: InputDescriptor::NumberInput {
                     min: Some(0.0),
                     max: None,
+                    unit: None,
+                    whole_num: false,
+                },
+            },
+            OptionsEntry::Input {
+                unique_id: "update_order".into(),
+                name: "Cell update order".into(),
+                description: "Order of the cell updates within an iteration: 0 = sequential in place (layout order), 1 = reverse, 2 = random (seeded), 3 = simultaneous (Jacobi with mixing)".into(),
+                descriptor: InputDescriptor::NumberInput {
+                    min: Some(0.0),
+                    max: Some(3.0),
+                    unit: None,
+                    whole_num: true,
+                },
+            },
+            OptionsEntry::Input {
+                unique_id: "update_seed".into(),
+                name: "Random order seed".into(),
+                description: "Seed of the random update order (order 2)".into(),
+                descriptor: InputDescriptor::NumberInput {
+                    min: Some(0.0),
+                    max: None,
+                    unit: None,
+                    whole_num: true,
+                },
+            },
+            OptionsEntry::Input {
+                unique_id: "update_mixing".into(),
+                name: "Mixing weight".into(),
+                description: "Weight of the new state in the simultaneous update (order 3)".into(),
+                descriptor: InputDescriptor::NumberInput {
+                    min: Some(0.001),
+                    max: Some(1.0),
                     unit: None,
                     whole_num: false,
                 },
@@ -758,11 +812,15 @@ impl SimulationModelTrait for ICHAModel {
             + &internal_cell.dynamic_hamilton_matrix * clock_value;
 
         internal_cell.dot_potential = DVector::zeros(n);
-        for (ind, c) in self
-            .index_cells_static_map
-            .iter()
-            .chain(self.index_cells_write_map.iter())
-        {
+        let simultaneous = self.model_settings.get_update_order() == UpdateOrder::Simultaneous;
+        // Sequential orders see the states already updated in this iteration;
+        // the simultaneous update sees only those of the previous iteration.
+        let neighbours = if simultaneous {
+            &self.index_cells_read_map
+        } else {
+            &self.index_cells_write_map
+        };
+        for (ind, c) in self.index_cells_static_map.iter().chain(neighbours.iter()) {
             if *ind != cell_ind {
                 for i in 0..n {
                     for j in 0..n {
@@ -836,6 +894,12 @@ impl SimulationModelTrait for ICHAModel {
                     );
                 }
             }
+        }
+
+        if simultaneous {
+            let w = self.model_settings.update_mixing.clamp(1e-3, 1.0);
+            internal_cell.dot_charge_probability =
+                &internal_cell.dot_charge_probability * w + &old_charge_probability * (1.0 - w);
         }
 
         let mut stable: bool = true;
