@@ -15,6 +15,7 @@ use std::thread::JoinHandle;
 use tokio::sync::oneshot;
 
 pub mod model;
+pub mod models;
 pub mod settings;
 
 //pub mod bistable;
