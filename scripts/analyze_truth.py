@@ -23,6 +23,9 @@ def _run_analysis(filename: str, delays: list[str]):
     for delay in delays:
         delay_args += ['-d', delay]
     result = subprocess.run([QCA_SIM, 'truth', filename] + delay_args, capture_output=True, text=True)
+    if result.returncode != 0:
+        # An empty table would otherwise silently score as 100 % accurate.
+        raise RuntimeError(f'qca-sim truth failed for {filename}: {result.stderr.strip()}')
     parsed_result = _parse_truth_table(result.stdout)
     return parsed_result
 

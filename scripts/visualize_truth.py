@@ -53,7 +53,10 @@ def _merge_truth_analysis(truth_analysis_filenames: list[str]) -> tuple[np.ndarr
 
     return (x_coords, y_coords, accuracies)
 
-def visualize_truth_analysis(truth_analysis_filenames: list[str], output_filename: str|None):
+def visualize_truth_analysis(truth_analysis_filenames: list[str], output_filename: str|None,
+                             x_label: str = 'Medcelična razdalja ($nm$)',
+                             y_label: str = 'Radij razporeditve kvantnih pik ($nm$)',
+                             accuracy_label: str = 'Pravilnost'):
     (x_coords, y_coords, accuracies) = _merge_truth_analysis(truth_analysis_filenames)
 
     fig = plt.figure(figsize=(10, 5))
@@ -77,12 +80,12 @@ def visualize_truth_analysis(truth_analysis_filenames: list[str], output_filenam
     contour_filled = ax1.contourf(grid_x, grid_y, grid_accuracy,
                                 cmap='viridis', alpha=1.0)
 
-    ax1.set_xlabel('Medcelična razdalja ($nm$)', fontsize=12)
-    ax1.set_ylabel('Radij razporeditve kvantnih pik ($nm$)', fontsize=12)
+    ax1.set_xlabel(x_label, fontsize=12)
+    ax1.set_ylabel(y_label, fontsize=12)
     ax1.grid(True, alpha=0.3)
 
     cbar1 = plt.colorbar(contour_filled, ax=ax1, shrink=1.0)
-    cbar1.set_label('Pravilnost', fontsize=12)
+    cbar1.set_label(accuracy_label, fontsize=12)
 
     # author_x = 110
     # author_y = 26.13 
