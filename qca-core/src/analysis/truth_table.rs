@@ -107,12 +107,15 @@ fn combination_grouping(design: &QCADesign) -> Option<(usize, usize)> {
         .simulation_settings
         .selected_simulation_model_id
         .as_ref()?;
-    let clock_generator_settings = &design
+    let settings = design
         .simulation_settings
         .simulation_model_settings
-        .get(model_id)?
-        .clock_generator_settings;
-    let num_cycles = clock_generator_settings.get("num_cycles")?.as_u64()? as usize;
+        .get(model_id)?;
+    let mut model = crate::simulation::models::create_sim_model(model_id)?;
+    model
+        .deserialize_clock_generator_settings(&settings.clock_generator_settings.to_string())
+        .ok()?;
+    let num_cycles = model.get_clock_generator_settings().get_num_cycles();
 
     let polarization_n = design
         .layers
@@ -275,22 +278,17 @@ pub fn generate_truth_table(
             // large clock_skip_cycles delay still needs its full share of
             // clock_regions to skip through before grouping, or it would be
             // starved of real data instead of just losing the settling tail.
-            let mut logical_data: Vec<Option<char>> = match grouping {
+            let logical_data: Vec<Option<char>> = match grouping {
                 Some((num_combinations, num_cycles)) => {
                     let mut rows: Vec<Option<char>> = region_values
                         .chunks(num_cycles)
                         .map(|chunk| chunk.last().copied().flatten())
                         .collect();
-                    rows.truncate(num_combinations);
+                    rows.resize(num_combinations, None);
                     rows
                 }
                 None => region_values,
             };
-            while grouping
-                .is_some_and(|(num_combinations, _)| logical_data.len() < num_combinations)
-            {
-                logical_data.push(None);
-            }
 
             let cell_label = if let Some(label) = &design_cell.label {
                 label.clone()

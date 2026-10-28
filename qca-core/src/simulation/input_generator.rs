@@ -150,18 +150,10 @@ impl CellInputGenerator {
         // A = -1 / B = +1 convention, while every following
         // polarization's states run positive-then-negative (C, D, ...)
         // to match its A/B-independent labeling.
-        let signal_polarity = if polarization_value == 0 {
-            if offset == 0 {
-                -1.0
-            } else {
-                1.0
-            }
+        let signal_polarity = if (polarization_value == 0) == (offset == 0) {
+            -1.0
         } else {
-            if offset == 0 {
-                1.0
-            } else {
-                -1.0
-            }
+            1.0
         };
 
         // Only generate signal for the corresponding polarization
