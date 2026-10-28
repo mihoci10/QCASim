@@ -28,6 +28,13 @@ pub struct QCACell {
     pub label: Option<String>,
 }
 
+impl QCACell {
+    /// Index (0-3) of the clock zone that drives this cell.
+    pub fn clock_zone(&self) -> usize {
+        (self.clock_phase_shift.rem_euclid(360.0) / 90.0) as usize
+    }
+}
+
 impl QCACellIndex {
     pub fn new(layer: usize, cell: usize) -> Self {
         QCACellIndex { layer, cell }

@@ -487,11 +487,9 @@ impl SimulationModelTrait for BistableModel {
     }
 
     fn calculate(&mut self, cell_ind: QCACellIndex) -> bool {
-        let cell_options = self.index_cells_write_map.get_mut(&cell_ind);
-        if cell_options.is_none() {
+        let Some(cell) = self.index_cells_write_map.get(&cell_ind) else {
             return true;
-        }
-        let mut cell = cell_options.unwrap().clone();
+        };
 
         let mut polar_math = self
             .neighborhood_map
@@ -520,7 +518,7 @@ impl SimulationModelTrait for BistableModel {
             })
             .sum::<f64>();
 
-        let clock_index = (cell.clock_phase_shift.rem_euclid(360.0) / 90.0) as usize;
+        let clock_index = cell.clock_zone();
 
         // The clock generator emits the tunneling energy as a negative value
         // (ICHA's Hamiltonian convention); the bistable approximation needs its
@@ -547,8 +545,10 @@ impl SimulationModelTrait for BistableModel {
                 stable = false;
             }
         }
-        cell.dot_probability_distribution = new_dot_probability;
-        self.index_cells_write_map.insert(cell_ind, cell);
+        self.index_cells_write_map
+            .get_mut(&cell_ind)
+            .unwrap()
+            .dot_probability_distribution = new_dot_probability;
 
         stable
     }

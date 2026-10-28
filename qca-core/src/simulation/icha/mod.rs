@@ -823,7 +823,7 @@ impl SimulationModelTrait for ICHAModel {
         let n = cell_architecture.dot_count as usize;
         let ro_plus = 2.0 / n as f64;
 
-        let clock_index = (internal_cell.cell.clock_phase_shift.rem_euclid(360.0) / 90.0) as usize;
+        let clock_index = internal_cell.cell.clock_zone();
         let clock_value = self.clock_states[clock_index];
 
         internal_cell.hamilton_matrix = &internal_cell.static_hamilton_matrix
