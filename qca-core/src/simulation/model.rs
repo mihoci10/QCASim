@@ -4,9 +4,38 @@ use crate::objects::layer::QCALayer;
 use crate::simulation::settings::OptionsList;
 use std::collections::HashMap;
 
+/// Order of the cell updates within one iteration.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum UpdateOrder {
+    /// In place, in storage order (Gauss-Seidel).
+    Sequential,
+    Reverse,
+    /// In place, in a seeded order that changes every iteration.
+    Random,
+    /// From the previous iteration's states (Jacobi), with linear mixing.
+    Simultaneous,
+}
+
+impl UpdateOrder {
+    pub fn from_index(index: usize) -> Self {
+        match index {
+            1 => UpdateOrder::Reverse,
+            2 => UpdateOrder::Random,
+            3 => UpdateOrder::Simultaneous,
+            _ => UpdateOrder::Sequential,
+        }
+    }
+}
+
 pub trait SimulationModelSettingsTrait {
     fn get_max_iterations(&self) -> usize;
     fn get_convergence_tolerance(&self) -> f64;
+    fn get_update_order(&self) -> UpdateOrder {
+        UpdateOrder::Sequential
+    }
+    fn get_update_seed(&self) -> u64 {
+        0
+    }
 }
 
 pub trait ClockGeneratorSettingsTrait {

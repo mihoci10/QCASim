@@ -83,6 +83,28 @@ fn generate_clock_regions(
     })
 }
 
+/// `(num_combinations, num_cycles)` of the input sweep, or None if unknown.
+fn combination_grouping(design: &QCADesign) -> Option<(usize, usize)> {
+    let (model, custom_input_sequence) =
+        crate::simulation::models::prepare_simulation(design).ok()?;
+    let num_cycles = model.get_clock_generator_settings().get_num_cycles();
+
+    let polarization_n = design
+        .layers
+        .first()
+        .and_then(|layer| design.cell_architectures.get(&layer.cell_architecture_id))?
+        .dot_count as usize
+        / 4;
+
+    let num_combinations = crate::simulation::input_generator::num_combinations(
+        polarization_n,
+        crate::simulation::get_num_inputs(&design.layers),
+        custom_input_sequence.as_deref(),
+    );
+
+    Some((num_combinations, num_cycles.max(1)))
+}
+
 fn clean_clock_regions(clock_regions: &mut [Vec<ClockRegion>; 4]) {
     for i in (0..4).rev() {
         for j in (0..i).rev() {
@@ -121,9 +143,9 @@ fn generate_logical_value(
             1 => {
                 let value = data_slice[i];
                 if value > polarization_high {
-                    Some('A')
-                } else if value < polarization_low {
                     Some('B')
+                } else if value < polarization_low {
+                    Some('A')
                 } else {
                     None
                 }
@@ -132,9 +154,9 @@ fn generate_logical_value(
                 let value_a = data_slice[i];
                 let value_b = data_slice[i + 1];
                 if value_a > polarization_high {
-                    Some('A')
-                } else if value_a < polarization_low {
                     Some('B')
+                } else if value_a < polarization_low {
+                    Some('A')
                 } else if value_b > polarization_high {
                     Some('C')
                 } else if value_b < polarization_low {
@@ -173,25 +195,30 @@ pub fn generate_truth_table(
     let mut clock_regions = generate_clock_regions(&simulation.clock_data, clock_threshold);
     clean_clock_regions(&mut clock_regions);
 
+    let grouping = combination_grouping(design);
+
     let entries = cells
         .iter()
-        .map(|cell| {
+        .filter_map(|cell| {
+            // `cells` may not match this design; a panic would abort the app.
             let cell_data = simulation
                 .cells_data
                 .iter()
-                .find(|cell_data| cell_data.index.eq(cell))
-                .unwrap();
+                .find(|cell_data| cell_data.index.eq(cell))?;
 
-            let clock_phase_shift = design.layers[cell.layer].cells[cell.cell].clock_phase_shift;
-            let clock_index = (clock_phase_shift / 90f64).round() as usize % 4;
+            let layer = design.layers.get(cell.layer)?;
+            let design_cell = layer.cells.get(cell.cell)?;
+
+            let clock_index = design_cell.clock_zone();
 
             let clock_skip_cycles = *cell_clock_delay.get(&cell).or(Some(&0)).unwrap();
 
-            let polarization_count = &design.cell_architectures
-                [&design.layers[cell.layer].cell_architecture_id]
+            let polarization_count = design
+                .cell_architectures
+                .get(&layer.cell_architecture_id)?
                 .dot_count
                 / 4;
-            let logical_data = clock_regions[clock_index]
+            let region_values: Vec<Option<char>> = clock_regions[clock_index]
                 .iter()
                 .skip(clock_skip_cycles)
                 .map(|clock_region| {
@@ -203,17 +230,29 @@ pub fn generate_truth_table(
                         value_threshold,
                     )
                 })
-                .chain((0..clock_skip_cycles).map(|_| None))
-                .collect::<Vec<_>>();
+                .collect();
 
-            let cell_label = if let Some(label) = &design.layers[cell.layer].cells[cell.cell].label
-            {
+            // One row per combination from its last cycle, dropping the settling
+            // tail. Skip the cell's delay before chunking.
+            let logical_data: Vec<Option<char>> = match grouping {
+                Some((num_combinations, num_cycles)) => {
+                    let mut rows: Vec<Option<char>> = region_values
+                        .chunks(num_cycles)
+                        .map(|chunk| chunk.last().copied().flatten())
+                        .collect();
+                    rows.resize(num_combinations, None);
+                    rows
+                }
+                None => region_values,
+            };
+
+            let cell_label = if let Some(label) = &design_cell.label {
                 label.clone()
             } else {
                 cell.to_string()
             };
 
-            (cell_label, logical_data)
+            Some((cell_label, logical_data))
         })
         .collect::<Vec<_>>();
 

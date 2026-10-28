@@ -36,6 +36,9 @@ pub enum InputDescriptor {
         max: Option<f32>,
         unit: Option<String>,
         whole_num: bool,
+        /// Labels of the values 0, 1, 2, ... of a whole-number choice.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        choices: Option<Vec<String>>,
     },
     StringInput {},
     BoolInput {},

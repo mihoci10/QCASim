@@ -8,7 +8,10 @@ use crate::simulation::model::{ClockGeneratorSettingsTrait, SimulationModelSetti
 use crate::simulation::settings::{InputDescriptor, OptionsEntry, OptionsList};
 use serde::{Deserialize, Serialize};
 use serde_inline_default::serde_inline_default;
-use std::{collections::HashMap, mem};
+use std::{
+    collections::{BTreeMap, HashMap},
+    mem,
+};
 
 struct BistableNeighbor {
     cell_index: QCACellIndex,
@@ -18,13 +21,13 @@ struct BistableNeighbor {
 pub struct BistableModel {
     clock_states: [f64; 4],
     input_states: Vec<f64>,
-    index_cells_static_map: HashMap<QCACellIndex, QCACell>,
-    index_cells_read_map: HashMap<QCACellIndex, QCACell>,
-    index_cells_write_map: HashMap<QCACellIndex, QCACell>,
-    cell_input_map: HashMap<QCACellIndex, usize>,
+    index_cells_static_map: BTreeMap<QCACellIndex, QCACell>,
+    index_cells_read_map: BTreeMap<QCACellIndex, QCACell>,
+    index_cells_write_map: BTreeMap<QCACellIndex, QCACell>,
+    cell_input_map: BTreeMap<QCACellIndex, usize>,
     active_layer: i8,
     polarizations: [Vec<f64>; 2],
-    neighborhood_map: HashMap<QCACellIndex, Vec<BistableNeighbor>>,
+    neighborhood_map: BTreeMap<QCACellIndex, Vec<BistableNeighbor>>,
     model_settings: BistableModelSettings,
     clock_settings: BistableClockGeneratorSettings,
 }
@@ -51,10 +54,11 @@ pub struct BistableClockGeneratorSettings {
     #[serde_inline_default(1)]
     num_cycles: usize,
 
-    #[serde_inline_default(1e-3)]
+    // QCADesigner's bistable clock low/high (3.8e-23 J and 9.8e-22 J) in meV.
+    #[serde_inline_default(0.2372)]
     amplitude_min: f64,
 
-    #[serde_inline_default(65.0)]
+    #[serde_inline_default(6.1167)]
     amplitude_max: f64,
 
     #[serde_inline_default(0)]
@@ -109,12 +113,12 @@ impl BistableModel {
             clock_states: [0.0, 0.0, 0.0, 0.0],
             input_states: vec![],
             active_layer: 0,
-            index_cells_static_map: HashMap::new(),
-            index_cells_read_map: HashMap::new(),
-            index_cells_write_map: HashMap::new(),
-            cell_input_map: HashMap::new(),
+            index_cells_static_map: BTreeMap::new(),
+            index_cells_read_map: BTreeMap::new(),
+            index_cells_write_map: BTreeMap::new(),
+            cell_input_map: BTreeMap::new(),
             polarizations: [vec![], vec![]],
-            neighborhood_map: HashMap::new(),
+            neighborhood_map: BTreeMap::new(),
             model_settings: BistableModelSettings::new(),
             clock_settings: BistableClockGeneratorSettings::new(),
         }
@@ -206,7 +210,9 @@ impl BistableModel {
             }
         }
 
-        (1.0 / (FOUR_PI_EPSILON * permitivity)) * (energy_diff - energy_same)
+        const JOULES_PER_MEV: f64 = 1.602176634e-22;
+
+        (1.0 / (FOUR_PI_EPSILON * permitivity)) * (energy_diff - energy_same) / JOULES_PER_MEV
     }
 }
 
@@ -240,6 +246,7 @@ impl SimulationModelTrait for BistableModel {
                     max: None,
                     unit: None,
                     whole_num: true,
+                    choices: None,
                 },
             },
             OptionsEntry::Input {
@@ -251,6 +258,7 @@ impl SimulationModelTrait for BistableModel {
                     max: Some(1.0),
                     unit: None,
                     whole_num: false,
+                    choices: None,
                 },
             },
             OptionsEntry::Input {
@@ -262,6 +270,7 @@ impl SimulationModelTrait for BistableModel {
                     max: None,
                     unit: Some("nm".into()),
                     whole_num: false,
+                    choices: None,
                 },
             },
             OptionsEntry::Input {
@@ -273,6 +282,7 @@ impl SimulationModelTrait for BistableModel {
                     max: None,
                     unit: None,
                     whole_num: false,
+                    choices: None,
                 },
             },
         ]
@@ -289,39 +299,43 @@ impl SimulationModelTrait for BistableModel {
                     max: None,
                     unit: None,
                     whole_num: true,
+                    choices: None,
                 },
             },
             OptionsEntry::Input {
                 unique_id: "amplitude_min".to_string(),
                 name: "Minimum amplitude".to_string(),
-                description: "The minimum value of the clock signal".to_string(),
+                description: "Tunneling energy of the clock signal while cells hold their state (clock low)".to_string(),
                 descriptor: InputDescriptor::NumberInput {
-                    min: None,
+                    min: Some(0.0),
                     max: None,
-                    unit: None,
+                    unit: Some("meV".into()),
                     whole_num: false,
+                    choices: None,
                 },
             },
             OptionsEntry::Input {
                 unique_id: "amplitude_max".to_string(),
                 name: "Maximum amplitude".to_string(),
-                description: "The maximum value of the clock signal".to_string(),
+                description: "Tunneling energy of the clock signal while cells are released (clock high)".to_string(),
                 descriptor: InputDescriptor::NumberInput {
-                    min: None,
+                    min: Some(0.0),
                     max: None,
-                    unit: None,
+                    unit: Some("meV".into()),
                     whole_num: false,
+                    choices: None,
                 },
             },
             OptionsEntry::Input {
                 unique_id: "extra_periods".to_string(),
-                name: "Extra periods".to_string(),
-                description: "Extra clock periods at the end to account for delays".to_string(),
+                name: "Extra clock periods".to_string(),
+                description: "Extra full clock cycles (phases 0/90/180/270) to run after the input sweep, giving cells with a large clock-phase delay - e.g. far down a propagating wire - time to settle before the simulation ends. Actual extra cycles simulated = this value x the cell architecture's polarization count (1 for two-state cells, 2 for tri/quad-state cells).".to_string(),
                 descriptor: InputDescriptor::NumberInput {
                     min: Some(0.0),
                     max: None,
                     unit: None,
                     whole_num: true,
+                    choices: None,
                 },
             },
             OptionsEntry::Input {
@@ -334,6 +348,7 @@ impl SimulationModelTrait for BistableModel {
                     max: None,
                     unit: None,
                     whole_num: true,
+                    choices: None,
                 },
             },
         ]
@@ -472,16 +487,15 @@ impl SimulationModelTrait for BistableModel {
     }
 
     fn calculate(&mut self, cell_ind: QCACellIndex) -> bool {
-        let cell_options = self.index_cells_write_map.get_mut(&cell_ind);
-        if cell_options.is_none() {
+        let Some(cell) = self.index_cells_write_map.get(&cell_ind) else {
             return true;
-        }
-        let mut cell = cell_options.unwrap().clone();
+        };
 
         let mut polar_math = self
             .neighborhood_map
             .get(&cell_ind)
-            .unwrap()
+            .map(|neighbours| neighbours.as_slice())
+            .unwrap_or_default()
             .iter()
             .map(|neighbour| {
                 let neighbour_cell = {
@@ -504,9 +518,11 @@ impl SimulationModelTrait for BistableModel {
             })
             .sum::<f64>();
 
-        let clock_index = (cell.clock_phase_shift as i32 % 90) as usize;
+        let clock_index = cell.clock_zone();
 
-        polar_math /= 2.0 * self.clock_states[clock_index];
+        // The clock generator emits negative values; a zero clock latches the cell.
+        let tunneling_energy = self.clock_states[clock_index].abs().max(f64::MIN_POSITIVE);
+        polar_math /= 2.0 * tunneling_energy;
 
         let new_polarization = if polar_math > 1000.0 {
             1.0
@@ -527,7 +543,10 @@ impl SimulationModelTrait for BistableModel {
                 stable = false;
             }
         }
-        cell.dot_probability_distribution = new_dot_probability;
+        self.index_cells_write_map
+            .get_mut(&cell_ind)
+            .unwrap()
+            .dot_probability_distribution = new_dot_probability;
 
         stable
     }
@@ -543,5 +562,82 @@ impl SimulationModelTrait for BistableModel {
             return c.dot_probability_distribution.clone();
         }
         panic!("Cell not found");
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::simulation::run_simulation;
+
+    const ARCHITECTURE_ID: &str = "qcadesigner";
+
+    fn cell(x: f64, typ: CellType, clock_phase_shift: f64) -> QCACell {
+        QCACell {
+            position: [x, 0.0],
+            rotation: 0.0,
+            typ,
+            clock_phase_shift,
+            dot_probability_distribution: polarization_to_dot_probability_distribution(&[0.0]),
+            label: None,
+        }
+    }
+
+    fn simulate(cells: Vec<QCACell>) -> crate::simulation::file::QCASimulationData {
+        let mut layer = QCALayer::new("Main".into(), ARCHITECTURE_ID.into(), 0.0);
+        layer.cells = cells;
+        let architectures = HashMap::from([(
+            ARCHITECTURE_ID.to_string(),
+            QCACellArchitecture::new(18.0, 5.0, 4, 9.0),
+        )]);
+        run_simulation(
+            Box::new(BistableModel::new()),
+            vec![layer],
+            architectures,
+            None,
+        )
+    }
+
+    /// Polarization of stored cell `stored` during `combination` (20 samples each).
+    fn held_polarization(
+        data: &crate::simulation::file::QCASimulationData,
+        stored: usize,
+        combination: usize,
+    ) -> f64 {
+        data.cells_data[stored].data[combination * 20 + 7]
+    }
+
+    #[test]
+    fn wire_follows_its_input() {
+        let mut cells = vec![cell(0.0, CellType::Input, 0.0)];
+        cells.extend((1..4).map(|i| cell(20.0 * i as f64, CellType::Normal, 0.0)));
+        cells.push(cell(80.0, CellType::Output, 0.0));
+
+        let data = simulate(cells);
+
+        // Stored cells: input 0, output 1. Combination 0 drives -1, 1 drives +1.
+        assert!(held_polarization(&data, 1, 0) < -0.9);
+        assert!(held_polarization(&data, 1, 1) > 0.9);
+    }
+
+    #[test]
+    fn isolated_cell_does_not_panic() {
+        let data = simulate(vec![
+            cell(0.0, CellType::Input, 0.0),
+            cell(1000.0, CellType::Output, 0.0),
+        ]);
+
+        assert_eq!(held_polarization(&data, 1, 0), 0.0);
+    }
+
+    #[test]
+    fn clock_phase_selects_the_clock_zone() {
+        let mut cells = vec![cell(0.0, CellType::Input, 0.0)];
+        cells.extend((1..4).map(|i| cell(20.0 * i as f64, CellType::Normal, 0.0)));
+        cells.push(cell(80.0, CellType::Output, 45.0));
+
+        let data = simulate(cells);
+
+        assert!(held_polarization(&data, 1, 1) > 0.9);
     }
 }

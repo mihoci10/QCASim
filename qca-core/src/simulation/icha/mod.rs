@@ -1,11 +1,13 @@
 use super::{CellType, QCACellArchitecture, QCACellIndex, QCALayer, SimulationModelTrait};
 use crate::objects::cell::{polarization_to_dot_probability_distribution, QCACell};
-use crate::simulation::model::{ClockGeneratorSettingsTrait, SimulationModelSettingsTrait};
+use crate::simulation::model::{
+    ClockGeneratorSettingsTrait, SimulationModelSettingsTrait, UpdateOrder,
+};
 use crate::simulation::settings::{InputDescriptor, OptionsEntry, OptionsList};
 use nalgebra::{distance, DMatrix, DMatrixView, DVector, DVectorView, Point3, Schur};
 use serde::{Deserialize, Serialize};
 use serde_inline_default::serde_inline_default;
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::mem;
 
 const E_CHARGE: f64 = 1.602_176_634e-19; // Coulombs [C]
@@ -386,6 +388,17 @@ pub struct ICHAModelSettings {
 
     #[serde_inline_default(1e-6)]
     schur_convergence_tolerance: f64,
+
+    /// See `UpdateOrder::from_index`.
+    #[serde_inline_default(0)]
+    update_order: usize,
+
+    #[serde_inline_default(0)]
+    update_seed: usize,
+
+    /// Weight of the new state (0 < w <= 1).
+    #[serde_inline_default(0.5)]
+    update_mixing: f64,
 }
 
 #[serde_inline_default]
@@ -414,10 +427,10 @@ pub struct ICHAModel {
     clock_generator_settings: ICHAClockGeneratorSettings,
     layer_map: HashMap<usize, QCALayer>,
     cell_architectures_map: HashMap<String, QCACellArchitecture>,
-    cell_input_map: HashMap<QCACellIndex, usize>,
-    index_cells_static_map: HashMap<QCACellIndex, QCACellInternal>,
-    index_cells_read_map: HashMap<QCACellIndex, QCACellInternal>,
-    index_cells_write_map: HashMap<QCACellIndex, QCACellInternal>,
+    cell_input_map: BTreeMap<QCACellIndex, usize>,
+    index_cells_static_map: BTreeMap<QCACellIndex, QCACellInternal>,
+    index_cells_read_map: BTreeMap<QCACellIndex, QCACellInternal>,
+    index_cells_write_map: BTreeMap<QCACellIndex, QCACellInternal>,
 }
 
 impl ICHAModelSettings {
@@ -438,6 +451,12 @@ impl SimulationModelSettingsTrait for ICHAModelSettings {
     }
     fn get_convergence_tolerance(&self) -> f64 {
         self.convergence_tolerance
+    }
+    fn get_update_order(&self) -> UpdateOrder {
+        UpdateOrder::from_index(self.update_order)
+    }
+    fn get_update_seed(&self) -> u64 {
+        self.update_seed as u64
     }
 }
 
@@ -468,10 +487,10 @@ impl ICHAModel {
             clock_generator_settings: ICHAClockGeneratorSettings::new(),
             layer_map: HashMap::new(),
             cell_architectures_map: HashMap::new(),
-            cell_input_map: HashMap::new(),
-            index_cells_static_map: HashMap::new(),
-            index_cells_read_map: HashMap::new(),
-            index_cells_write_map: HashMap::new(),
+            cell_input_map: BTreeMap::new(),
+            index_cells_static_map: BTreeMap::new(),
+            index_cells_read_map: BTreeMap::new(),
+            index_cells_write_map: BTreeMap::new(),
         }
     }
 }
@@ -504,6 +523,7 @@ impl SimulationModelTrait for ICHAModel {
                     max: None,
                     unit: None,
                     whole_num: true,
+                    choices: None,
                 },
             },
             OptionsEntry::Input {
@@ -515,6 +535,7 @@ impl SimulationModelTrait for ICHAModel {
                     max: None,
                     unit: None,
                     whole_num: false,
+                    choices: None,
                 },
             },
             OptionsEntry::Input {
@@ -526,6 +547,48 @@ impl SimulationModelTrait for ICHAModel {
                     max: None,
                     unit: None,
                     whole_num: false,
+                    choices: None,
+                },
+            },
+            OptionsEntry::Input {
+                unique_id: "update_order".into(),
+                name: "Cell update order".into(),
+                description: "Order of the cell updates within an iteration: 0 = sequential in place (layout order), 1 = reverse, 2 = random (seeded), 3 = simultaneous (Jacobi with mixing)".into(),
+                descriptor: InputDescriptor::NumberInput {
+                    min: Some(0.0),
+                    max: Some(3.0),
+                    unit: None,
+                    whole_num: true,
+                    choices: Some(vec![
+                        "Sequential (layout order)".into(),
+                        "Reverse".into(),
+                        "Random (seeded)".into(),
+                        "Simultaneous (with mixing)".into(),
+                    ]),
+                },
+            },
+            OptionsEntry::Input {
+                unique_id: "update_seed".into(),
+                name: "Random order seed".into(),
+                description: "Seed of the random update order (order 2)".into(),
+                descriptor: InputDescriptor::NumberInput {
+                    min: Some(0.0),
+                    max: None,
+                    unit: None,
+                    whole_num: true,
+                    choices: None,
+                },
+            },
+            OptionsEntry::Input {
+                unique_id: "update_mixing".into(),
+                name: "Mixing weight".into(),
+                description: "Weight of the new state in the simultaneous update (order 3)".into(),
+                descriptor: InputDescriptor::NumberInput {
+                    min: Some(0.001),
+                    max: Some(1.0),
+                    unit: None,
+                    whole_num: false,
+                    choices: None,
                 },
             },
             OptionsEntry::Header {
@@ -540,6 +603,7 @@ impl SimulationModelTrait for ICHAModel {
                     max: None,
                     unit: None,
                     whole_num: true,
+                    choices: None,
                 },
             },
             OptionsEntry::Input {
@@ -551,6 +615,7 @@ impl SimulationModelTrait for ICHAModel {
                     max: None,
                     unit: None,
                     whole_num: false,
+                    choices: None,
                 },
             },
         ]
@@ -567,6 +632,7 @@ impl SimulationModelTrait for ICHAModel {
                     max: None,
                     unit: None,
                     whole_num: true,
+                    choices: None,
                 },
             },
             OptionsEntry::Input {
@@ -578,6 +644,7 @@ impl SimulationModelTrait for ICHAModel {
                     max: None,
                     unit: None,
                     whole_num: false,
+                    choices: None,
                 },
             },
             OptionsEntry::Input {
@@ -589,17 +656,19 @@ impl SimulationModelTrait for ICHAModel {
                     max: None,
                     unit: None,
                     whole_num: false,
+                    choices: None,
                 },
             },
             OptionsEntry::Input {
                 unique_id: "extra_periods".into(),
                 name: "Extra clock periods".into(),
-                description: "Number of extra clock periods at the end".into(),
+                description: "Extra full clock cycles (phases 0/90/180/270) to run after the input sweep, giving cells with a large clock-phase delay - e.g. far down a propagating wire - time to settle before the simulation ends. Actual extra cycles simulated = this value x the cell architecture's polarization count (1 for two-state cells, 2 for tri/quad-state cells).".into(),
                 descriptor: InputDescriptor::NumberInput {
                     min: Some(0.0),
                     max: None,
                     unit: None,
                     whole_num: true,
+                    choices: None,
                 },
             },
             OptionsEntry::Input {
@@ -611,6 +680,7 @@ impl SimulationModelTrait for ICHAModel {
                     max: None,
                     unit: None,
                     whole_num: true,
+                    choices: None,
                 },
             },
         ]
@@ -751,18 +821,21 @@ impl SimulationModelTrait for ICHAModel {
         let n = cell_architecture.dot_count as usize;
         let ro_plus = 2.0 / n as f64;
 
-        let clock_index = (internal_cell.cell.clock_phase_shift.rem_euclid(360.0) / 90.0) as usize;
+        let clock_index = internal_cell.cell.clock_zone();
         let clock_value = self.clock_states[clock_index];
 
         internal_cell.hamilton_matrix = &internal_cell.static_hamilton_matrix
             + &internal_cell.dynamic_hamilton_matrix * clock_value;
 
         internal_cell.dot_potential = DVector::zeros(n);
-        for (ind, c) in self
-            .index_cells_static_map
-            .iter()
-            .chain(self.index_cells_write_map.iter())
-        {
+        let simultaneous = self.model_settings.get_update_order() == UpdateOrder::Simultaneous;
+        // The simultaneous update reads only the previous iteration's states.
+        let neighbours = if simultaneous {
+            &self.index_cells_read_map
+        } else {
+            &self.index_cells_write_map
+        };
+        for (ind, c) in self.index_cells_static_map.iter().chain(neighbours.iter()) {
             if *ind != cell_ind {
                 for i in 0..n {
                     for j in 0..n {
@@ -838,6 +911,7 @@ impl SimulationModelTrait for ICHAModel {
             }
         }
 
+        // Judge convergence on the unmixed update; mixing would stop too early.
         let mut stable: bool = true;
         for i in 0..n as usize {
             if (internal_cell.dot_charge_probability[i] - old_charge_probability[i]).abs()
@@ -845,6 +919,12 @@ impl SimulationModelTrait for ICHAModel {
             {
                 stable = false;
             }
+        }
+
+        if simultaneous {
+            let w = self.model_settings.update_mixing.clamp(1e-3, 1.0);
+            internal_cell.dot_charge_probability =
+                &internal_cell.dot_charge_probability * w + &old_charge_probability * (1.0 - w);
         }
 
         self.index_cells_write_map.insert(cell_ind, internal_cell);

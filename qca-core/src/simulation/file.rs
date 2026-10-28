@@ -14,8 +14,8 @@ const DESIGN_ENTRY_NAME: &str = "DESIGN.json";
 const SIM_METADATA_ENTRY_NAME: &str = "METADATA.json";
 const SIM_DATA_ENTRY_NAME: &str = "DATA.bin";
 
-#[derive(Serialize, Deserialize, Debug)]
 #[serde_inline_default]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct QCASimulationMetadata {
     #[serde_inline_default("unknown".to_string())]
     pub qca_core_version: String,
