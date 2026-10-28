@@ -83,25 +83,7 @@ fn generate_clock_regions(
     })
 }
 
-/// `run_simulation_internal` (qca-core::simulation) holds each real input
-/// combination steady for `num_cycles` full clock rotations before advancing
-/// to the next one - giving models with only local/neighborhood cell
-/// interactions (e.g. Bistable) enough clock cycles for a change to
-/// physically ripple down a multi-cell-zone wire before the input moves on.
-/// So `clock_regions[i]` contains `num_combinations * num_cycles` real
-/// regions (`num_combinations` distinct input combinations, `num_cycles`
-/// repeats of each), followed by `polarization_n * extra_periods` trailing
-/// settling regions where the input is held at zero (see
-/// CellInputGenerator) - neither the cycle repeats nor the settling tail
-/// are a distinct input combination, so a generated truth table should
-/// collapse each combination's `num_cycles` repeats into a single row (its
-/// *last*, most-settled repeat) rather than a row apiece, and never grow
-/// rows for the settling tail at all.
-///
-/// Returns `(num_combinations, num_cycles)`, or None if this can't be
-/// determined (e.g. an old file with no recorded model selection), in which
-/// case the caller should show every detected cycle as its own row rather
-/// than silently guessing.
+/// `(num_combinations, num_cycles)` of the input sweep, or None if unknown.
 fn combination_grouping(design: &QCADesign) -> Option<(usize, usize)> {
     let (model, custom_input_sequence) =
         crate::simulation::models::prepare_simulation(design).ok()?;
@@ -218,13 +200,7 @@ pub fn generate_truth_table(
     let entries = cells
         .iter()
         .filter_map(|cell| {
-            // `cells` is supplied by the caller (e.g. a UI selection made
-            // against a possibly different design/simulation than the one
-            // passed in here) and is not guaranteed to reference cells that
-            // actually exist in `design`/`simulation`. Skip anything that
-            // doesn't resolve instead of panicking - across the Tauri IPC
-            // boundary a panic here aborts the whole app rather than just
-            // failing the one request.
+            // `cells` may not match this design; a panic would abort the app.
             let cell_data = simulation
                 .cells_data
                 .iter()
@@ -233,7 +209,6 @@ pub fn generate_truth_table(
             let layer = design.layers.get(cell.layer)?;
             let design_cell = layer.cells.get(cell.cell)?;
 
-            // Same clock zone the models drive this cell with.
             let clock_index = design_cell.clock_zone();
 
             let clock_skip_cycles = *cell_clock_delay.get(&cell).or(Some(&0)).unwrap();
@@ -257,13 +232,8 @@ pub fn generate_truth_table(
                 })
                 .collect();
 
-            // Collapse each combination's `num_cycles` repeated clock
-            // regions into a single row - its last (most-settled) repeat -
-            // and drop the trailing settling-cycle regions entirely (see
-            // combination_grouping). Skip first, chunk after: a cell with a
-            // large clock_skip_cycles delay still needs its full share of
-            // clock_regions to skip through before grouping, or it would be
-            // starved of real data instead of just losing the settling tail.
+            // One row per combination from its last cycle, dropping the settling
+            // tail. Skip the cell's delay before chunking.
             let logical_data: Vec<Option<char>> = match grouping {
                 Some((num_combinations, num_cycles)) => {
                     let mut rows: Vec<Option<char>> = region_values

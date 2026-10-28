@@ -69,10 +69,6 @@ fn run_simulation_internal(
     let model_settings = sim_model.get_model_settings();
     let clock_generator_settings = sim_model.get_clock_generator_settings();
 
-    // The number of *distinct* input combinations being swept - either
-    // every possible combination, or however many vectors are in the
-    // caller's explicit sequence (which may repeat a vector, so this is not
-    // necessarily how many *unique* combinations there are).
     let num_combinations = input_generator::num_combinations(
         polarization_n as usize,
         num_inputs,
@@ -121,7 +117,6 @@ fn run_simulation_internal(
 
     let update_order = model_settings.get_update_order();
     let update_seed = model_settings.get_update_seed();
-    // Base update order, built once: storage order, or its reverse.
     let mut update_indices: Vec<QCACellIndex> = (0..layers.len())
         .flat_map(|l| (0..layers[l].cells.len()).map(move |c| QCACellIndex::new(l, c)))
         .collect();
@@ -159,7 +154,6 @@ fn run_simulation_internal(
             sim_model.pre_calculate(&clock_states, &input_states);
 
             let order = if update_order == UpdateOrder::Random {
-                // Shuffle a fresh copy of the storage order every iteration.
                 shuffled_indices.clone_from(&update_indices);
                 shuffle(
                     &mut shuffled_indices,
@@ -286,8 +280,6 @@ pub fn get_num_samples(
     ))
 }
 
-/// Input generator configuration shared by the simulation run and
-/// `get_num_samples`, without the custom input sequence.
 fn input_config(
     clock_generator_settings: &dyn ClockGeneratorSettingsTrait,
     num_inputs: usize,

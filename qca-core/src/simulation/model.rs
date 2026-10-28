@@ -4,19 +4,15 @@ use crate::objects::layer::QCALayer;
 use crate::simulation::settings::OptionsList;
 use std::collections::HashMap;
 
-/// Order in which the cells are updated within one self-consistency iteration.
+/// Order of the cell updates within one iteration.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum UpdateOrder {
-    /// In place, in the order in which the cells are stored in the design
-    /// (Gauss-Seidel); the historical behaviour.
+    /// In place, in storage order (Gauss-Seidel).
     Sequential,
-    /// In place, in the reverse storage order.
     Reverse,
-    /// In place, in a pseudo-random order that changes in every iteration but
-    /// is reproducible for a given seed.
+    /// In place, in a seeded order that changes every iteration.
     Random,
-    /// All cells from the states of the previous iteration (Jacobi), with
-    /// linear mixing of the old and new state; independent of any order.
+    /// From the previous iteration's states (Jacobi), with linear mixing.
     Simultaneous,
 }
 
@@ -34,11 +30,9 @@ impl UpdateOrder {
 pub trait SimulationModelSettingsTrait {
     fn get_max_iterations(&self) -> usize;
     fn get_convergence_tolerance(&self) -> f64;
-    /// How the generic simulation loop orders the cell updates of an iteration.
     fn get_update_order(&self) -> UpdateOrder {
         UpdateOrder::Sequential
     }
-    /// Seed of the pseudo-random update order.
     fn get_update_seed(&self) -> u64 {
         0
     }

@@ -389,16 +389,14 @@ pub struct ICHAModelSettings {
     #[serde_inline_default(1e-6)]
     schur_convergence_tolerance: f64,
 
-    /// 0 = sequential (in place, storage order), 1 = reverse, 2 = random,
-    /// 3 = simultaneous (Jacobi with mixing); see `UpdateOrder`.
+    /// See `UpdateOrder::from_index`.
     #[serde_inline_default(0)]
     update_order: usize,
 
-    /// Seed of the random update order.
     #[serde_inline_default(0)]
     update_seed: usize,
 
-    /// Weight of the new state in the simultaneous update (0 < w <= 1).
+    /// Weight of the new state (0 < w <= 1).
     #[serde_inline_default(0.5)]
     update_mixing: f64,
 }
@@ -831,8 +829,7 @@ impl SimulationModelTrait for ICHAModel {
 
         internal_cell.dot_potential = DVector::zeros(n);
         let simultaneous = self.model_settings.get_update_order() == UpdateOrder::Simultaneous;
-        // Sequential orders see the states already updated in this iteration;
-        // the simultaneous update sees only those of the previous iteration.
+        // The simultaneous update reads only the previous iteration's states.
         let neighbours = if simultaneous {
             &self.index_cells_read_map
         } else {
@@ -914,8 +911,7 @@ impl SimulationModelTrait for ICHAModel {
             }
         }
 
-        // Judge convergence on the unmixed update: the mixed step is scaled by
-        // the mixing weight and would report convergence too early.
+        // Judge convergence on the unmixed update; mixing would stop too early.
         let mut stable: bool = true;
         for i in 0..n as usize {
             if (internal_cell.dot_charge_probability[i] - old_charge_probability[i]).abs()

@@ -12,18 +12,14 @@ pub struct CellInputConfig {
     pub num_polarization: usize,
     /// Number of extra clock periods to generate
     pub extra_clock_periods: usize,
-    /// When set, step through this explicit, ordered list of input vectors
-    /// (repeats allowed) instead of exhaustively enumerating every
-    /// combination. Each vector holds one state index per input, in the
-    /// same encoding `get_combination` produces.
+    /// Ordered input vectors to use instead of every combination
     pub custom_sequence: Option<Vec<Vec<usize>>>,
 }
 
 impl GeneratorConfig for CellInputConfig {}
 
 impl CellInputConfig {
-    /// Number of samples generated for `num_combinations` input combinations,
-    /// including the trailing extra clock periods.
+    /// Includes the extra clock periods
     pub fn num_samples(&self, num_combinations: usize) -> usize {
         self.num_samples_per_combination * num_combinations + self.extra_samples()
     }
@@ -33,9 +29,7 @@ impl CellInputConfig {
     }
 }
 
-/// Number of input combinations a simulation steps through: the length of
-/// the custom sequence when one is given (repeats included), otherwise every
-/// combination, `(2 * num_polarization)^num_inputs`.
+/// Length of the custom sequence, or (2 * num_polarization)^num_inputs
 pub fn num_combinations(
     num_polarization: usize,
     num_inputs: usize,
@@ -144,12 +138,8 @@ impl CellInputGenerator {
         // Determine the base signal value and polarization
         let polarization_value = input_state / 2; // 0 to num_polarization-1
         let offset = input_state % 2;
-        // Combination indices must enumerate states in literature order
-        // (A, B, C, D, ...): the first polarization's states run
-        // negative-then-positive (A, B), matching the truth table's
-        // A = -1 / B = +1 convention, while every following
-        // polarization's states run positive-then-negative (C, D, ...)
-        // to match its A/B-independent labeling.
+        // Literature order A, B, C, D: the first polarization runs -1, +1,
+        // the others +1, -1.
         let signal_polarity = if (polarization_value == 0) == (offset == 0) {
             -1.0
         } else {

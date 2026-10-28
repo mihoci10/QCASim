@@ -1,6 +1,4 @@
-//! Registry of the built-in simulation models and construction of the model
-//! a design selects. Shared by the `qca-sim` CLI and the QCAForge desktop
-//! application.
+//! Built-in simulation models, shared by `qca-sim` and QCAForge.
 
 use crate::design::file::QCADesign;
 use crate::objects::cell::CellType;
@@ -9,21 +7,17 @@ use crate::simulation::get_num_inputs;
 use crate::simulation::icha::ICHAModel;
 use crate::simulation::model::SimulationModelTrait;
 
-/// A fresh instance of every built-in simulation model.
 pub fn available_models() -> Vec<Box<dyn SimulationModelTrait>> {
     vec![Box::new(BistableModel::new()), Box::new(ICHAModel::new())]
 }
 
-/// Creates the built-in model with the given unique id.
 pub fn create_sim_model(model_id: &str) -> Option<Box<dyn SimulationModelTrait>> {
     available_models()
         .into_iter()
         .find(|model| model.get_unique_id() == model_id)
 }
 
-/// Builds the simulation model selected in `design` (with its model and clock
-/// generator settings applied) and validates the custom input sequence, if
-/// one is enabled.
+/// Builds the design's selected model and validates its custom input sequence.
 pub fn prepare_simulation(
     design: &QCADesign,
 ) -> Result<(Box<dyn SimulationModelTrait>, Option<Vec<Vec<usize>>>), String> {
@@ -39,8 +33,7 @@ pub fn prepare_simulation(
         .ok_or(format!("Design has no settings for model '{}'", model_id))?;
 
     let mut model = create_sim_model(&model_id).ok_or("No model with such id exists")?;
-    // The bistable approximation describes two-state (4-dot) cells only; on
-    // other cells it would write data the .qcs reader can't parse.
+    // Bistable only supports 4-dot cells; others write unreadable .qcs data.
     if model_id == BistableModel::new().get_unique_id()
         && design.layers.iter().any(|layer| {
             design
@@ -70,7 +63,7 @@ pub fn prepare_simulation(
                 num_inputs
             ));
         }
-        // Each input takes 2 states per polarization of its layer's architecture.
+        // 2 states per polarization.
         let num_states: Vec<usize> = design
             .layers
             .iter()

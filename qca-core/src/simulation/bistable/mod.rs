@@ -520,9 +520,7 @@ impl SimulationModelTrait for BistableModel {
 
         let clock_index = cell.clock_zone();
 
-        // The clock generator emits the tunneling energy as a negative value
-        // (ICHA's Hamiltonian convention); the bistable approximation needs its
-        // magnitude. A zero clock fully latches the cell instead of dividing by 0.
+        // The clock generator emits negative values; a zero clock latches the cell.
         let tunneling_energy = self.clock_states[clock_index].abs().max(f64::MIN_POSITIVE);
         polar_math /= 2.0 * tunneling_energy;
 
@@ -600,8 +598,7 @@ mod tests {
         )
     }
 
-    /// Polarization of the stored cell `stored` while clock zone 0 holds the
-    /// given input combination (each combination spans 20 samples by default).
+    /// Polarization of stored cell `stored` during `combination` (20 samples each).
     fn held_polarization(
         data: &crate::simulation::file::QCASimulationData,
         stored: usize,
@@ -618,8 +615,7 @@ mod tests {
 
         let data = simulate(cells);
 
-        // Stored cells are the input (0) and the output (1); combination 0
-        // drives the input to -1 and combination 1 to +1.
+        // Stored cells: input 0, output 1. Combination 0 drives -1, 1 drives +1.
         assert!(held_polarization(&data, 1, 0) < -0.9);
         assert!(held_polarization(&data, 1, 1) > 0.9);
     }
@@ -638,7 +634,6 @@ mod tests {
     fn clock_phase_selects_the_clock_zone() {
         let mut cells = vec![cell(0.0, CellType::Input, 0.0)];
         cells.extend((1..4).map(|i| cell(20.0 * i as f64, CellType::Normal, 0.0)));
-        // A phase that is not a multiple of 90 used to index past the clock array.
         cells.push(cell(80.0, CellType::Output, 45.0));
 
         let data = simulate(cells);
